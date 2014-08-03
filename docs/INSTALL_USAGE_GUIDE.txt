@@ -1,0 +1,231 @@
+Author: Sebastian Kraetzig <info@ts3-tools.info>
+Project: www.ts3-tools.info
+
+----------------------------------
+
+I N S T A L L    A N D    U S A G E    G U I D E
+
+----------------------------------
+
+This file shows you, how you can install and use the TS3 UpdateScript. This file is always referred to the attached TS3 UpdateScript.
+
+----------------------------------
+
+T A B L E    O F    C O N T E N T
+
+----------------------------------
+
+1. Requirements
+2. Installation
+3. Usage
+4. Update Text Examples
+5. Usage Examples
+6. How-To get "client_database_id"
+7. Debugging
+
+
+
+----------------------------------
+
+1) R E Q U I R E M E N T S
+
+----------------------------------
+
+- Supported Linux server distributation:
+	- Debian / Ubuntu
+	- RedHat / CentOS
+- root access on Linux server
+- Installed TeamSpeak 3 server
+- Some needed software packages:
+	- rsync
+	- mktemp
+	- wget
+	- grep
+	- telnet (optional; if you want to inform online clients about server update)
+	- sed
+	- unzip
+	- mail (for cronjob, if you want to receive the output as E-Mail)
+
+
+----------------------------------
+
+2) I N S T A L L A T I O N
+
+----------------------------------
+
+a) Download the TS3 UpdateScript from addons.teamspeak.com: http://addons.teamspeak.com/directory/tools/miscellaneous/Script-Automated-TeamSpeak-3-update-with-version-checker.html
+
+b) Unzip the downloaded 'TS3UpdateScript_vX.Y.zip' archive on your Linux server:
+	unzip TS3UpdateScript_vX.Y.zip
+
+   HINT: X.Y means the version. The archive can for example look like following: TS3UpdateScript_v1.7.zip
+         You can unzip and use the script from each directory of your server which you want to.
+
+c) Make the script executable:
+	chmod +x TS3UpdateScript.sh
+
+d) Run the script once, to detect all TeamSpeak 3 server instances, that the script can copy the 'password-file' file to each directory:
+	./TS3UpdateScript.sh --check
+
+	HINT: If a newer TeamSpeak 3 server version is available, enter "n" to stop the script.
+
+e) If you want to inform online clients about coming server updates with your own text and displayed username, you have to edit the following files:
+	- auto_update_text.txt
+		This file/text will be used, if the cronjob executes the script. The server informs your online clients and will wait 5 minutes before it starts the update process.
+
+	- update_text.txt
+		This file/text will be used, if you are executing the script manually. The update process starts, if you hit "yes".
+
+	- displayed_user_name.txt
+		This file contains the username, which will be displayed for poke messages
+
+	- ignore_clients.txt
+		This file contains client_database_id's of users, which should not get any poke messages about updates
+		HINT: Do NOT remove the number 1 from this file!
+
+	- password-file
+		This file contains the 'serveradmin' password to connect to your server
+		HINT: The password-file is located in each TeamSpeak 3 server root directory
+
+	HINT: Both texts has a limitation of 100 characters. The script checks at the start, if you are using a valid length. After editing the file(s), you should run the script once manually to check and see, if the length is ok: ./TS3UpdateScript.sh --check --inform-online-clients password-file
+
+f) Finish! Read the USAGE below to see, how you can use it
+
+
+
+----------------------------------
+
+3) U S A G E
+
+----------------------------------
+
+HINT: The script needs root permissions, because it's detecting all informations automatical and it's also using some commands, which are just available with root permissions.
+
+a) Simply start the script with following syntax:
+	./TS3UpdateScript.sh OPTION(S)
+
+b) The script has an included "help"-page:
+	./TS3UpdateScript.sh --help
+	or
+	./TS3UpdateScript.sh -h
+
+
+
+----------------------------------
+
+4. U P D A T E   T E X T   E X A M P L E S
+
+----------------------------------
+
+Following you can see some examples, how you can fill your 'auto_update_text.txt' and 'update_text.txt' files:
+
+a) This server will be updated to version $VERSION in 5 minutes. Please wait...
+
+b) Server update to version $VERSION in 5 minutes.
+
+c) The server will restart for server update. New version $VERSION will be installed.
+
+d) The server will be updated. Please wait a while...
+
+e) An update will be executed. Please try to reconnect in a few seconds...
+
+
+
+----------------------------------
+
+5) U S A G E   E X A M P L E S
+
+----------------------------------
+
+Following you can see some examples how you can use the script. A line started with "#" is just a comment...
+
+# Easy check; Just check, if a newer TeamSpeak 3 server version is available. If yes it asks you, if you want to update it
+Command: ./TS3UpdateScript.sh --check
+
+# Check with deleting logs; Same as above, but if it updates your server, it also will delete your old server logs
+Command: ./TS3UpdateScript.sh --check --delete-old-logs
+
+# Easy check with informing online clients; Checks if a newer version is available and informs online clients about a update process, if you are updating the server (password-file must include your 'serveradmin' password); informing will just work, if the serveradmin password is correct
+Command: ./TS3UpdateScript.sh --check --inform-online-clients
+
+# Check with deleting logs and informing online clients; Same as above, but also deletes old logs (password-file must include your 'serveradmin' password)
+Command: ./TS3UpdateScript.sh --check --delete-old-logs --inform-online-clients
+
+# Check with deleting logs and informing online clients; Same as above, but works just with the given directory
+Command: ./TS3UpdateScript.sh --check --delete-old-logs --inform-online-clients --path /path/to/teamspeak_server/
+
+# Installs weekly check cronjob for monday at 3 AM
+# Same as './TS3UpdateScript.sh --check', but it's automated - you don't have to enter yes or no. Default is 'yes'
+# Don't forget to provide your E-Mail address in the following file: administrator_eMail.txt
+Command: ./TS3UpdateScript.sh --autoupdate yes --check
+
+# Same as above, but it will also delete old logs
+Command: ./TS3UpdateScript.sh --autoupdate yes --check --delete-old-logs
+
+# Installs weekly check cronjob for monday at 3 AM; it also informs online clients and will wait 5 minutes for updating (password-file must include your 'serveradmin' password)
+Command: ./TS3UpdateScript.sh --autoupdate yes --check --inform-online-clients
+
+# Installs weekly check cronjob for monday at 3 AM; it also deletes old logs, informs online clients and will wait 5 minutes for updating (password-file must include your 'serveradmin' password)
+# This is my (Sebastian Kraetzig) personal favourite :)
+Command: ./TS3UpdateScript.sh --autoupdate yes --check --delete-old-logs --inform-online-clients
+
+# Deinstalls weekly cronjob of monday at 3 AM
+Command: ./TS3UpdateScript.sh --autoupdate no
+
+HINT: If you are installing a cronjob, it will look like following:
+	0 3 * * 0  root /path/to/TS3UpdateScript.sh --path /home/to/teamspeak/install_dir --cronjob-auto-update --check --delete-old-logs --inform-online-clients
+
+	The "TS3 UpdateScript" cronjob can be found here: /etc/cron.d/TS3UpdateScript
+
+
+
+----------------------------------
+
+6) H O W - T O   G E T   "client_database_id"
+
+----------------------------------
+
+1. Open a telnet connection to your TeamSpeak 3 server on the ServerQuery Port (default: 10011)
+
+2. Login wih your ServerQuery account:
+	login serveradmin very$SecretPassword2014
+
+3. Connect to your virtual server if needed:
+	use sid=1
+	or
+	use port=9987
+
+4. Fetch the clientlist of your virtual server:
+	clientlist
+
+5. Copy & Paste the whole output of "clientlist" in your editor/notepad and search with "Strg/Ctrl" and "F" the clients nickname, which client_database_id you need/want
+	You will find something like this:
+	clid=5 cid=2034 client_database_id=1243 client_nickname=Sebbo client_type=0
+
+	HINT: Each clientinfo is between two pipes (|)!
+
+6. Save the client_database_id in the file 'ignore_clients.txt' in a extra line to ignore that client for update pokes
+	Here for example: 1243
+
+
+----------------------------------
+
+7. D E B B U G I N G
+
+----------------------------------
+
+You will not need to debug and fix the issue by yourself. Just activate something from the script and send me the output of the script via eMail to mail@ts3-tools.info.
+
+1. Open the 'TS3UpdateScript.sh' with an text editor such as nano, vim or notepad
+
+2. In line 5 you should find following code:
+	#set -x
+
+3. Remove the hashtag from the line. Now it should look like following:
+	set -x
+
+4. Save the file and close it
+
+5. Execute the script with those parameters you want and copy and paste the output into an eMail
+
+6. Send me the ouput via eMail
