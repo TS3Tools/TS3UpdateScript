@@ -255,8 +255,7 @@ else
 fi
 
 # Check, if a new TS3UpdateScript version is available
-#wget http://files.ts3-tools.info/TS3_UpdateScript/.latest_version.txt -q -O - > TEMP_latest_version.txt
-#LATEST_TS3_UPDATESCRIPT_VERSION="$(cat TEMP_latest_version.txt | tail -1)"
+wget https://github.com/TS3Tools/TS3UpdateScript/blob/master/TS3UpdateScript.sh -q -O - > TEMP_latest_version.txt
 LATEST_TS3_UPDATESCRIPT_VERSION="$(grep -E 'SCRIPT_VERSION' TEMP_latest_version.txt | head -1 | cut -d ';' -f 2 | egrep -o '[0-9\.]+')"
 rm TEMP_latest_version.txt
 
