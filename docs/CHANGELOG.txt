@@ -39,6 +39,7 @@ History:
 * Removed link to forum, because I received all bug reports and suggestions via eMail (forum was deleted)
 * Changed mail@ts3-tools.info to info@ts3-tools.info everywhere
 * Adjusted '--help' output, because some output was overwritten
+* Fixed check for latest version of TS3 UpdateScript self, because the old link is not longer available
 
 ==================================
 ||      Version 3.4             ||

@@ -13,7 +13,7 @@ exec 5<&0
 #
 
 SCRIPT_VERSION="3.5"
-LAST_EDIT_DATE="2014-08-03"
+LAST_EDIT_DATE="2014-08-12"
 
 # Clear the terminal screen
 clear 2> /dev/null
@@ -255,8 +255,9 @@ else
 fi
 
 # Check, if a new TS3UpdateScript version is available
-wget http://files.ts3-tools.info/TS3_UpdateScript/.latest_version.txt -q -O - > TEMP_latest_version.txt
-LATEST_TS3_UPDATESCRIPT_VERSION="$(cat TEMP_latest_version.txt | tail -1)"
+#wget http://files.ts3-tools.info/TS3_UpdateScript/.latest_version.txt -q -O - > TEMP_latest_version.txt
+#LATEST_TS3_UPDATESCRIPT_VERSION="$(cat TEMP_latest_version.txt | tail -1)"
+LATEST_TS3_UPDATESCRIPT_VERSION="$(grep -E 'SCRIPT_VERSION' TEMP_latest_version.txt | head -1 | cut -d ';' -f 2 | egrep -o '[0-9\.]+')"
 rm TEMP_latest_version.txt
 
 if [ "$SCRIPT_VERSION" != "$LATEST_TS3_UPDATESCRIPT_VERSION" ]; then
