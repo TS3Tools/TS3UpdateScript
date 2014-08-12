@@ -16,3 +16,8 @@ Path		|	Description
 .		|	README.txt, TS3UpdateScript.sh and the copy of the license
 ./docs/		|	Install and upgrade guide as well as changelog
 .configs/	|	Configuration files
+
+First Header  | Second Header
+------------- | -------------
+Content Cell  | Content Cell
+Content Cell  | Content Cell
