@@ -12,7 +12,7 @@ It's a bash script which checks, if a newer version for your TeamSpeak 3 server 
 Directory Structure - Where can I find which file?
 ============
 Path  | Description
-------------- | -------------
+:------------- | :-------------
 .  | README.md, TS3UpdateScript.sh and the copy of the license
 ./docs/  | Install and upgrade guide as well as changelog
 .configs/  | Configuration files
