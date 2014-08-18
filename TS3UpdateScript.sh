@@ -247,13 +247,13 @@ checkdeps()
 
 # Execute software checks
 if [ "$INFORM_ONLINE_CLIENTS" == "true" ]; then
-	checkdeps bash mktemp rsync wget grep sed unzip ca-certificates telnet
+	checkdeps bash mktemp rsync wget grep sed unzip telnet
 elif [ -n "$AUTO_UPDATE_PARAMETER" ] && [ "$INFORM_ONLINE_CLIENTS" == "true" ]; then
-	checkdeps bash mktemp rsync wget grep sed unzip ca-certificates mail telnet
+	checkdeps bash mktemp rsync wget grep sed unzip mail telnet
 elif [ -n "$AUTO_UPDATE_PARAMETER" ]; then
-	checkdeps bash mktemp rsync wget grep sed unzip ca-certificates mail
+	checkdeps bash mktemp rsync wget grep sed unzip mail
 else
-	checkdeps bash mktemp rsync wget grep sed unzip ca-certificates
+	checkdeps bash mktemp rsync wget grep sed unzip
 fi
 
 # Check, if a new TS3UpdateScript version is available
