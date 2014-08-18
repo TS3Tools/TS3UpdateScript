@@ -13,8 +13,8 @@ exec 5<&0
 # Donations: https://www.paypal.com/cgi-bin/webscr?cmd=_s-xclick&hosted_button_id=QMAAHHWHW3VQA
 #
 
-SCRIPT_VERSION="3.5"
-LAST_EDIT_DATE="2014-08-12"
+SCRIPT_VERSION="3.5.1"
+LAST_EDIT_DATE="2014-08-18"
 
 # Clear the terminal screen
 clear 2> /dev/null
@@ -247,13 +247,13 @@ checkdeps()
 
 # Execute software checks
 if [ "$INFORM_ONLINE_CLIENTS" == "true" ]; then
-	checkdeps bash mktemp rsync wget grep sed unzip telnet
+	checkdeps bash mktemp rsync wget grep sed unzip ca-certificates telnet
 elif [ -n "$AUTO_UPDATE_PARAMETER" ] && [ "$INFORM_ONLINE_CLIENTS" == "true" ]; then
-	checkdeps bash mktemp rsync wget grep sed unzip mail telnet
+	checkdeps bash mktemp rsync wget grep sed unzip ca-certificates mail telnet
 elif [ -n "$AUTO_UPDATE_PARAMETER" ]; then
-	checkdeps bash mktemp rsync wget grep sed unzip mail
+	checkdeps bash mktemp rsync wget grep sed unzip ca-certificates mail
 else
-	checkdeps bash mktemp rsync wget grep sed unzip
+	checkdeps bash mktemp rsync wget grep sed unzip ca-certificates
 fi
 
 # Check, if a new TS3UpdateScript version is available

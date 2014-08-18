@@ -22,6 +22,12 @@ History:
 ----------------------------------
 
 ==================================
+||      Version 3.5.1           ||
+==================================
+
+* Added needed package 'ca-certificates' for being able to get latest script version from HTTPs website GitHub.com - for further details execute 'apt-cache show ca-certificates'
+
+==================================
 ||      Version 3.5             ||
 ==================================
 
