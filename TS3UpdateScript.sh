@@ -6,6 +6,7 @@ exec 5<&0
 #
 # About: This little Shell-Script checks, if a newer version of your TeamSpeak 3 server is available and if yes, it will update the server, if you want to.
 # Author: Sebastian Kraetzig <info@ts3-tools.info>
+# Project: www.ts3-tools.info
 #
 # License: GNU GPLv3
 #
@@ -47,6 +48,7 @@ Whi='\e[0;37m';     BWhi='\e[1;37m';    UWhi='\e[4;37m';    IWhi='\e[0;97m';    
 
 echo -e "\nAbout: This little Shell-Script checks, if a newer version of your TeamSpeak 3 server is available and if yes, it will update the server, if you want to.";
 echo "Author: Sebastian Kraetzig <info@ts3-tools.info>";
+echo "Project: www.ts3-tools.info";
 echo -e "License: GNU GPLv3\n";
 echo -e "Version: $SCRIPT_VERSION ($LAST_EDIT_DATE)\n";
 echo -e "------------------------------------------------------------------\n";
@@ -255,8 +257,8 @@ else
 fi
 
 # Check, if a new TS3UpdateScript version is available
-wget https://github.com/TS3Tools/TS3UpdateScript/blob/master/TS3UpdateScript.sh -q -O - > TEMP_latest_version.txt
-LATEST_TS3_UPDATESCRIPT_VERSION="$(grep -E 'SCRIPT_VERSION' TEMP_latest_version.txt | head -1 | cut -d ';' -f 2 | egrep -o '[0-9\.]+')"
+wget https://github.com/TS3Tools/TS3UpdateScript/blob/master/docs/CHANGELOG.txt -q -O - > TEMP_latest_version.txt
+LATEST_TS3_UPDATESCRIPT_VERSION=$(grep Version TEMP_latest_version.txt | head -1 | egrep -o 'Version [0-9\.?]+' | egrep -o '[0-9\.?]+')
 rm TEMP_latest_version.txt
 
 if [ "$SCRIPT_VERSION" != "$LATEST_TS3_UPDATESCRIPT_VERSION" ]; then
@@ -296,9 +298,9 @@ if [ "$SCRIPT_VERSION" != "$LATEST_TS3_UPDATESCRIPT_VERSION" ]; then
 			rm TEMP_STRING_LATEST_VERSION.txt
 
 			# Download latest version
-			wget -q http://files.ts3-tools.info/TS3_UpdateScript/$NUMBER_OF_VERSION/TS3UpdateScript_v$STRING_LATEST_VERSION.zip
+			wget -q https://github.com/TS3Tools/TS3UpdateScript/archive/master.zip
 			# Unzip latest version
-			if [ $(unzip TS3UpdateScript_v$STRING_LATEST_VERSION.zip -x configs/) ]; then
+			if [ $(unzip master.zip "TS3UpdateScript-master/*" -x configs/) ]; then
 				echo -e "${RCurs}${MCurs}[ ${Gre}OK ${RCol}]\n";
 				exit 1;
 			else
