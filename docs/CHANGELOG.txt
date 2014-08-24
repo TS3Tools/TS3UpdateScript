@@ -27,6 +27,7 @@ History:
 * Changed donation link
 ! Extended README.md
 + --help: Added 'You may will test the latest version first' to parameter '--latest-version'
+* Renamed parameter '--check-for-update' to '--update-script'
 
 ==================================
 ||      Version 3.5.1           ||

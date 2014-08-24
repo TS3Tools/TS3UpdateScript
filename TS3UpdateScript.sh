@@ -127,8 +127,8 @@ while [ -n "$1" ]; do
 		echo -en "${SCurs}--autoupdate no";
 		echo -e "${RCurs}${MCursB}Deinstalls weekly cronjob /etc/cron.d/TS3UpdateScript\n";
 
-		echo -en "${SCurs}--check-for-update";
-		echo -e "${RCurs}${MCursB}Checks for newer TS3 UpdateScript version\n";
+		echo -en "${SCurs}--update-script";
+		echo -e "${RCurs}${MCursB}Updates TS3 UpdateScript to latest version\n";
 
 		exit 0;
 	;;
@@ -181,8 +181,8 @@ while [ -n "$1" ]; do
 		shift
 	;;
 
-	--check-for-update)
-		CHECK_FOR_UPDATE="true";
+	--update-script)
+		UPDATE_SCRIPT="true";
 		shift
 	;;
 
@@ -264,14 +264,14 @@ rm TEMP_latest_version.txt
 
 if [ "$SCRIPT_VERSION" != "$LATEST_TS3_UPDATESCRIPT_VERSION" ]; then
 	if [ "$CRONJOB_AUTO_UPDATE" == "true" ]; then
-		echo -en "\n'TS3 UpdateScript' version '$LATEST_TS3_UPDATESCRIPT_VERSION' released. Execute './$SCRIPT_NAME --check-for-update' to update the script";
+		echo -en "\n'TS3 UpdateScript' version '$LATEST_TS3_UPDATESCRIPT_VERSION' released. Execute './$SCRIPT_NAME --update-script' to update the script";
 		echo -e "\t[ INFO ]\n";
 	else
-		echo -en "\n${SCurs}'TS3 UpdateScript' version '$LATEST_TS3_UPDATESCRIPT_VERSION' released. Execute './$SCRIPT_NAME --check-for-update' to update the script";
+		echo -en "\n${SCurs}'TS3 UpdateScript' version '$LATEST_TS3_UPDATESCRIPT_VERSION' released. Execute './$SCRIPT_NAME --update-script' to update the script";
 		echo -e "${RCurs}${MCurs}[ ${Cya}INFO ${RCol}]\n";
 	fi
 
-	if [ "$CHECK_FOR_UPDATE" == "true" ]; then
+	if [ "$UPDATE_SCRIPT" == "true" ]; then
 		UPDATE_ANSWER=""
 
 		while [ "$UPDATE_ANSWER" == "" ]; do
