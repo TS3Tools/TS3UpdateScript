@@ -7,6 +7,7 @@ exec 5<&0
 # About: This little Shell-Script checks, if a newer version of your TeamSpeak 3 server is available and if yes, it will update the server, if you want to.
 # Author: Sebastian Kraetzig <info@ts3-tools.info>
 # Project: www.ts3-tools.info
+# facebook: www.facebook.com/TS3Tools
 #
 # License: GNU GPLv3
 #
@@ -49,6 +50,7 @@ Whi='\e[0;37m';     BWhi='\e[1;37m';    UWhi='\e[4;37m';    IWhi='\e[0;97m';    
 echo -e "\nAbout: This little Shell-Script checks, if a newer version of your TeamSpeak 3 server is available and if yes, it will update the server, if you want to.";
 echo "Author: Sebastian Kraetzig <info@ts3-tools.info>";
 echo "Project: www.ts3-tools.info";
+echo "facebook: www.facebook.com/TS3Tools";
 echo -e "License: GNU GPLv3\n";
 echo -e "Version: $SCRIPT_VERSION ($LAST_EDIT_DATE)\n";
 echo -e "------------------------------------------------------------------\n";
@@ -284,7 +286,7 @@ if [ "$SCRIPT_VERSION" != "$LATEST_TS3_UPDATESCRIPT_VERSION" ]; then
 			fi
 		done
 
-		if [[ "$UPDATE_ANSWER" == "y" ]] && [[ "$UPDATE_ANSWER" == "yes" ]]; then
+		if [[ "$UPDATE_ANSWER" == "y" ]] || [[ "$UPDATE_ANSWER" == "yes" ]]; then
 			echo -en "\n${SCurs}Updating TS3 UpdateScript script";
 			echo -e "${RCurs}${MCurs}[ ${Whi}.. ${RCol}]\n";
 

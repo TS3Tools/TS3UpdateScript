@@ -3,7 +3,7 @@ README
 
 Developers
 ============
-Sebastian Kraetzig <info@ts3-tools.info>
+Sebastian Kraetzig [info@ts3-tools.info]
 
 What is the TS3 UpdateScript?
 ============
