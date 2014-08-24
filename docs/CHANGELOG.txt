@@ -22,6 +22,14 @@ History:
 ----------------------------------
 
 ==================================
+||      Version 3.6             ||
+==================================
+
+* Deleted first/standard password-file; it will now created with a stream redirection instead of coping the file
+* Changed donation link
+! Extended README.md
+
+==================================
 ||      Version 3.5.1           ||
 ==================================
 

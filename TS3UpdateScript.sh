@@ -10,11 +10,11 @@ exec 5<&0
 #
 # License: GNU GPLv3
 #
-# Donations: https://www.paypal.com/cgi-bin/webscr?cmd=_s-xclick&hosted_button_id=QMAAHHWHW3VQA
+# Donations: https://www.paypal.com/cgi-bin/webscr?cmd=_s-xclick&hosted_button_id=7ZRXLSC2UBVWE
 #
 
-SCRIPT_VERSION="3.5.1"
-LAST_EDIT_DATE="2014-08-18"
+SCRIPT_VERSION="3.6"
+LAST_EDIT_DATE="2014-08-24"
 
 # Clear the terminal screen
 clear 2> /dev/null
@@ -574,7 +574,7 @@ while read paths; do
 
 	# Copy password-file to root directory of TeamSpeak 3 server
 	if [ ! -f $TEAMSPEAK_DIRECTORY/password-file ]; then
-		cp -f password-file $TEAMSPEAK_DIRECTORY
+		echo "verySecretServerQueryPassword" > $TEAMSPEAK_DIRECTORY/password-file
 	fi
 
 	# Fetch latest version from www.teamspeak.com
@@ -1328,7 +1328,7 @@ else
 	echo -e "${RCurs}${MCurs}[ ${Cya}INFO ${RCol}]";
 fi
 
-echo -e "\nDonations: https://www.paypal.com/cgi-bin/webscr?cmd=_s-xclick&hosted_button_id=QMAAHHWHW3VQA";
+echo -e "\nDonations: https://www.paypal.com/cgi-bin/webscr?cmd=_s-xclick&hosted_button_id=7ZRXLSC2UBVWE";
 
 # Restore stdin and close file descriptor 5
 exec 0<&5 5>&-
