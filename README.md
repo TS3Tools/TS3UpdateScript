@@ -3,7 +3,7 @@ README
 
 Developers
 ============
-Sebastian Kraetzig <info [ at ] ts3-tools [ dot ] info>
+Sebastian Kraetzig <info@ts3-tools.info>
 
 What is the TS3 UpdateScript?
 ============
@@ -12,7 +12,9 @@ It's a bash script which checks, if a newer version for your TeamSpeak 3 server 
 Stay tuned!
 ============
 Official Project Homepage: www.ts3-tools.info
+
 facebook Fanpage: https://www.facebook.com/TS3Tools
+
 GitHub: https://github.com/TS3Tools/TS3UpdateScript/
 
 Requirements
@@ -56,24 +58,24 @@ Features
 Work flow of the script
 ============
 First it will check, if a newer version for the script self is available and afterwards it will check your installed version of each instance against the latest available version from teamspeak.de. It also will detect, if you are using TSDNS, SQLite or MySQL database and so on. If a newer version is available, the script will do following steps:
-1 Inform online clients on all virtual servers (if you want to; parameter '--inform-online-clients' needed)
-2 Stopp running TSDNS (if used)
-3 Stopp running server instance gracefully
-4 Delete old logs (if you want to; parameter '--delete-old-logs' needed)
-5 Create backup of currently running TeamSpeak 3 server in '/tmp/ts3server_backup/'
-6 Download latest and named TeamSpeak 3 server files from 4players.de
-7 Unzip downloaded TeamSpeak 3 server files
-8 Import licensekey (if available), database and Query IP Black- and Whitelist from backup
-9 Import TSDNS settings file (if used)
-10 Delete ts3server.pid, if exists for correct start
-11 Delete downloaded TeamSpeak 3 server files
-12 Set ownership and group of files like before update
-13 Start TSDNS (if was used)
-14 Add commandline parameter to new ts3server_startscript.sh if INI-file is used
-15 Start updated server
-16 Script waits 15 seconds and checks, if the server is running
-17 If the server is not running, the rollback will be executed
-18 Clean up system from created and downloaded files for the update process
+1. Inform online clients on all virtual servers (if you want to; parameter '--inform-online-clients' needed)
+2. Stopp running TSDNS (if used)
+3. Stopp running server instance gracefully
+4. Delete old logs (if you want to; parameter '--delete-old-logs' needed)
+5. Create backup of currently running TeamSpeak 3 server in '/tmp/ts3server_backup/'
+6. Download latest and named TeamSpeak 3 server files from 4players.de
+7. Unzip downloaded TeamSpeak 3 server files
+8. Import licensekey (if available), database and Query IP Black- and Whitelist from backup
+9. Import TSDNS settings file (if used)
+10. Delete ts3server.pid, if exists for correct start
+11. Delete downloaded TeamSpeak 3 server files
+12. Set ownership and group of files like before update
+13. Start TSDNS (if was used)
+14. Add commandline parameter to new ts3server_startscript.sh if INI-file is used
+15. Start updated server
+16. Script waits 15 seconds and checks, if the server is running
+17. If the server is not running, the rollback will be executed
+18. Clean up system from created and downloaded files for the update process
 
 Those steps will the script execute for each installed instance, which will be checked.
 
