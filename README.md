@@ -58,6 +58,7 @@ Features
 Work flow of the script
 ============
 First it will check, if a newer version for the script self is available and afterwards it will check your installed version of each instance against the latest available version from teamspeak.de. It also will detect, if you are using TSDNS, SQLite or MySQL database and so on. If a newer version is available, the script will do following steps:
+
 1. Inform online clients on all virtual servers (if you want to; parameter '--inform-online-clients' needed)
 2. Stopp running TSDNS (if used)
 3. Stopp running server instance gracefully
