@@ -51,8 +51,8 @@ Features
   - ServerQuery Port
   - Latest version of the TS3UpdateScript self
 - Backup as rollback, if the newer TeamSpeak server version is not compatible or not working
-- Deletes old logs, if you want to
-- Informs online clients via poke message, if you want to
+- Deletes old logs, if you want to (parameter '--delete-old-logs')
+- Informs online clients via poke message, if you want to (parameter '--inform-online-clients')
 - Keeps rollback Backup, if you want to (parameter '--keep-backups')
 - Cronjob (CRON) for (weekly) fully automated update process (it's manually adjustable)
 
