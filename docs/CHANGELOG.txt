@@ -7,9 +7,7 @@ C H A N G E L O G
 
 ----------------------------------
 
-This file shows all the adjustments which were done in this TS3 UpdateScript. For example there
-were some corrections on the code, some new features and bugfixes. This file is always referred
-to the attached TS3 UpdateScript.
+This file shows all the adjustments which were done in this TS3 UpdateScript. For example there were some corrections on the code, some new features and bugfixes. This file is always referred to the attached TS3 UpdateScript.
 
 ----------------------------------
 
@@ -28,6 +26,7 @@ History:
 * Deleted first/standard password-file; it will now created with a stream redirection instead of coping the file
 * Changed donation link
 ! Extended README.md
++ --help: Added 'You may will test the latest version first' to parameter '--latest-version'
 
 ==================================
 ||      Version 3.5.1           ||

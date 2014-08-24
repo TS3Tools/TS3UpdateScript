@@ -112,7 +112,8 @@ while [ -n "$1" ]; do
 		echo -e "${RCurs}${MCursB}Just check the server in this directory and do not search for directories on the whole server\n";
 
 		echo -en "${SCurs}--latest-version /path/to/latestStableVersion.txt";
-		echo -e "${RCurs}${MCursB}Do not use the official latest version. Use instead the latest version from the given file\n";
+		echo -e "${RCurs}${MCursB}Do not use the official latest version. Use instead the latest version from the given file";
+		echo -e "${RCurs}\n${MCursB}You may will test the latest version first\n";
 
 		echo -en "${SCurs}--keep-backups";
 		echo -e "${RCurs}${MCursB}Set this parameter, if you want to keep the created backups by the script\n";

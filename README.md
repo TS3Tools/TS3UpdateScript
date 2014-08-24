@@ -44,6 +44,7 @@ Features
 - Auto detection of
   - TeamSpeak server instances installation directories
   - Installed and latest TeamSpeak server version as well as architecture
+    - You may will test the latest version for a while, so you can set 'your' latest version (View parameter '--latest-version' with './TS3UpdateScript.sh --help')
   - File permissions of current installed TeamSpeak server
   - Used database type
   - TSDNS usage
@@ -52,7 +53,7 @@ Features
 - Backup as rollback, if the newer TeamSpeak server version is not compatible or not working
 - Deletes old logs, if you want to
 - Informs online clients via poke message, if you want to
-- Keeps rollback Backup, if you want to
+- Keeps rollback Backup, if you want to (parameter '--keep-backups')
 - Cronjob (CRON) for (weekly) fully automated update process (it's manually adjustable)
 
 Work flow of the script
