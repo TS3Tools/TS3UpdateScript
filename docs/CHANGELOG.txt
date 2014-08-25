@@ -20,7 +20,7 @@ History:
 ----------------------------------
 
 ==================================
-||      Version 3.6.1           ||
+||      Version 3.6.2           ||
 ==================================
 
 * Deleted first/standard password-file; it will now created with a stream redirection instead of coping the file
@@ -32,6 +32,7 @@ History:
 + Added facebook fanpage to header of script
 * Temp-file 'auto_update_text.txt' was created in root directory of TS3UpdateScript, but not deleted
 * Fixed non-working script update
+* Set raw-GitHub link for better searching for the latest script version
 
 ==================================
 ||      Version 3.5.1           ||

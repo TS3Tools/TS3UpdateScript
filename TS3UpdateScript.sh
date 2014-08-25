@@ -260,7 +260,7 @@ else
 fi
 
 # Check, if a new TS3UpdateScript version is available
-wget https://github.com/TS3Tools/TS3UpdateScript/blob/master/docs/CHANGELOG.txt -q -O - > TEMP_latest_version.txt
+wget https://raw.githubusercontent.com/TS3Tools/TS3UpdateScript/master/docs/CHANGELOG.txt -q -O - > TEMP_latest_version.txt
 LATEST_TS3_UPDATESCRIPT_VERSION=$(grep Version TEMP_latest_version.txt | head -1 | egrep -o 'Version [0-9\.?]+' | egrep -o '[0-9\.?]+')
 rm TEMP_latest_version.txt
 
@@ -303,7 +303,7 @@ if [ "$SCRIPT_VERSION" != "$LATEST_TS3_UPDATESCRIPT_VERSION" ]; then
 			# Download latest version
 			wget -q https://github.com/TS3Tools/TS3UpdateScript/archive/master.zip
 			# Unzip latest version
-			if [ $(unzip master.zip TS3UpdateScript-master/* -x TS3UpdateScript-master/configs/ && mv TS3UpdateScript-master/* . && rmdir TS3UpdateScript-master/) ]; then
+			if [ $(unzip master.zip TS3UpdateScript-master/* -x TS3UpdateScript-master/configs/ && mv -f TS3UpdateScript-master/* . && rmdir TS3UpdateScript-master/) ]; then
 				echo -e "${RCurs}${MCurs}[ ${Gre}OK ${RCol}]\n";
 				exit 1;
 			else
