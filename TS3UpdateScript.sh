@@ -15,7 +15,7 @@ exec 5<&0
 #
 
 SCRIPT_VERSION="3.6"
-LAST_EDIT_DATE="2014-08-24"
+LAST_EDIT_DATE="2014-08-25"
 
 # Clear the terminal screen
 clear 2> /dev/null
@@ -303,7 +303,7 @@ if [ "$SCRIPT_VERSION" != "$LATEST_TS3_UPDATESCRIPT_VERSION" ]; then
 			# Download latest version
 			wget -q https://github.com/TS3Tools/TS3UpdateScript/archive/master.zip
 			# Unzip latest version
-			if [ $(unzip master.zip "TS3UpdateScript-master/*" -x configs/) ]; then
+			if [ $(unzip master.zip TS3UpdateScript-master/* -x TS3UpdateScript-master/configs/ && mv TS3UpdateScript-master/* . && rmdir TS3UpdateScript-master/) ]; then
 				echo -e "${RCurs}${MCurs}[ ${Gre}OK ${RCol}]\n";
 				exit 1;
 			else
@@ -373,7 +373,7 @@ if [ -z "$AUTO_UPDATE_PARAMETER" ]; then
 		# Auto update text
 		# Replace $VERSION with the latest version
 		TEMP_AUTO_UPDATE_TEXT=$(sed -r 's/\$VERSION/'$LATEST_VERSION'/g' $SCRIPT_PATH/configs/auto_update_text.txt)
-		echo "$TEMP_AUTO_UPDATE_TEXT" > $SCRIPT_PATH/auto_update_text.txt
+		echo "$TEMP_AUTO_UPDATE_TEXT" > $SCRIPT_PATH/configs/auto_update_text.txt
 		AUTO_UPDATE_TEXT=$(sed -r 's/ /\\s/g' $SCRIPT_PATH/configs/auto_update_text.txt)
 		AUTO_UPDATE_TEXT_LENGTH=$(echo -n $AUTO_UPDATE_TEXT | wc -c)
 		AUTO_UPDATE_LENGTH_OVERHANG=`expr $AUTO_UPDATE_TEXT_LENGTH - 100`
