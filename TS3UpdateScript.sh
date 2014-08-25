@@ -14,7 +14,7 @@ exec 5<&0
 # Donations: https://www.paypal.com/cgi-bin/webscr?cmd=_s-xclick&hosted_button_id=7ZRXLSC2UBVWE
 #
 
-SCRIPT_VERSION="3.6"
+SCRIPT_VERSION="3.6.1"
 LAST_EDIT_DATE="2014-08-25"
 
 # Clear the terminal screen
