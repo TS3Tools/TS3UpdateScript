@@ -19,10 +19,10 @@ wget -q https://github.com/TS3Tools/TS3UpdateScript/archive/master.zip
 # Unzip latest version
 if [[ $(unzip master.zip TS3UpdateScript-master/* -x TS3UpdateScript-master/configs/*) ]]; then
 	if [ $(cp -Rf TS3UpdateScript-master/* . && rm -rf TS3UpdateScript-master/) ]; then
+		rm -rf master.zip
 	        exit 1;
 	fi
 else
+	rm -rf master.zip
         exit 0;
 fi
-
-rm -rf master.zip

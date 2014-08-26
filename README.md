@@ -87,7 +87,7 @@ Directory Structure - Where can I find which file?
 ============
 Path  | Description
 :------------- | :-------------
-.  | README.md, TS3UpdateScript.sh and the copy of the license
+.  | README.md, TS3UpdateScript.sh, .updateScript.sh and the copy of the license
 ./docs/  | Install and upgrade guide as well as changelog
 .configs/  | Configuration files
 
