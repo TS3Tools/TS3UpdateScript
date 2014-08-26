@@ -509,7 +509,7 @@ if [ "$AUTO_UPDATE_PARAMETER" == "yes" ]; then
 	echo -en "# TS3UpdateScript: Cronjob(s) for auto updates\n\n" >> /etc/cron.d/TS3UpdateScript;
 
 	if [ "$AUTO_UPDATE_SCRIPT" == "true" ]; then
-		echo -e "  $CRONJOB_MINUTE 3 * * 1  root $(pwd)/$(basename $0) --cronjob-auto-update --autoupdate-script\n" >> /etc/cron.d/TS3UpdateScript;
+		echo -e "  45 2 * * 1  root $(pwd)/$(basename $0) --cronjob-auto-update --autoupdate-script\n" >> /etc/cron.d/TS3UpdateScript;
 	fi
 
 	while read paths; do
