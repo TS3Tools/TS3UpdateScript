@@ -35,7 +35,7 @@ T A B L E    O F    C O N T E N T
 	- Debian / Ubuntu
 	- RedHat / CentOS
 - root access on Linux server
-- Installed TeamSpeak 3 server
+- Installed TeamSpeak 3 server instance
 - Some needed software packages:
 	- rsync
 	- mktemp
@@ -54,22 +54,17 @@ T A B L E    O F    C O N T E N T
 ----------------------------------
 
 a) Download the TS3 UpdateScript from addons.teamspeak.com: http://addons.teamspeak.com/directory/tools/miscellaneous/Script-Automated-TeamSpeak-3-update-with-version-checker.html
+					or from GitHub.com: https://github.com/TS3Tools/TS3UpdateScript/
 
-b) Unzip the downloaded 'TS3UpdateScript_vX.Y.zip' archive on your Linux server:
-	unzip TS3UpdateScript_vX.Y.zip
+b) Unzip the downloaded archive on your Linux server:
+	For example: unzip TS3UpdateScript.zip
 
-   HINT: X.Y means the version. The archive can for example look like following: TS3UpdateScript_v1.7.zip
-         You can unzip and use the script from each directory of your server which you want to.
+   HINT: You can unzip and use the script from each directory of your server which you want to.
 
 c) Make the script executable:
 	chmod +x TS3UpdateScript.sh
 
-d) Run the script once, to detect all TeamSpeak 3 server instances, that the script can copy the 'password-file' file to each directory:
-	./TS3UpdateScript.sh --check
-
-	HINT: If a newer TeamSpeak 3 server version is available, enter "n" to stop the script.
-
-e) If you want to inform online clients about coming server updates with your own text and displayed username, you have to edit the following files:
+d) If you want to inform online clients about coming server updates with your own text and displayed username, you have to edit the following files:
 	- auto_update_text.txt
 		This file/text will be used, if the cronjob executes the script. The server informs your online clients and will wait 5 minutes before it starts the update process.
 
@@ -87,7 +82,8 @@ e) If you want to inform online clients about coming server updates with your ow
 		This file contains the 'serveradmin' password to connect to your server
 		HINT: The password-file is located in each TeamSpeak 3 server root directory
 
-	HINT: Both texts has a limitation of 100 characters. The script checks at the start, if you are using a valid length. After editing the file(s), you should run the script once manually to check and see, if the length is ok: ./TS3UpdateScript.sh --check --inform-online-clients password-file
+	HINT: Both texts has a limitation of 100 characters. The script checks at the start, if you are using a valid length. After editing the file(s), you should run the script once manually to check and see, if the length is ok: ./TS3UpdateScript.sh --check --inform-online-clients
+		This command will also create the password-file in each root of a TeamSpeak server instance directory
 
 f) Finish! Read the USAGE below to see, how you can use it
 
@@ -128,6 +124,10 @@ c) The server will restart for server update. New version $VERSION will be insta
 d) The server will be updated. Please wait a while...
 
 e) An update will be executed. Please try to reconnect in a few seconds...
+
+
+Available variables are:
+- $VERSION (returns latest version; for example: 3.0.10.3)
 
 
 
@@ -214,7 +214,7 @@ HINT: If you are installing a cronjob, it will look like following:
 
 ----------------------------------
 
-You will not need to debug and fix the issue by yourself. Just activate something from the script and send me the output of the script via eMail to mail@ts3-tools.info.
+You will not need to debug and fix the issue by yourself. Just activate something from the script and send me the output of the script via eMail to info@ts3-tools.info.
 
 1. Open the 'TS3UpdateScript.sh' with an text editor such as nano, vim or notepad
 

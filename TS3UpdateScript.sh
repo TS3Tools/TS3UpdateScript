@@ -71,7 +71,7 @@ if [[ "$(whoami)" != "root" ]]; then
 	echo -en "${SCurs}This script needs root permissions. Please enter your root password...";
 	echo -e "${RCurs}${MCurs}[ ${Red}HINT ${RCol}]";
 
-	su -c "$SCRIPT $1 $2 $3 $4 $5 $6 $7 $8"
+	su -c "$SCRIPT $1 $2 $3 $4 $5 $6 $7 $8 $9 ${10}"
 
 	exit 0
 fi
@@ -182,7 +182,6 @@ while [ -n "$1" ]; do
 	--latest-version)
 		LATEST_VERSION_FILE="true"
 		LATEST_VERSION="$(cat $2)"
-		shift
 		shift
 	;;
 
@@ -496,7 +495,7 @@ EMAIL="$(cat $SCRIPT_PATH/configs/administrator_eMail.txt)"
 
 # If option '--autoupdate yes' is set, install the cronjob for monday at 3 AM
 if [ "$AUTO_UPDATE_PARAMETER" == "yes" ]; then
-	echo -en "${SCurs}Installing new cronjob";
+	echo -en "${SCurs}Installing new cronjob in '/etc/cron.d/TS3UpdateScript'";
 	echo -e "${RCurs}${MCurs}[ ${Whi}.. ${RCol}]";
 
 	CRONJOB_MINUTE="0";

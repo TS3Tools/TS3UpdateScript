@@ -61,7 +61,9 @@ T A B L E    O F    C O N T E N T
 1) Deinstall old cronjob:
 	./TS3UpdateScript.sh --autoupdate no
 
-2) Install new cronjob with your needed parameters as well as with the new needed parameter '--autoupdate-script' - for example:
-	./TS3UpdateScript.sh --autoupdate yes --check --delete-old-logs --inform-online-clients --autoupdate-script
+2) Install new cronjob with your needed parameters as well as with the needed parameter '--autoupdate-script' - for example:
+	./TS3UpdateScript.sh --check --inform-online-clients --autoupdate-script --delete-old-logs --autoupdate yes
+
+	HINT: The TS3UpdateScript will sort the parameters in cronjob to best practise. ;)
 
 3) Finish - The next cronjob will check for a newer version and will update the TS3UpdateScript if needed

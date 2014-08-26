@@ -26,10 +26,12 @@ History:
 + Added parameter(s) '-v' / '--version' to display the version of the script
 + Added parameter '--autoupdate-script' for full automate update process of your TS3UpdateScript - excluding configs/
 + Added support for two new parameters for su-command, if you execute the script with non-root permissions
-! Updated docs/UPDATE_GUIDE.txt
 * Updated cronjob installer for supporting all parameters
 */- Removed second needed parameter 'latestStableVersion.txt' for parameter '--latest-version'; it will use the version of configs/latestStableVersion.txt
 ! If you have used this feature in past, just remove the parameter to the file
+* Changed text "Installing new cronjob" to "Installing new cronjob in '/etc/cron.d/TS3UpdateScript'" as hint for finding the cronjob file
+! Updated docs/UPDATE_GUIDE.txt
+! Updated docs/INSTALL_USAGE_GUIDE.txt
 
 ==================================
 ||      Version 3.6.3           ||
