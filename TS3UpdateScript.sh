@@ -14,7 +14,7 @@ exec 5<&0
 # Donations: https://www.paypal.com/cgi-bin/webscr?cmd=_s-xclick&hosted_button_id=7ZRXLSC2UBVWE
 #
 
-SCRIPT_VERSION="3.6.5"
+SCRIPT_VERSION="3.7"
 LAST_EDIT_DATE="2014-08-26"
 
 # Clear the terminal screen
@@ -181,7 +181,7 @@ while [ -n "$1" ]; do
 
 	--latest-version)
 		LATEST_VERSION_FILE="true"
-		LATEST_VERSION="$(cat $2)"
+		LATEST_VERSION="$(cat $SCRIPT_PATH/configs/latestStableVersion.txt)"
 		shift
 	;;
 
