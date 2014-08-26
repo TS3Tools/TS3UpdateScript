@@ -14,8 +14,8 @@ exec 5<&0
 # Donations: https://www.paypal.com/cgi-bin/webscr?cmd=_s-xclick&hosted_button_id=7ZRXLSC2UBVWE
 #
 
-SCRIPT_VERSION="3.6.1"
-LAST_EDIT_DATE="2014-08-25"
+SCRIPT_VERSION="3.6.3"
+LAST_EDIT_DATE="2014-08-26"
 
 # Clear the terminal screen
 clear 2> /dev/null
@@ -23,6 +23,7 @@ clear 2> /dev/null
 # Get screen width
 export TERM=xterm
 let "COL = $(tput cols) - 10"
+let "BCOL = $(tput cols) - 23"
 
 
 
@@ -33,6 +34,7 @@ let "COL = $(tput cols) - 10"
 SCurs='\e[s';		# Save Cursor
 MCurs="\e[${COL}C";	# Move Cursor
 MCursB="\e[55C";	# Move Cursor a bit
+MCursBB="\e[${BCOL}C";	# Move Cursor a bit more
 RCurs='\e[u';		# Reset Cursor
 RCol='\e[0m';		# Text Reset
 
@@ -300,15 +302,10 @@ if [ "$SCRIPT_VERSION" != "$LATEST_TS3_UPDATESCRIPT_VERSION" ]; then
 			NUMBER_OF_VERSION=$(grep -Po "^([0-9]+)" TEMP_STRING_LATEST_VERSION.txt)
 			rm TEMP_STRING_LATEST_VERSION.txt
 
-			# Download latest version
-			wget -q https://github.com/TS3Tools/TS3UpdateScript/archive/master.zip
-			# Unzip latest version
-			if [ $(unzip master.zip TS3UpdateScript-master/* -x TS3UpdateScript-master/configs/ && mv -f TS3UpdateScript-master/* . && rmdir TS3UpdateScript-master/) ]; then
-				echo -e "${RCurs}${MCurs}[ ${Gre}OK ${RCol}]\n";
+			# Install latest version
+			if [ ! $(bash ./.updateScript.sh &) ]; then
+				echo -e "${RCurs}${MCursBB}[ ${Cya}Should be updated ${RCol}]\n";
 				exit 1;
-			else
-				echo -e "${RCurs}${MCurs}[ ${Red}FAILED ${RCol}]\n";
-				exit 0;
 			fi
 		else
 			echo -en "\n${SCurs}Your TS3 UpdateScript was NOT updated";

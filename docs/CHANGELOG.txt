@@ -20,7 +20,7 @@ History:
 ----------------------------------
 
 ==================================
-||      Version 3.6.2           ||
+||      Version 3.6.3           ||
 ==================================
 
 * Deleted first/standard password-file; it will now created with a stream redirection instead of coping the file
@@ -33,6 +33,8 @@ History:
 * Temp-file 'auto_update_text.txt' was created in root directory of TS3UpdateScript, but not deleted
 * Fixed non-working script update
 * Set raw-GitHub link for better searching for the latest script version
+* Outsourced TS3UpdateScript update mechnism to own script: .updateScript.sh
+! ATTENTION: Do *NOT* execute the script manually - it's your own risk! Use instead ./TS3UpdateScript.sh --update-script
 
 ==================================
 ||      Version 3.5.1           ||
