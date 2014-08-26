@@ -14,7 +14,7 @@ exec 5<&0
 # Donations: https://www.paypal.com/cgi-bin/webscr?cmd=_s-xclick&hosted_button_id=7ZRXLSC2UBVWE
 #
 
-SCRIPT_VERSION="3.7"
+SCRIPT_VERSION="3.6.5"
 LAST_EDIT_DATE="2014-08-26"
 
 # Clear the terminal screen
@@ -285,7 +285,7 @@ if [ "$SCRIPT_VERSION" != "$LATEST_TS3_UPDATESCRIPT_VERSION" ]; then
 		echo -e "${RCurs}${MCurs}[ ${Cya}INFO ${RCol}]\n";
 	fi
 
-	if [ "$UPDATE_SCRIPT" == "true" ] || [ "$AUTO_UPDATE_SCRIPT" == "true" ]; then
+	if [ "$UPDATE_SCRIPT" == "true" ] || [ "$AUTO_UPDATE_SCRIPT" == "true" ] && [ -z "$AUTO_UPDATE_PARAMETER" ]; then
 		if [ "$AUTO_UPDATE_SCRIPT" == "true" ] && [ "$CRONJOB_AUTO_UPDATE" == "true" ]; then
 			UPDATE_ANSWER="yes"
 		else
@@ -317,7 +317,7 @@ if [ "$SCRIPT_VERSION" != "$LATEST_TS3_UPDATESCRIPT_VERSION" ]; then
 			rm TEMP_STRING_LATEST_VERSION.txt
 
 			# Install latest version
-			if [ ! $(bash ./.updateScript.sh &) ]; then
+			if [ ! $(bash $SCRIPT_PATH/.updateScript.sh &) ]; then
 				echo -e "${RCurs}${MCursBB}[ ${Cya}Should be updated ${RCol}]\n";
 				exit 1;
 			fi
@@ -508,8 +508,12 @@ if [ "$AUTO_UPDATE_PARAMETER" == "yes" ]; then
 	echo -en "MAILTO=\"$EMAIL\"\n\n" >> /etc/cron.d/TS3UpdateScript;
 	echo -en "# TS3UpdateScript: Cronjob(s) for auto updates\n\n" >> /etc/cron.d/TS3UpdateScript;
 
-	DIRECTORY_COUNTER="$(cat TeamSpeak_Directories.txt | wc -l)"
-	COUNTER=1
+#	DIRECTORY_COUNTER="$(cat TeamSpeak_Directories.txt | wc -l)"
+#	COUNTER=1
+
+	if [ "$AUTO_UPDATE_SCRIPT" == "true" ]; then
+		echo -e "  $CRONJOB_MINUTE 3 * * 1  root $(pwd)/$(basename $0) --cronjob-auto-update --autoupdate-script\n" >> /etc/cron.d/TS3UpdateScript;
+	fi
 
 	while read paths; do
 		PARAMETER_PATH="$(dirname $paths)"
@@ -530,18 +534,15 @@ if [ "$AUTO_UPDATE_PARAMETER" == "yes" ]; then
 			if [ "$KEEP_BACKUPS" == "true" ]; then
 				echo -n "--keep-backups " >> /etc/cron.d/TS3UpdateScript;
 			fi
-			if [ "$UPDATE_SCRIPT" == "true" ]; then
-				echo -n "--update-script " >> /etc/cron.d/TS3UpdateScript;
-			fi
-			if [ "$COUNTER" -eq "$DIRECTORY_COUNTER" ]; then
-				if [ "$AUTO_UPDATE_SCRIPT" == "true" ]; then
-					echo -n "--autoupdate-script" >> /etc/cron.d/TS3UpdateScript;
-				fi
-			fi
+#			if [ "$COUNTER" -eq "$DIRECTORY_COUNTER" ]; then
+#				if [ "$AUTO_UPDATE_SCRIPT" == "true" ]; then
+#					echo -n "--autoupdate-script" >> /etc/cron.d/TS3UpdateScript;
+#				fi
+#			fi
 			echo -e "\n" >> /etc/cron.d/TS3UpdateScript;
 
 			CRONJOB_MINUTE=`expr $CRONJOB_MINUTE + 10`
-			let "COUNTER = $COUNTER + 1"
+#			let "COUNTER = $COUNTER + 1"
 		fi
 	done < TeamSpeak_Directories.txt
 
