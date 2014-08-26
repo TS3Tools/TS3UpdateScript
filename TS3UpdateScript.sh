@@ -508,9 +508,6 @@ if [ "$AUTO_UPDATE_PARAMETER" == "yes" ]; then
 	echo -en "MAILTO=\"$EMAIL\"\n\n" >> /etc/cron.d/TS3UpdateScript;
 	echo -en "# TS3UpdateScript: Cronjob(s) for auto updates\n\n" >> /etc/cron.d/TS3UpdateScript;
 
-#	DIRECTORY_COUNTER="$(cat TeamSpeak_Directories.txt | wc -l)"
-#	COUNTER=1
-
 	if [ "$AUTO_UPDATE_SCRIPT" == "true" ]; then
 		echo -e "  $CRONJOB_MINUTE 3 * * 1  root $(pwd)/$(basename $0) --cronjob-auto-update --autoupdate-script\n" >> /etc/cron.d/TS3UpdateScript;
 	fi
@@ -534,15 +531,9 @@ if [ "$AUTO_UPDATE_PARAMETER" == "yes" ]; then
 			if [ "$KEEP_BACKUPS" == "true" ]; then
 				echo -n "--keep-backups " >> /etc/cron.d/TS3UpdateScript;
 			fi
-#			if [ "$COUNTER" -eq "$DIRECTORY_COUNTER" ]; then
-#				if [ "$AUTO_UPDATE_SCRIPT" == "true" ]; then
-#					echo -n "--autoupdate-script" >> /etc/cron.d/TS3UpdateScript;
-#				fi
-#			fi
 			echo -e "\n" >> /etc/cron.d/TS3UpdateScript;
 
 			CRONJOB_MINUTE=`expr $CRONJOB_MINUTE + 10`
-#			let "COUNTER = $COUNTER + 1"
 		fi
 	done < TeamSpeak_Directories.txt
 
