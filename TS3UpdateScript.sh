@@ -285,8 +285,12 @@ if [ "$SCRIPT_VERSION" != "$LATEST_TS3_UPDATESCRIPT_VERSION" ]; then
 		echo -e "${RCurs}${MCurs}[ ${Cya}INFO ${RCol}]\n";
 	fi
 
-	if [ "$UPDATE_SCRIPT" == "true" ]; then
-		UPDATE_ANSWER=""
+	if [ "$UPDATE_SCRIPT" == "true" ] || [ "$AUTO_UPDATE_SCRIPT" == "true" ]; then
+		if [ "$AUTO_UPDATE_SCRIPT" == "true" ] && [ "$CRONJOB_AUTO_UPDATE" == "true" ]; then
+			UPDATE_ANSWER="yes"
+		else
+			UPDATE_ANSWER=""
+		fi
 
 		while [ "$UPDATE_ANSWER" == "" ]; do
 			read -p "Do you want to update the script? ([y]es/[n]o) " UPDATE_ANSWER
