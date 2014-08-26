@@ -14,7 +14,7 @@ exec 5<&0
 # Donations: https://www.paypal.com/cgi-bin/webscr?cmd=_s-xclick&hosted_button_id=7ZRXLSC2UBVWE
 #
 
-SCRIPT_VERSION="3.6.3"
+SCRIPT_VERSION="3.7"
 LAST_EDIT_DATE="2014-08-26"
 
 # Clear the terminal screen
@@ -71,7 +71,7 @@ if [[ "$(whoami)" != "root" ]]; then
 	echo -en "${SCurs}This script needs root permissions. Please enter your root password...";
 	echo -e "${RCurs}${MCurs}[ ${Red}HINT ${RCol}]";
 
-	su -c "$SCRIPT $1 $2 $3 $4 $5 $6"
+	su -c "$SCRIPT $1 $2 $3 $4 $5 $6 $7 $8"
 
 	exit 0
 fi
@@ -96,12 +96,6 @@ while [ -n "$1" ]; do
 		echo -en "${SCurs}Option";
 		echo -e "${RCurs}${MCursB}Description";
 		echo    "------------------------------------------------------------------";
-		echo -en "${SCurs}-h";
-		echo -e "${RCurs}${MCursB}Shows this usage message\n";
-
-		echo -en "${SCurs}--help";
-		echo -e "${RCurs}${MCursB}Shows this usage message\n";
-
 		echo -en "${SCurs}--check";
 		echo -e "${RCurs}${MCursB}Checks for newer version; If a newer version is available, the user will be asked, if he want to update his TeamSpeak 3 server\n";
 
@@ -115,12 +109,15 @@ while [ -n "$1" ]; do
 		echo -en "${SCurs}--path /path/to/ts3server/";
 		echo -e "${RCurs}${MCursB}Just check the server in this directory and do not search for directories on the whole server\n";
 
-		echo -en "${SCurs}--latest-version /path/to/latestStableVersion.txt";
-		echo -e "${RCurs}${MCursB}Do not use the official latest version. Use instead the latest version from the given file";
+		echo -en "${SCurs}--latest-version";
+		echo -e "${RCurs}${MCursB}Do not use the official latest version. Use instead the latest version from the given file configs/latestStableVersion.txt";
 		echo -e "${RCurs}\n${MCursB}You may will test the latest version first\n";
 
 		echo -en "${SCurs}--keep-backups";
 		echo -e "${RCurs}${MCursB}Set this parameter, if you want to keep the created backups by the script\n";
+
+		echo -en "${SCurs}--autoupdate-script";
+		echo -e "${RCurs}${MCursB}If this parameter is set, the script will automate update the TS3UpdateScript\n";
 
 		echo -en "${SCurs}--autoupdate yes";
 		echo -e "${RCurs}${MCursB}Installs weekly cronjob to /etc/cron.d/TS3UpdateScript for monday at 3 AM (= 03:00 O'clock) with your given parameters";
@@ -128,11 +125,23 @@ while [ -n "$1" ]; do
 		echo -en "${RCurs}\n\n${MCursB}If more than one TeamSpeak 3 server instances are installed, the cronjobs are planned with a 10 minutes time interval\n";
 
 		echo -en "\nThe following parameters need to be used as single parameter:\n";
+		echo -en "${SCurs}-h OR --help";
+		echo -e "${RCurs}${MCursB}Shows this usage message\n";
+
+		echo -en "${SCurs}-v OR --version";
+		echo -e "${RCurs}${MCursB}Display version of this script\n";
+
 		echo -en "${SCurs}--autoupdate no";
 		echo -e "${RCurs}${MCursB}Deinstalls weekly cronjob /etc/cron.d/TS3UpdateScript\n";
 
 		echo -en "${SCurs}--update-script";
 		echo -e "${RCurs}${MCursB}Updates TS3 UpdateScript to latest version\n";
+
+		exit 0;
+	;;
+
+	-v | --version)
+		echo "The script of version $SCRIPT_VERSION was edited on $LAST_EDIT_DATE the last time.";
 
 		exit 0;
 	;;
@@ -171,10 +180,7 @@ while [ -n "$1" ]; do
 	;;
 
 	--latest-version)
-		if [ -z "$2" ]; then
-			echo "Error: Parameter $1 needs a value.";
-			exit 1;
-		fi
+		LATEST_VERSION_FILE="true"
 		LATEST_VERSION="$(cat $2)"
 		shift
 		shift
@@ -187,6 +193,11 @@ while [ -n "$1" ]; do
 
 	--update-script)
 		UPDATE_SCRIPT="true";
+		shift
+	;;
+
+	--autoupdate-script)
+		AUTO_UPDATE_SCRIPT="true";
 		shift
 	;;
 
@@ -494,6 +505,9 @@ if [ "$AUTO_UPDATE_PARAMETER" == "yes" ]; then
 	echo -en "MAILTO=\"$EMAIL\"\n\n" >> /etc/cron.d/TS3UpdateScript;
 	echo -en "# TS3UpdateScript: Cronjob(s) for auto updates\n\n" >> /etc/cron.d/TS3UpdateScript;
 
+	DIRECTORY_COUNTER="$(cat TeamSpeak_Directories.txt | wc -l)"
+	COUNTER=1
+
 	while read paths; do
 		PARAMETER_PATH="$(dirname $paths)"
 
@@ -510,9 +524,21 @@ if [ "$AUTO_UPDATE_PARAMETER" == "yes" ]; then
 			if [ "$INFORM_ONLINE_CLIENTS" == "true" ]; then
 				echo -n "--inform-online-clients " >> /etc/cron.d/TS3UpdateScript;
 			fi
+			if [ "$KEEP_BACKUPS" == "true" ]; then
+				echo -n "--keep-backups " >> /etc/cron.d/TS3UpdateScript;
+			fi
+			if [ "$UPDATE_SCRIPT" == "true" ]; then
+				echo -n "--update-script " >> /etc/cron.d/TS3UpdateScript;
+			fi
+			if [ "$COUNTER" -eq "$DIRECTORY_COUNTER" ]; then
+				if [ "$AUTO_UPDATE_SCRIPT" == "true" ]; then
+					echo -n "--autoupdate-script" >> /etc/cron.d/TS3UpdateScript;
+				fi
+			fi
 			echo -e "\n" >> /etc/cron.d/TS3UpdateScript;
 
 			CRONJOB_MINUTE=`expr $CRONJOB_MINUTE + 10`
+			let "COUNTER = $COUNTER + 1"
 		fi
 	done < TeamSpeak_Directories.txt
 
