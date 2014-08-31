@@ -14,8 +14,8 @@ exec 5<&0
 # Donations: https://www.paypal.com/cgi-bin/webscr?cmd=_s-xclick&hosted_button_id=7ZRXLSC2UBVWE
 #
 
-SCRIPT_VERSION="3.7"
-LAST_EDIT_DATE="2014-08-26"
+SCRIPT_VERSION="3.8"
+LAST_EDIT_DATE="2014-08-31"
 
 # Clear the terminal screen
 clear 2> /dev/null
@@ -612,45 +612,6 @@ while read paths; do
 	GROUP="$(stat --format='%G' $(find $TEAMSPEAK_DIRECTORY -name 'ts3server_startscript.sh' 2> /dev/null | sort | tail -1))"
 	GROUP_ID=$(grep "$USER" /etc/passwd | cut -d ":" -f 4)
 
-	# Get installed TeamSpeak 3 server version
-	INSTALLED_VERSION="$(cat $(find $TEAMSPEAK_DIRECTORY -name 'ts3server*_0.log' 2> /dev/null | sort | tail -1) | egrep -o 'TeamSpeak 3 Server ((\.)?[0-9]{1,3}){1,3}\.[0-9]{1,3}' | egrep -o '((\.)?[0-9]{1,3}){1,3}\.[0-9]{1,3}')"
-
-	if [[ "$INSTALLED_VERSION" == "" ]]; then
-		INSTALLED_VERSION="Unknown"
-	fi
-
-	# Get installed TeamSpeak architecture
-	ARCHITECTURE="$(ls $(find $TEAMSPEAK_DIRECTORY -name 'ts3server_*_*' 2> /dev/null | grep -v 'ts3server_minimal_runscript.sh' | sort | tail -1) | egrep -o  '(amd64|x86)' | tail -1)"
-
-	if [[ "$ARCHITECTURE" == "" ]]; then
-		ARCHITECTURE="Unknown"
-	fi
-
-	# Check, if "Linux" or "FreeBSD" is installed
-	if [ -e "$TEAMSPEAK_DIRECTORY/ts3server_linux_$ARCHITECTURE" ]; then
-		LINUX_OR_FREEBSD="linux"
-		LINUX_OR_FREEBSD_UPPER_CASE="Linux"
-	elif [ -e "$TEAMSPEAK_DIRECTORY/ts3server_freebsd_$ARCHITECTURE" ]; then
-		LINUX_OR_FREEBSD="freebsd"
-		LINUX_OR_FREEBSD_UPPER_CASE="FreeBSD"
-	fi
-
-	# Check, if MySQL-Database exists
-	TEAMSPEAK_DATABASE_TYPE=$(find $TEAMSPEAK_DIRECTORY -name 'ts3db_mysql.ini' 2> /dev/null | sort | tail -1)
-
-	if [[ "$TEAMSPEAK_DATABASE_TYPE" == "" ]]; then
-		TEAMSPEAK_DATABASE_TYPE="SQLite"
-	else
-		TEAMSPEAK_DATABASE_TYPE="MySQL"
-	fi
-
-	# Does the INI-File 'ts3server.ini' exist?
-	if [[ "$TEAMSPEAK_DATABASE_TYPE" == "MySQL" ]]; then
-		INI_FILE_NAME=$(basename $(find $TEAMSPEAK_DIRECTORY -name 'ts3server.ini' 2> /dev/null | sort | tail -1))
-	else
-		INI_FILE_NAME="Unknown"
-	fi
-
 	# Get ServerQuery Port and IP
 	if [ -f $TEAMSPEAK_DIRECTORY/ts3server.ini ]; then
 		TEAMSPEAK_SERVER_QUERY_PORT=$(cat $TEAMSPEAK_DIRECTORY/ts3server.ini | grep query_port | cut -d "=" -f 2)
@@ -667,6 +628,71 @@ while read paths; do
 	else
 		TEAMSPEAK_SERVER_QUERY_PORT="10011"
 		TEAMSPEAK_SERVER_QUERY_IP="127.0.0.1"
+	fi
+
+	# Get installed TeamSpeak 3 server version, build and platform
+	(
+		echo open $TEAMSPEAK_SERVER_QUERY_IP $TEAMSPEAK_SERVER_QUERY_PORT
+		sleep 2s
+		echo "version"
+		sleep 1s
+		echo "quit"
+	) | telnet > TEMP_VERSION.txt 2> /dev/null
+
+	INSTALLED_VERSION="$(egrep -o 'version=.*platform=(Linux|FreeBSD)' TEMP_VERSION.txt | cut -d " " -f 1 | cut -d "=" -f 2)"
+	INSTALLED_BUILD="$(egrep -o 'version=.*platform=(Linux|FreeBSD)' TEMP_VERSION.txt | cut -d " " -f 2 | cut -d "=" -f 2)"
+	INSTALLED_PLATFORM="$(egrep -o 'version=.*platform=(Linux|FreeBSD)' TEMP_VERSION.txt | cut -d " " -f 3 | cut -d "=" -f 2)"
+
+	if [ -f TEMP_VERSION.txt ]; then
+		rm TEMP_VERSION.txt
+	fi
+
+	if [[ "$INSTALLED_VERSION" == "" ]]; then
+		INSTALLED_VERSION="Unknown"
+	fi
+
+	if [[ "$INSTALLED_BUILD" == "" ]]; then
+		INSTALLED_BUILD="Unknown"
+	fi
+
+	if [[ "$INSTALLED_PLATFORM" == "" ]]; then
+		INSTALLED_PLATFORM="Unknown"
+	fi
+
+	# Get installed TeamSpeak architecture
+	ARCHITECTURE="$(ls $(find $TEAMSPEAK_DIRECTORY -name 'ts3server_*_*' 2> /dev/null | grep -v 'ts3server_minimal_runscript.sh' | sort | tail -1) | egrep -o  '(amd64|x86)' | tail -1)"
+
+	if [[ "$ARCHITECTURE" == "" ]]; then
+		ARCHITECTURE="Unknown"
+	fi
+
+	# Check, if "Linux" or "FreeBSD" is installed
+	if [ -e "$TEAMSPEAK_DIRECTORY/ts3server_linux_$ARCHITECTURE" ]; then
+		LINUX_OR_FREEBSD="linux"
+	elif [ -e "$TEAMSPEAK_DIRECTORY/ts3server_freebsd_$ARCHITECTURE" ]; then
+		LINUX_OR_FREEBSD="freebsd"
+	fi
+
+	# Check, if MySQL-Database exists
+        TEAMSPEAK_DATABASE_TYPE=$(egrep -o 'dbPlugin name:.*plugin' $(find $TEAMSPEAK_DIRECTORY/logs/ -name 'ts3server*_0.log' 2> /dev/null | sort | tail -1) | tr -d " " | cut -d ":" -f 2 | egrep -o 'SQLite|MySQL|MariaDB')
+
+	if [[ "$TEAMSPEAK_DATABASE_TYPE" == "" ]]; then
+		TEAMSPEAK_DATABASE_TYPE="Unknown"
+	elif [[ "$TEAMSPEAK_DATABASE_TYPE" == "MySQL" ]] || [[ "$TEAMSPEAK_DATABASE_TYPE" == "MariaDB" ]]; then
+		if [ -f $TEAMSPEAK_DIRECTORY/ts3server.ini ]; then
+			DATABASE_INI_FILE="$(grep -o 'dbpluginparameter=[a-zA-Z\_0-9\.]*' $TEAMSPEAK_DIRECTORY/ts3server.ini | cut -d "=" -f 2)"
+
+			DB_USER_NAME="$(egrep -o 'username=.*' $TEAMSPEAK_DIRECTORY/$DATABASE_INI_FILE | cut -d "=" -f 2)"
+			DB_PASSWORD="$(egrep -o 'password=.*' $TEAMSPEAK_DIRECTORY/$DATABASE_INI_FILE | cut -d "=" -f 2)"
+			DB_NAME="$(egrep -o 'database=.*' $TEAMSPEAK_DIRECTORY/$DATABASE_INI_FILE | cut -d "=" -f 2)"
+		fi
+	fi
+
+	# Does the INI-File 'ts3server.ini' exist?
+	INI_FILE_NAME=$(basename $(find $TEAMSPEAK_DIRECTORY -name 'ts3server.ini' 2> /dev/null | sort | tail -1))
+
+	if [[ "$INI_FILE_NAME" == "" ]]; then
+		INI_FILE_NAME="Unknown"
 	fi
 
 	# Get TSDNS PID, if it is running/in use
@@ -740,9 +766,9 @@ while read paths; do
 
 	echo "#############################################################";
 	echo "	Latest Version        	: $LATEST_VERSION";
-	echo "	Installed Version     	: $INSTALLED_VERSION";
+	echo "	Installed Version     	: $INSTALLED_VERSION (Build: $INSTALLED_BUILD)";
 	echo "	Installed Architecture	: $ARCHITECTURE";
-	echo "	Installed Binary	: $LINUX_OR_FREEBSD_UPPER_CASE";
+	echo "	Installed Binary	: $INSTALLED_PLATFORM";
 	echo
 	echo "	Installation Directory	: $TEAMSPEAK_DIRECTORY";
 	echo "	Files Owner		: $USER (UID $USER_ID)";
@@ -750,8 +776,9 @@ while read paths; do
 	echo
 	echo "	Database-Type		: $TEAMSPEAK_DATABASE_TYPE";
 
-	if [[ "$TEAMSPEAK_DATABASE_TYPE" == "MySQL" ]]; then
+	if [[ "$TEAMSPEAK_DATABASE_TYPE" == "MySQL" ]] || [[ "$TEAMSPEAK_DATABASE_TYPE" == "MariaDB" ]]; then
 		echo -e "	INI-File		: $INI_FILE_NAME";
+		echo -e "	Database INI-File	: $DATABASE_INI_FILE";
 	fi
 
 	echo "	ServerQuery IP:		: $TEAMSPEAK_SERVER_QUERY_IP";
@@ -775,10 +802,10 @@ while read paths; do
 
 	if [[ "$INSTALLED_VERSION" == "Unknown" ]]; then
 		if [ "$CRONJOB_AUTO_UPDATE" == "true" ]; then
-			echo -en "Could not identify your installed TeamSpeak 3 server version. Please check this manually!";
+			echo -en "Could not identify your installed TeamSpeak 3 server version. This instance is may not running or you are banned. Please check this manually!";
 			echo -e "\t[ HINT ]";
 		else
-			echo -en "${SCurs}Could not identify your installed TeamSpeak 3 server version. Please check this manually!";
+			echo -en "${SCurs}Could not identify your installed TeamSpeak 3 server version. This instance is may not running or you are banned. Please check this manually!";
 			echo -e "${RCurs}${MCurs}[ ${Gre}HINT ${RCol}]";
 		fi
 	fi
@@ -794,17 +821,26 @@ while read paths; do
 		exit 1;
 	fi
 
-	if [[ "$TEAMSPEAK_DATABASE_TYPE" == "MySQL" ]]; then
+	if [[ "$TEAMSPEAK_DATABASE_TYPE" == "MySQL" ]] || [[ "$TEAMSPEAK_DATABASE_TYPE" == "MariaDB" ]]; then
 		if [[ "$INI_FILE_NAME" == "Unknown" ]]; then
 			if [ "$CRONJOB_AUTO_UPDATE" == "true" ]; then
-				echo -en "Could not find INI-File 'ts3server.ini'. It is needed for starting the TeamSpeak 3 server with MySQL database. Please provide this file!";
+				echo -en "Could not find INI-File 'ts3server.ini'. It is needed for starting the TeamSpeak 3 server with ${TEAMSPEAK_DATABASE_TYPE} database. Please provide this file!";
 				echo -e "\t[ FAILED ]";
 			else
-				echo -en "${SCurs}Could not find INI-File 'ts3server.ini'. It is needed for starting the TeamSpeak 3 server with MySQL database. Please provide this file!";
+				echo -en "${SCurs}Could not find INI-File 'ts3server.ini'. It is needed for starting the TeamSpeak 3 server with ${TEAMSPEAK_DATABASE_TYPE} database. Please provide this file!";
 				echo -e "${RCurs}${MCurs}[ ${Red}FAILED ${RCol}]";
 			fi
 			exit 1;
 		fi
+	elif [[ "$TEAMSPEAK_DATABASE_TYPE" == "" ]]; then
+		if [ "$CRONJOB_AUTO_UPDATE" == "true" ]; then
+			echo -en "Could not detect used database type. Have you deleted your instance log file?";
+			echo -e "\t[ FAILED ]";
+		else
+			echo -en "${SCurs}Could not detect used database type. Have you deleted your instance log file?";
+			echo -e "${RCurs}${MCurs}[ ${Red}FAILED ${RCol}]";
+		fi
+		exit 1;
 	fi
 
 	# Check installed version against latest version
@@ -855,7 +891,7 @@ while read paths; do
 				echo "quit"
 			) | telnet > TEMP_SERVERLIST.txt 2> /dev/null || true
 
-			# Get each clientlist of each virtual server
+			# Get clientlist of each virtual server
 			cat TEMP_SERVERLIST.txt | grep -Eo "virtualserver_id=[0-9]+" | grep -Eo "[0-9]+" | while read virtualserver_id; do
 				(
 					echo open $TEAMSPEAK_SERVER_QUERY_IP $TEAMSPEAK_SERVER_QUERY_PORT
@@ -869,6 +905,22 @@ while read paths; do
 					echo "quit"
 				) | telnet > TEMP_CLIENTLIST_$virtualserver_id.txt 2> /dev/null || true
 			done
+
+			# Get client database ids of given servergroup ids
+			(
+				echo open $TEAMSPEAK_SERVER_QUERY_IP $TEAMSPEAK_SERVER_QUERY_PORT
+				sleep 2s
+				echo "login serveradmin $SERVERADMIN_PASSWORD"
+				sleep 1s
+				while read sgid; do
+					echo "servergroupclientlist sgid=$sgid"
+					sleep 1s
+				done < configs/ignore_servergroups.txt
+				echo "logout"
+				echo "quit"
+			) | telnet > TEMP_SERVERGROUPCLIENTLIST.txt 2> /dev/null
+
+			egrep -o 'cldbid=[0-9]+\|?' TEMP_SERVERGROUPCLIENTLIST.txt | tr -d "|" | cut -d "=" -f 2 > TEMP_SERVERGROUPCLIENTLIST_CLDBIDs.txt
 
 			(
 				echo open $TEAMSPEAK_SERVER_QUERY_IP $TEAMSPEAK_SERVER_QUERY_PORT
@@ -888,7 +940,8 @@ while read paths; do
 					echo "clientupdate client_nickname=$DISPLAYED_USER_NAME"
 
 					# Just poke "normal" clients and no "ServerQuery" client
-					cat TEMP_CLIENTLIST_$virtualserver_id.txt | tr "|" "\n" | grep "client_type=0" | grep -v "client_database_id=$(while read cldbid; do echo $cldbid; done < configs/ignore_clients.txt)" | awk '{print $1}' | cut -d "=" -f2 | while read client_id; do
+					# Also ignore clients of configs/ignore_clients.txt and configs/ignore_servergroups.txt
+					cat TEMP_CLIENTLIST_$virtualserver_id.txt | tr "|" "\n" | grep "client_type=0" | grep -v "client_database_id=$(while read cldbid; do echo $cldbid; done < configs/ignore_clients.txt)" | grep -v "client_database_id=$(while read cldbid; do echo $cldbid; done < TEMP_SERVERGROUPCLIENTLIST_CLDBIDs.txt)" | awk '{print $1}' | cut -d "=" -f2 | while read client_id; do
 						echo "clientpoke msg=$UPDATE_TEXT clid=$client_id"
 					done
 				done
@@ -896,6 +949,8 @@ while read paths; do
 				echo "logout"
 				echo "quit"
 			) | telnet > /dev/null 2> /dev/null || true
+
+			rm TEMP_SERVERGROUPCLIENTLIST_CLDBIDs.txt
 		fi
 
 		# Wait 5 minutes, if it is a cronjob
@@ -1079,6 +1134,55 @@ while read paths; do
 			fi
 		fi
 
+		# If Database-Type is "MariaDB", import MariaDB-Database and associated files
+		if [[ "$TEAMSPEAK_DATABASE_TYPE" == "MariaDB" ]]; then
+			if [ "$CRONJOB_AUTO_UPDATE" == "true" ]; then
+				echo -en "Importing MariaDB database and associated files as well as serverkey and INI-file";
+			else
+				echo -en "${SCurs}Importing MariaDB database and associated files as well as serverkey and INI-file";
+				echo -e "${RCurs}${MCurs}[ ${Whi}.. ${RCol}]\n";
+			fi
+
+			if [ ! $(cp -f /tmp/ts3server_backup$TEAMSPEAK_DIRECTORY/libts3db_mariadb.so $TEAMSPEAK_DIRECTORY) ] && [ ! $(cp -f /tmp/ts3server_backup$TEAMSPEAK_DIRECTORY/serverkey.dat $TEAMSPEAK_DIRECTORY) ] && [ ! $(cp -f /tmp/ts3server_backup$TEAMSPEAK_DIRECTORY/libts3db_mariadb.so $TEAMSPEAK_DIRECTORY) ]&& [ ! $(cp -f /tmp/ts3server_backup$TEAMSPEAK_DIRECTORY/ts3server.ini $TEAMSPEAK_DIRECTORY) ]; then
+				if [ "$CRONJOB_AUTO_UPDATE" == "true" ]; then
+					echo -e "\t[ OK ]";
+				else
+					echo -e "${RCurs}${MCurs}[ ${Gre}OK ${RCol}]";
+				fi
+			else
+				if [ "$CRONJOB_AUTO_UPDATE" == "true" ]; then
+					echo -e "\t[ FAILED ]";
+				else
+					echo -e "${RCurs}${MCurs}[ ${Red}FAILED ${RCol}]";
+				fi
+			fi
+		fi
+
+		# If database MySQL was used, update database to MariaDB
+		# Installed Build 1388593719 is latest version 3.0.10.3 with MySQL support
+		if [[ "$TEAMSPEAK_DATABASE_TYPE" == "MySQL" ]] && [[ "$INSTALLED_BUILD" == "1388593719" ]]; then
+			if [ "$CRONJOB_AUTO_UPDATE" == "true" ]; then
+				echo -en "Updating existing MySQL database to MariaDB";
+			else
+				echo -en "${SCurs}Updating existing MySQL database to MariaDB";
+				echo -e "${RCurs}${MCurs}[ ${Whi}.. ${RCol}]\n";
+			fi
+
+			if [ ! $(mysql --user=$DB_USER_NAME --password=$DB_PASSWORD $DB_NAME < $TEAMSPEAK_DIRECTORY/sql/updates_and_fixes/convert_mysql_to_mariadb.sql) ] && [ ! $(mysql --user=$DB_USER_NAME --password=$DB_PASSWORD $DB_NAME < $TEAMSPEAK_DIRECTORY/sql/updates_and_fixes/mariadb_fix_latin_utf8.sql) ]; then
+				if [ "$CRONJOB_AUTO_UPDATE" == "true" ]; then
+					echo -e "\t[ OK ]";
+				else
+					echo -e "${RCurs}${MCurs}[ ${Gre}OK ${RCol}]";
+				fi
+			else
+				if [ "$CRONJOB_AUTO_UPDATE" == "true" ]; then
+					echo -e "\t[ FAILED ]";
+				else
+					echo -e "${RCurs}${MCurs}[ ${Red}FAILED ${RCol}]";
+				fi
+			fi
+		fi
+
 		# If TSDNS server was running, import 'tsdns_settings.ini' file
 		if [[ "$TSDNS_STATUS" == "Running" ]]; then
 			if [ "$CRONJOB_AUTO_UPDATE" == "true" ]; then
@@ -1185,7 +1289,7 @@ while read paths; do
 		fi
 
 		# Add commandline parameter 'inifile=ts3server.ini' to ts3server_startscript.sh
-		if [[ "$TEAMSPEAK_DATABASE_TYPE" == "MySQL" ]] || [ -f $TEAMSPEAK_DIRECTORY/ts3server.ini ]; then
+		if [[ "$TEAMSPEAK_DATABASE_TYPE" == "MySQL" ]] || [[ "$TEAMSPEAK_DATABASE_TYPE" == "MariaDB" ]] || [ -f $TEAMSPEAK_DIRECTORY/ts3server.ini ]; then
 			while read line; do
 				if [[ "$line" == 'COMMANDLINE_PARAMETERS="${2}" #add any command line parameters you want to pass here' ]]; then
 					echo 'COMMANDLINE_PARAMETERS="inifile=ts3server.ini" #add any command line parameters you want to pass here' >> TEMP_ts3server_startscript.sh;
@@ -1273,7 +1377,7 @@ while read paths; do
 			fi
 
 			# Start TeamSpeak 3 server
-			if [[ "$TEAMSPEAK_DATABASE_TYPE" == "MySQL" ]]; then
+			if [[ "$TEAMSPEAK_DATABASE_TYPE" == "MySQL" ]] || [[ "$TEAMSPEAK_DATABASE_TYPE" == "MariaDB" ]]; then
 				su -c "rm teamspeak3-server_$LINUX_OR_FREEBSD-$ARCHITECTURE-$LATEST_VERSION.tar.gz && $TEAMSPEAK_DIRECTORY/ts3server_startscript.sh start inifile=ts3server.ini" $USER
 			else
 				su -c "rm teamspeak3-server_$LINUX_OR_FREEBSD-$ARCHITECTURE-$LATEST_VERSION.tar.gz && $TEAMSPEAK_DIRECTORY/ts3server_startscript.sh start" $USER
@@ -1349,7 +1453,7 @@ else
 	echo -e "${RCurs}${MCurs}[ ${Cya}INFO ${RCol}]";
 fi
 
-echo -e "\nDonations: https://www.paypal.com/cgi-bin/webscr?cmd=_s-xclick&hosted_button_id=7ZRXLSC2UBVWE";
+echo -e "\nSupport the development of this script and donate: https://www.paypal.com/cgi-bin/webscr?cmd=_s-xclick&hosted_button_id=7ZRXLSC2UBVWE Thank you very much!";
 
 # Restore stdin and close file descriptor 5
 exec 0<&5 5>&-

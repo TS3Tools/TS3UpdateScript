@@ -20,6 +20,21 @@ History:
 ----------------------------------
 
 ==================================
+||      Version 3.8             ||
+==================================
+
+* Adjusted detection for installed TeamSpeak server version, build and platform
++ Added "Build" string to summary output
++ Added support for ignoring all clients of given servergroup ids for parameter '--inform-online-clients' (enter sgid in configs/ignore_servergroups.txt)
+! You have to create this file, if it does not exists
++ Added support for new dbPlugin 'MariaDB'
+! Since TeamSpeak server version 3.0.11 (Build 1408694433) was the MySQL database replaced by the fork MariaDB (read CHANGELOG of TeamSpeak server version 3.0.11 and newer)
+! If the script is updating from version 3.0.10.3 (Build 1388593719) to 3.0.11 or newer, it also will update your MySQL database to MariaDB
++ If MySQL/MariaDB database is used, the script will also detect the database username, password and database (used for updates and database fixes)
+! Add your IP address, which is used for connecting as ServerQuery to query_ip_whitelist.txt or the script is may not able to detect your installed version, because it is banned by the server
+! Do not check to often the same instance or you will get banned by the instance!
+
+==================================
 ||      Version 3.7             ||
 ==================================
 
