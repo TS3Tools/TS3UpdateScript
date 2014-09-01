@@ -35,7 +35,7 @@ Requirements
 
 Supports
 ============
-- SQLite and MySQL database setups
+- SQLite and MySQL as well as MariaDB database setups
 - TSDNS
 - Linux and FreeBSD
 
