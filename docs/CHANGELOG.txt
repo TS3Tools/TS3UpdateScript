@@ -20,6 +20,13 @@ History:
 ----------------------------------
 
 ==================================
+||      Version 3.8.1           ||
+==================================
+
+* Adjusted TS3UpdateScript cronjob eMail text for selfupdate of script
++ Added check: If the script is currently just updating itself and no instance, it should stop now after the self-check process
+
+==================================
 ||      Version 3.8             ||
 ==================================
 

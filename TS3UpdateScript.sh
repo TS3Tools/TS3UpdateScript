@@ -14,8 +14,8 @@ exec 5<&0
 # Donations: https://www.paypal.com/cgi-bin/webscr?cmd=_s-xclick&hosted_button_id=7ZRXLSC2UBVWE
 #
 
-SCRIPT_VERSION="3.8"
-LAST_EDIT_DATE="2014-08-31"
+SCRIPT_VERSION="3.8.1"
+LAST_EDIT_DATE="2014-09-06"
 
 # Clear the terminal screen
 clear 2> /dev/null
@@ -303,8 +303,12 @@ if [ "$SCRIPT_VERSION" != "$LATEST_TS3_UPDATESCRIPT_VERSION" ]; then
 		done
 
 		if [[ "$UPDATE_ANSWER" == "y" ]] || [[ "$UPDATE_ANSWER" == "yes" ]]; then
-			echo -en "\n${SCurs}Updating TS3 UpdateScript script";
-			echo -e "${RCurs}${MCurs}[ ${Whi}.. ${RCol}]\n";
+			if [ "$CRONJOB_AUTO_UPDATE" == "true" ]; then
+				echo -en "Updating TS3 UpdateScript script";
+			else
+				echo -en "\n${SCurs}Updating TS3 UpdateScript script";
+				echo -e "${RCurs}${MCurs}[ ${Whi}.. ${RCol}]\n";
+			fi
 
 			# Format "latest version" into usable string for downloads
 			echo "$LATEST_TS3_UPDATESCRIPT_VERSION" > TEMP_LATEST_VERSION.txt
@@ -318,12 +322,21 @@ if [ "$SCRIPT_VERSION" != "$LATEST_TS3_UPDATESCRIPT_VERSION" ]; then
 
 			# Install latest version
 			if [ ! $(bash $SCRIPT_PATH/.updateScript.sh &) ]; then
-				echo -e "${RCurs}${MCursBB}[ ${Cya}Should be updated ${RCol}]\n";
+				if [ "$CRONJOB_AUTO_UPDATE" == "true" ]; then
+					echo -e "\t[ Should be updated ]\n";
+				else
+					echo -e "${RCurs}${MCursBB}[ ${Cya}Should be updated ${RCol}]\n";
+				fi
 				exit 1;
 			fi
 		else
-			echo -en "\n${SCurs}Your TS3 UpdateScript was NOT updated";
-			echo -e "${RCurs}${MCurs}[ ${Cya}INFO ${RCol}]\n";
+			if [ "$CRONJOB_AUTO_UPDATE" == "true" ]; then
+				echo -en "\nYour TS3 UpdateScript was NOT updated";
+				echo -e "\t[ INFO ]\n";
+			else
+				echo -en "\n${SCurs}Your TS3 UpdateScript was NOT updated";
+				echo -e "${RCurs}${MCurs}[ ${Cya}INFO ${RCol}]\n";
+			fi
 			exit 1;
 		fi
 	fi
@@ -335,6 +348,11 @@ else
 		echo -en "${SCurs}You are using the latest TS3 UpdateScript";
 		echo -e "${RCurs}${MCurs}[ ${Cya}INFO ${RCol}]\n";
 	fi
+fi
+
+# If the script just should update itself: Stop it here and do not check all installed TeamSpeak server instances
+if [[ "$AUTO_UPDATE_SCRIPT" == "true" ]]; then
+	exit 1;
 fi
 
 if [ -z "$AUTO_UPDATE_PARAMETER" ]; then
