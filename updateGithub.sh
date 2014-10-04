@@ -5,8 +5,6 @@ git add TS3UpdateScript.sh
 git add LICENSE_GNU_GPL.txt
 git add README.md
 git add updateGithub.sh
-git add testumgebung/detection.sh
-git add testumgebung/test.sh
 git add .updateScript.sh
 git add configs/auto_update_text.txt
 git add configs/ignore_clients.txt
