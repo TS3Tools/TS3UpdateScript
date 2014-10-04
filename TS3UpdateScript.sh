@@ -1493,9 +1493,7 @@ while read paths; do
 		rm TEMP_SERVERLIST.txt
 	fi
 
-	if [ -f TEMP_CLIENTLIST_*.txt ]; then
-		rm TEMP_CLIENTLIST_*.txt
-	fi
+	rm TEMP_CLIENTLIST_*.txt 2> /dev/null
 done < TeamSpeak_Directories.txt
 
 if [ -f TeamSpeak_Directories.txt ]; then
