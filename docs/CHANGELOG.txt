@@ -20,6 +20,20 @@ History:
 ----------------------------------
 
 ==================================
+||      Version 3.8.9           ||
+==================================
+
++ Added changelog to output of script update
+* Renamed all 'LATEST_VERSION' variables to 'LATEST_STABLE_RELEASE'
+* Adjusted detection of latest stable release
+! Renamed file 'configs/latestStableVersion.txt' to 'configs/latestStableRelease.txt' (the script will rename this file automatic)
+* Renamed all 'INSTALLED_VERSION' variables to 'INSTALLED_RELEASE'
++ Added parameter '--beta-release' to be able to update your TeamSpeak server to the latest beta release
++ Added detection for latest beta release
+- Removed needed software 'mktemp', because no temp files are needed anymore
+* Fixed issue with 'rm: missing operand'
+
+==================================
 ||      Version 3.8.1           ||
 ==================================
 

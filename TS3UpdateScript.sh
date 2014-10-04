@@ -14,8 +14,8 @@ exec 5<&0
 # Donations: https://www.paypal.com/cgi-bin/webscr?cmd=_s-xclick&hosted_button_id=7ZRXLSC2UBVWE
 #
 
-SCRIPT_VERSION="3.8.1"
-LAST_EDIT_DATE="2014-09-06"
+SCRIPT_VERSION="3.8.9"
+LAST_EDIT_DATE="2014-10-04"
 
 # Clear the terminal screen
 clear 2> /dev/null
@@ -71,7 +71,7 @@ if [[ "$(whoami)" != "root" ]]; then
 	echo -en "${SCurs}This script needs root permissions. Please enter your root password...";
 	echo -e "${RCurs}${MCurs}[ ${Red}HINT ${RCol}]";
 
-	su -c "$SCRIPT $1 $2 $3 $4 $5 $6 $7 $8 $9 ${10}"
+	su -c "$SCRIPT $1 $2 $3 $4 $5 $6 $7 $8 $9 ${10} ${11}"
 
 	exit 0
 fi
@@ -109,9 +109,12 @@ while [ -n "$1" ]; do
 		echo -en "${SCurs}--path /path/to/ts3server/";
 		echo -e "${RCurs}${MCursB}Just check the server in this directory and do not search for directories on the whole server\n";
 
-		echo -en "${SCurs}--latest-version";
-		echo -e "${RCurs}${MCursB}Do not use the official latest version. Use instead the latest version from the given file configs/latestStableVersion.txt";
-		echo -e "${RCurs}\n${MCursB}You may will test the latest version first\n";
+		echo -en "${SCurs}--beta-release";
+		echo -e "${RCurs}${MCursB}With this parameter you are able to detect and update your TeamSpeak server to the latest beta release\n";
+
+		echo -en "${SCurs}--latest-release";
+		echo -e "${RCurs}${MCursB}Do not use the official latest release. Use instead the latest release from the given file configs/latestStableRelease.txt";
+		echo -e "${RCurs}\n${MCursB}You may will test the latest release first\n";
 
 		echo -en "${SCurs}--keep-backups";
 		echo -e "${RCurs}${MCursB}Set this parameter, if you want to keep the created backups by the script\n";
@@ -179,9 +182,18 @@ while [ -n "$1" ]; do
 		shift
 	;;
 
-	--latest-version)
-		LATEST_VERSION_FILE="true"
-		LATEST_VERSION="$(cat $SCRIPT_PATH/configs/latestStableVersion.txt)"
+	--beta-release)
+		USE_LATEST_BETA_RELEASE="true"
+		shift
+	;;
+
+	--latest-release)
+		LATEST_RELEASE_FILE="true"
+		# Rename this file, if needed
+		if [[ -f $SCRIPT_PATH/configs/latestStableVersion.txt ]]; then
+			mv $SCRIPT_PATH/configs/latestStableVersion.txt $SCRIPT_PATH/configs/latestStableRelease.txt
+		fi
+		LATEST_STABLE_RELEASE="$(cat $SCRIPT_PATH/configs/latestStableRelease.txt)"
 		shift
 	;;
 
@@ -262,13 +274,13 @@ checkdeps()
 
 # Execute software checks
 if [ "$INFORM_ONLINE_CLIENTS" == "true" ]; then
-	checkdeps bash mktemp rsync wget grep sed unzip telnet
+	checkdeps bash rsync wget grep sed unzip telnet
 elif [ -n "$AUTO_UPDATE_PARAMETER" ] && [ "$INFORM_ONLINE_CLIENTS" == "true" ]; then
-	checkdeps bash mktemp rsync wget grep sed unzip mail telnet
+	checkdeps bash rsync wget grep sed unzip mail telnet
 elif [ -n "$AUTO_UPDATE_PARAMETER" ]; then
-	checkdeps bash mktemp rsync wget grep sed unzip mail
+	checkdeps bash rsync wget grep sed unzip mail
 else
-	checkdeps bash mktemp rsync wget grep sed unzip
+	checkdeps bash rsync wget grep sed unzip
 fi
 
 # Check, if a new TS3UpdateScript version is available
@@ -327,6 +339,7 @@ if [ "$SCRIPT_VERSION" != "$LATEST_TS3_UPDATESCRIPT_VERSION" ]; then
 				else
 					echo -e "${RCurs}${MCursBB}[ ${Cya}Should be updated ${RCol}]\n";
 				fi
+				SCRIPT_WAS_UPDATED="true"
 				exit 1;
 			fi
 		else
@@ -352,37 +365,77 @@ fi
 
 # If the script just should update itself: Stop it here and do not check all installed TeamSpeak server instances
 if [[ "$AUTO_UPDATE_SCRIPT" == "true" ]]; then
+	if [[ "$SCRIPT_WAS_UPDATED" == "true" ]]; then
+		LINES="$(echo $LATEST_TS3_UPDATESCRIPT_VERSION | cut -d "." -f 3)"
+
+		sleep 15s
+		echo "History:"
+		echo "        + Added something"
+		echo "        - Removed something"
+		echo "        * Changed/Fixed something"
+		echo "        ! Hint/Warning"
+		echo -e "\nCHANGELOG:\n\n"
+		egrep -o "(^[\+\-\*\!]{1}\s{1}.*)$" docs/CHANGELOG.txt | head -${LINES}
+	fi
 	exit 1;
 fi
 
 if [ -z "$AUTO_UPDATE_PARAMETER" ]; then
 	# Search latest TeamSpeak 3 server version
 	if [ "$CRONJOB_AUTO_UPDATE" == "true" ]; then
-		echo -en "Searching for latest TeamSpeak 3 server version";
+		echo -en "Searching for latest TeamSpeak 3 server release";
 	else
-		echo -en "${SCurs}Searching for latest TeamSpeak 3 server version";
+		echo -en "${SCurs}Searching for latest TeamSpeak 3 server release";
 		echo -e "${RCurs}${MCurs}[ ${Whi}.. ${RCol}]";
 	fi
 
-	if [[ -z "$LATEST_VERSION" ]]; then
-		TEMPFILE_1=$(mktemp /tmp/ts3_download_page-XXXXX)
-		TEMPFILE_2=$(mktemp /tmp/ts3_download_page-XXXXX)
-		TEMPFILE_3=$(mktemp /tmp/ts3_download_page-XXXXX)
+	# Detect latest TeamSpeak server release
+	if [[ -z "$LATEST_STABLE_RELEASE" ]]; then
+		if [[ "$USE_LATEST_BETA_RELEASE" != "true" ]]; then
+			# Detect latest stable release
+			wget 'http://dl.4players.de/ts/releases/?C=M;O=D' -q -O - > TEMP_STABLE_RELEASES.txt
+			cat TEMP_STABLE_RELEASES.txt | grep -i dir | egrep -o '<a href=\".*\/\">.*\/<\/a>' | egrep -o '[0-9\.?]+' | uniq > TEMP_STABLE_RELEASES_NUMBERS.txt
 
-		# Download 'TeamSpeak 3 Download page'
-		wget http://www.teamspeak.de/download/teamspeak/ -q -O - > $TEMPFILE_1
+			while read stable_release; do
+				wget --spider -q http://dl.4players.de/ts/releases/$stable_release/teamspeak3-server_linux-amd64-$stable_release.tar.gz
+				if [[ $? == 0 ]]; then
+					LATEST_STABLE_RELEASE="$stable_release"
+					LATEST_RELEASE="$LATEST_STABLE_RELEASE"
+					# Break while-loop, if the latest release could be found
+					break
+				fi
+			done < TEMP_STABLE_RELEASES_NUMBERS.txt
 
-		# Get the latest Linux server version of the downloaded 'TeamSpeak Download page'
-		grep -A 15 'Teamspeak für Linux' $TEMPFILE_1 > $TEMPFILE_2
-		grep -A 1 'Server' $TEMPFILE_2 > $TEMPFILE_3
-		LATEST_VERSION="$(cat $TEMPFILE_3 | egrep -o  '((\.)?[0-9]{1,3}){1,3}\.[0-9]{1,3}' | tail -1)"
+			rm TEMP_STABLE_RELEASES.txt TEMP_STABLE_RELEASES_NUMBERS.txt
+		else
+			# Detect latest beta release
+			wget 'http://dl.4players.de/ts/releases/pre_releases/server/?C=M;O=D' -q -O - > TEMP_BETA_PRERELEASES.txt
+			cat TEMP_BETA_PRERELEASES.txt | grep -i dir | egrep -o '<a href=\".*\/\">.*\/<\/a>' | egrep -o '[0-9\.?]+-Beta-[0-9]+' | uniq > TEMP_BETA_PRERELEASES_NUMBERS.txt
+
+			while read beta_release; do
+				BETA_RELEASE_NUMBER="$(echo $beta_release | egrep -o '^[0-9\.?]+')"
+				wget --spider -q http://dl.4players.de/ts/releases/pre_releases/server/$beta_release/teamspeak3-server_linux-amd64-$BETA_RELEASE_NUMBER.tar.gz
+				if [[ $? == 0 ]]; then
+					LATEST_BETA_RELEASE="$beta_release"
+					LATEST_RELEASE="$LATEST_BETA_RELEASE"
+					# Break while-loop, if the latest release could be found
+					break
+				fi
+			done < TEMP_BETA_PRERELEASES_NUMBERS.txt
+
+			rm TEMP_BETA_PRERELEASES.txt TEMP_BETA_PRERELEASES_NUMBERS.txt
+		fi
 	fi
 
-	if [[ "$LATEST_VERSION" == "" ]]; then
-		LATEST_VERSION="Unknown"
+	if [[ "$LATEST_STABLE_RELEASE" == "" ]]; then
+		LATEST_STABLE_RELEASE="Unknown"
 	fi
 
-	if [[ "$LATEST_VERSION" == "Unknown" ]]; then
+	if [[ "$LATEST_BETA_RELEASE" == "" ]]; then
+		LATEST_BETA_RELEASE="Unknown"
+	fi
+
+	if [[ "$LATEST_RELEASE" == "Unknown" ]]; then
 		if [ "$CRONJOB_AUTO_UPDATE" == "true" ]; then
 			echo -e "\t[ FAILED ]";
 		else
@@ -401,24 +454,24 @@ if [ -z "$AUTO_UPDATE_PARAMETER" ]; then
 	if [ "$INFORM_ONLINE_CLIENTS" == "true" ]; then
 		# Auto update text
 		# Replace $VERSION with the latest version
-		TEMP_AUTO_UPDATE_TEXT=$(sed -r 's/\$VERSION/'$LATEST_VERSION'/g' $SCRIPT_PATH/configs/auto_update_text.txt)
+		TEMP_AUTO_UPDATE_TEXT=$(sed -r 's/\$VERSION/'$LATEST_RELEASE'/g' $SCRIPT_PATH/configs/auto_update_text.txt)
 		echo "$TEMP_AUTO_UPDATE_TEXT" > $SCRIPT_PATH/configs/auto_update_text.txt
 		AUTO_UPDATE_TEXT=$(sed -r 's/ /\\s/g' $SCRIPT_PATH/configs/auto_update_text.txt)
 		AUTO_UPDATE_TEXT_LENGTH=$(echo -n $AUTO_UPDATE_TEXT | wc -c)
 		AUTO_UPDATE_LENGTH_OVERHANG=`expr $AUTO_UPDATE_TEXT_LENGTH - 100`
 		# Save old Text back to file
-		TEMP_AUTO_UPDATE_TEXT=$(sed -r 's/'$LATEST_VERSION'/$VERSION/g' $SCRIPT_PATH/configs/auto_update_text.txt)
+		TEMP_AUTO_UPDATE_TEXT=$(sed -r 's/'$LATEST_RELEASE'/$VERSION/g' $SCRIPT_PATH/configs/auto_update_text.txt)
 		echo "$TEMP_AUTO_UPDATE_TEXT" > $SCRIPT_PATH/configs/auto_update_text.txt
 
 		# Update text
 		# Replace $VERSION with the latest version
-		TEMP_UPDATE_TEXT=$(sed -r 's/\$VERSION/'$LATEST_VERSION'/g' $SCRIPT_PATH/configs/update_text.txt)
+		TEMP_UPDATE_TEXT=$(sed -r 's/\$VERSION/'$LATEST_RELEASE'/g' $SCRIPT_PATH/configs/update_text.txt)
 		echo "$TEMP_UPDATE_TEXT" > $SCRIPT_PATH/configs/update_text.txt
 		UPDATE_TEXT=$(sed -r 's/ /\\s/g' $SCRIPT_PATH/configs/update_text.txt)
 		UPDATE_TEXT_LENGTH=$(echo -n $UPDATE_TEXT | wc -c)
 		UPDATE_LENGTH_OVERHANG=`expr $UPDATE_TEXT_LENGTH - 100`
 		# Save old Text back to file
-		TEMP_UPDATE_TEXT=$(sed -r 's/'$LATEST_VERSION'/$VERSION/g' $SCRIPT_PATH/configs/update_text.txt)
+		TEMP_UPDATE_TEXT=$(sed -r 's/'$LATEST_RELEASE'/$VERSION/g' $SCRIPT_PATH/configs/update_text.txt)
 		echo "$TEMP_UPDATE_TEXT" > $SCRIPT_PATH/configs/update_text.txt
 
 		# Displayed username
@@ -657,7 +710,7 @@ while read paths; do
 		echo "quit"
 	) | telnet > TEMP_VERSION.txt 2> /dev/null
 
-	INSTALLED_VERSION="$(egrep -o 'version=.*platform=(Linux|FreeBSD)' TEMP_VERSION.txt | cut -d " " -f 1 | cut -d "=" -f 2)"
+	INSTALLED_RELEASE="$(egrep -o 'version=.*platform=(Linux|FreeBSD)' TEMP_VERSION.txt | cut -d " " -f 1 | cut -d "=" -f 2)"
 	INSTALLED_BUILD="$(egrep -o 'version=.*platform=(Linux|FreeBSD)' TEMP_VERSION.txt | cut -d " " -f 2 | cut -d "=" -f 2)"
 	INSTALLED_PLATFORM="$(egrep -o 'version=.*platform=(Linux|FreeBSD)' TEMP_VERSION.txt | cut -d " " -f 3 | cut -d "=" -f 2)"
 
@@ -665,8 +718,8 @@ while read paths; do
 		rm TEMP_VERSION.txt
 	fi
 
-	if [[ "$INSTALLED_VERSION" == "" ]]; then
-		INSTALLED_VERSION="Unknown"
+	if [[ "$INSTALLED_RELEASE" == "" ]]; then
+		INSTALLED_RELEASE="Unknown"
 	fi
 
 	if [[ "$INSTALLED_BUILD" == "" ]]; then
@@ -783,8 +836,13 @@ while read paths; do
 	fi
 
 	echo "#############################################################";
-	echo "	Latest Version        	: $LATEST_VERSION";
-	echo "	Installed Version     	: $INSTALLED_VERSION (Build: $INSTALLED_BUILD)";
+	if [[ "$USE_LATEST_BETA_RELEASE" != "true" ]]; then
+		echo "	Latest Stable Release  	: $LATEST_RELEASE";
+	else
+		echo "	HINT: You are using the BETA release channel!";
+		echo "	Latest Beta Release	: $LATEST_RELEASE";
+	fi
+	echo "	Installed Release     	: $INSTALLED_RELEASE (Build: $INSTALLED_BUILD)";
 	echo "	Installed Architecture	: $ARCHITECTURE";
 	echo "	Installed Binary	: $INSTALLED_PLATFORM";
 	echo
@@ -811,14 +869,14 @@ while read paths; do
 	if [ "$INFORM_ONLINE_CLIENTS" == "true" ]; then
 		echo
 		echo "	Displayed Username	: $(cat $SCRIPT_PATH/configs/displayed_user_name.txt)";
-		echo "	Update Text (Manually)	: $(sed -r 's/\$VERSION/'$LATEST_VERSION'/g' $SCRIPT_PATH/configs/update_text.txt)";
-		echo "	Update Text (Cronjob)	: $(sed -r 's/\$VERSION/'$LATEST_VERSION'/g' $SCRIPT_PATH/configs/auto_update_text.txt)";
+		echo "	Update Text (Manually)	: $(sed -r 's/\$VERSION/'$LATEST_RELEASE'/g' $SCRIPT_PATH/configs/update_text.txt)";
+		echo "	Update Text (Cronjob)	: $(sed -r 's/\$VERSION/'$LATEST_RELEASE'/g' $SCRIPT_PATH/configs/auto_update_text.txt)";
 		echo "	Cronjob eMail Report	: $EMAIL";
 	fi
 
 	echo -e "#############################################################\n";
 
-	if [[ "$INSTALLED_VERSION" == "Unknown" ]]; then
+	if [[ "$INSTALLED_RELEASE" == "Unknown" ]]; then
 		if [ "$CRONJOB_AUTO_UPDATE" == "true" ]; then
 			echo -en "Could not identify your installed TeamSpeak 3 server version. This instance is may not running or you are banned. Please check this manually!";
 			echo -e "\t[ HINT ]";
@@ -863,7 +921,7 @@ while read paths; do
 
 	# Check installed version against latest version
 	# If latest version is not equal installed version ask the user for the update
-	if [ "$INSTALLED_VERSION" == "$LATEST_VERSION" ] || [ "$INSTALLED_VERSION" == "Unknown" ]; then
+	if [ "$INSTALLED_RELEASE" == "$LATEST_RELEASE" ] || [ "$INSTALLED_RELEASE" == "Unknown" ]; then
 		if [ "$CRONJOB_AUTO_UPDATE" == "true" ]; then
 			echo -en "Latest version is already installed. Nothing to do!";
 			echo -e "\t[ INFO ]";
@@ -878,7 +936,7 @@ while read paths; do
 		else
 			ANSWER=""
 			while [[ "$ANSWER" == "" ]]; do
-				read -p "Do you want to update your TeamSpeak 3 server? Please answer: ([y]es/[n]o) " ANSWER <&5
+				read -p "Do you want to update your TeamSpeak 3 server to the release $LATEST_RELEASE? Please answer: ([y]es/[n]o) " ANSWER <&5
 
 				if [[ -n "$ANSWER" ]] && [[ "$ANSWER" != "y" ]] && [[ "$ANSWER" != "yes" ]] && [[ "$ANSWER" != "n" ]] && [[ "$ANSWER" != "no" ]]; then
 					echo -en "${SCurs}Illegal characters, please retry.";
@@ -977,7 +1035,7 @@ while read paths; do
 		fi
 
 		# Build download link for the TeamSpeak 3 server download
-		TS3_SERVER_DOWNLOAD_LINK="http://dl.4players.de/ts/releases/$LATEST_VERSION/teamspeak3-server_$LINUX_OR_FREEBSD-$ARCHITECTURE-$LATEST_VERSION.tar.gz"
+		TS3_SERVER_DOWNLOAD_LINK="http://dl.4players.de/ts/releases/$LATEST_RELEASE/teamspeak3-server_$LINUX_OR_FREEBSD-$ARCHITECTURE-$LATEST_RELEASE.tar.gz"
 
 		# Stop running TSDNS server, if it is running
 		if [[ "$TSDNS_STATUS" == "Running" ]]; then
@@ -1049,7 +1107,7 @@ while read paths; do
 		cd $TEAMSPEAK_DIRECTORY
 
 		# Download latest TS3 Server files
-		wget $TS3_SERVER_DOWNLOAD_LINK -q -O teamspeak3-server_$LINUX_OR_FREEBSD-$ARCHITECTURE-$LATEST_VERSION.tar.gz
+		wget $TS3_SERVER_DOWNLOAD_LINK -q -O teamspeak3-server_$LINUX_OR_FREEBSD-$ARCHITECTURE-$LATEST_RELEASE.tar.gz
 
 		if [ "$CRONJOB_AUTO_UPDATE" == "true" ]; then
 			echo -en "Your server will be updated right now";
@@ -1059,7 +1117,7 @@ while read paths; do
 			echo -e "${RCurs}${MCurs}[ ${Cya}INFO ${RCol}]";
 		fi
 
-		tar xf teamspeak3-server_$LINUX_OR_FREEBSD-$ARCHITECTURE-$LATEST_VERSION.tar.gz && cp -R teamspeak3-server_$LINUX_OR_FREEBSD-$ARCHITECTURE/* . && rm -rf teamspeak3-server_$LINUX_OR_FREEBSD-$ARCHITECTURE/
+		tar xf teamspeak3-server_$LINUX_OR_FREEBSD-$ARCHITECTURE-$LATEST_RELEASE.tar.gz && cp -R teamspeak3-server_$LINUX_OR_FREEBSD-$ARCHITECTURE/* . && rm -rf teamspeak3-server_$LINUX_OR_FREEBSD-$ARCHITECTURE/
 
 		if [ -f /tmp/ts3server_backup$TEAMSPEAK_DIRECTORY/licensekey.dat ]; then
 			if [ "$CRONJOB_AUTO_UPDATE" == "true" ]; then
@@ -1249,7 +1307,7 @@ while read paths; do
 		fi
 
 		# Delete downloaded TeamSpeak 3 server archive
-		rm teamspeak3-server_$LINUX_OR_FREEBSD-$ARCHITECTURE-$LATEST_VERSION.tar.gz 2> /dev/null
+		rm teamspeak3-server_$LINUX_OR_FREEBSD-$ARCHITECTURE-$LATEST_RELEASE.tar.gz 2> /dev/null
 
 		if [ "$CRONJOB_AUTO_UPDATE" == "true" ]; then
 			echo -en "Adjusting ownership and group of files";
@@ -1373,9 +1431,9 @@ while read paths; do
 			fi
 		else
 			if [ "$CRONJOB_AUTO_UPDATE" == "true" ]; then
-				echo -en "Rollback to the version '$INSTALLED_VERSION', because the server could not start";
+				echo -en "Rollback to the version '$INSTALLED_RELEASE', because the server could not start";
 			else
-				echo -en "${SCurs}Rollback to the version '$INSTALLED_VERSION', because the server could not start";
+				echo -en "${SCurs}Rollback to the version '$INSTALLED_RELEASE', because the server could not start";
 				echo -e "${RCurs}${MCurs}[ ${Whi}.. ${RCol}]\n";
 			fi
 
@@ -1396,16 +1454,16 @@ while read paths; do
 
 			# Start TeamSpeak 3 server
 			if [[ "$TEAMSPEAK_DATABASE_TYPE" == "MySQL" ]] || [[ "$TEAMSPEAK_DATABASE_TYPE" == "MariaDB" ]]; then
-				su -c "rm teamspeak3-server_$LINUX_OR_FREEBSD-$ARCHITECTURE-$LATEST_VERSION.tar.gz && $TEAMSPEAK_DIRECTORY/ts3server_startscript.sh start inifile=ts3server.ini" $USER
+				su -c "rm teamspeak3-server_$LINUX_OR_FREEBSD-$ARCHITECTURE-$LATEST_RELEASE.tar.gz && $TEAMSPEAK_DIRECTORY/ts3server_startscript.sh start inifile=ts3server.ini" $USER
 			else
-				su -c "rm teamspeak3-server_$LINUX_OR_FREEBSD-$ARCHITECTURE-$LATEST_VERSION.tar.gz && $TEAMSPEAK_DIRECTORY/ts3server_startscript.sh start" $USER
+				su -c "rm teamspeak3-server_$LINUX_OR_FREEBSD-$ARCHITECTURE-$LATEST_RELEASE.tar.gz && $TEAMSPEAK_DIRECTORY/ts3server_startscript.sh start" $USER
 			fi
 
 			if [ "$CRONJOB_AUTO_UPDATE" == "true" ]; then
-				echo -en "Your new server version could not start. Deployed backup of version '$INSTALLED_VERSION'";
+				echo -en "Your new server version could not start. Deployed backup of version '$INSTALLED_RELEASE'";
 				echo -e "\t[ INFO ]";
 			else
-				echo -en "${SCurs}Your new server version could not start. Deployed backup of version '$INSTALLED_VERSION'";
+				echo -en "${SCurs}Your new server version could not start. Deployed backup of version '$INSTALLED_RELEASE'";
 				echo -e "${RCurs}${MCurs}[ ${Cya}INFO ${RCol}]";
 			fi
 		fi
@@ -1431,24 +1489,13 @@ while read paths; do
 		echo -e "${RCurs}${MCurs}[ ${Cya}INFO ${RCol}]";
 	fi
 
-	# Delete temp-files
-	if [ -f $TEMPFILE_1 ]; then
-		rm $TEMPFILE_1
-	fi
-
-	if [ -f $TEMPFILE_2 ]; then
-		rm $TEMPFILE_2
-	fi
-
-	if [ -f $TEMPFILE_3 ]; then
-		rm $TEMPFILE_3
-	fi
-
 	if [ -f TEMP_SERVERLIST.txt ]; then
 		rm TEMP_SERVERLIST.txt
 	fi
 
-	rm TEMP_CLIENTLIST_*.txt 2> /dev/null || true
+	if [ -f TEMP_CLIENTLIST_*.txt ]; then
+		rm TEMP_CLIENTLIST_*.txt
+	fi
 done < TeamSpeak_Directories.txt
 
 if [ -f TeamSpeak_Directories.txt ]; then
