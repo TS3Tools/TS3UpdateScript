@@ -21,10 +21,9 @@ Requirements
 ============
 - Linux (tested on Debian based systems such as Debian and Ubuntu, but should work on the most distributions)
 - root access on your Linux system
-- Installed TeamSpeak server
+- Installed TeamSpeak server instance
 - Needed installed softwares by the script
   - bash
-  - mktemp
   - rsync
   - wget
   - grep
