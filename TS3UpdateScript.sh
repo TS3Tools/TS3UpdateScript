@@ -991,7 +991,7 @@ while read paths; do
 				while read sgid; do
 					echo "servergroupclientlist sgid=$sgid"
 					sleep 1s
-				done < configs/ignore_servergroups.txt
+				done < $SCRIPT_PATH/configs/ignore_servergroups.txt
 				echo "logout"
 				echo "quit"
 			) | telnet > TEMP_SERVERGROUPCLIENTLIST.txt 2> /dev/null
@@ -1017,7 +1017,7 @@ while read paths; do
 
 					# Just poke "normal" clients and no "ServerQuery" client
 					# Also ignore clients of configs/ignore_clients.txt and configs/ignore_servergroups.txt
-					cat TEMP_CLIENTLIST_$virtualserver_id.txt | tr "|" "\n" | grep "client_type=0" | grep -v "client_database_id=$(while read cldbid; do echo $cldbid; done < configs/ignore_clients.txt)" | grep -v "client_database_id=$(while read cldbid; do echo $cldbid; done < TEMP_SERVERGROUPCLIENTLIST_CLDBIDs.txt)" | awk '{print $1}' | cut -d "=" -f2 | while read client_id; do
+					cat TEMP_CLIENTLIST_$virtualserver_id.txt | tr "|" "\n" | grep "client_type=0" | grep -v "client_database_id=$(while read cldbid; do echo $cldbid; done < $SCRIPT_PATH/configs/ignore_clients.txt)" | grep -v "client_database_id=$(while read cldbid; do echo $cldbid; done < TEMP_SERVERGROUPCLIENTLIST_CLDBIDs.txt)" | awk '{print $1}' | cut -d "=" -f2 | while read client_id; do
 						echo "clientpoke msg=$UPDATE_TEXT clid=$client_id"
 					done
 				done
