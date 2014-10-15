@@ -17,7 +17,7 @@ We offer managed service as well as installation and configuration help for less
 
 Our services can be found on www.ts3-tools.info
 
-Our ticket system can be found on support.ts3-tools.info
+Our ticket system can be found on https://support.ts3-tools.info/
 
 Stay tuned!
 ============
