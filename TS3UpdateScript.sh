@@ -14,7 +14,7 @@ exec 5<&0
 # Donations: https://www.paypal.com/cgi-bin/webscr?cmd=_s-xclick&hosted_button_id=7ZRXLSC2UBVWE
 #
 
-SCRIPT_VERSION="3.8.9"
+SCRIPT_VERSION="3.9.3"
 LAST_EDIT_DATE="2014-10-04"
 
 # Clear the terminal screen
@@ -701,18 +701,26 @@ while read paths; do
 		TEAMSPEAK_SERVER_QUERY_IP="127.0.0.1"
 	fi
 
-	# Get installed TeamSpeak 3 server version, build and platform
-	(
-		echo open $TEAMSPEAK_SERVER_QUERY_IP $TEAMSPEAK_SERVER_QUERY_PORT
-		sleep 2s
-		echo "version"
-		sleep 1s
-		echo "quit"
-	) | telnet > TEMP_VERSION.txt 2> /dev/null
+	if [ "$INFORM_ONLINE_CLIENTS" == "true" ]; then
+		# Get installed TeamSpeak 3 server version, build and platform
+		(
+			echo open $TEAMSPEAK_SERVER_QUERY_IP $TEAMSPEAK_SERVER_QUERY_PORT
+			sleep 2s
+			echo "version"
+			sleep 1s
+			echo "quit"
+		) | telnet > TEMP_VERSION.txt 2> /dev/null
 
-	INSTALLED_RELEASE="$(egrep -o 'version=.*platform=(Linux|FreeBSD)' TEMP_VERSION.txt | cut -d " " -f 1 | cut -d "=" -f 2)"
-	INSTALLED_BUILD="$(egrep -o 'version=.*platform=(Linux|FreeBSD)' TEMP_VERSION.txt | cut -d " " -f 2 | cut -d "=" -f 2)"
-	INSTALLED_PLATFORM="$(egrep -o 'version=.*platform=(Linux|FreeBSD)' TEMP_VERSION.txt | cut -d " " -f 3 | cut -d "=" -f 2)"
+		INSTALLED_RELEASE="$(egrep -o 'version=.*platform=(Linux|FreeBSD)' TEMP_VERSION.txt | cut -d " " -f 1 | cut -d "=" -f 2)"
+		INSTALLED_BUILD="$(egrep -o 'version=.*platform=(Linux|FreeBSD)' TEMP_VERSION.txt | cut -d " " -f 2 | cut -d "=" -f 2)"
+		INSTALLED_PLATFORM="$(egrep -o 'version=.*platform=(Linux|FreeBSD)' TEMP_VERSION.txt | cut -d " " -f 3 | cut -d "=" -f 2)"
+	else
+		INSTANCE_LOG_FILE="$(find $TEAMSPEAK_DIRECTORY/logs/ -name *_0.log | sort -nr | head -1)"
+
+		INSTALLED_RELEASE="$(egrep -o 'TeamSpeak\s3\sServer\s[0-9\.?]+' $INSTANCE_LOG_FILE | cut -d " " -f 4)"
+		INSTALLED_BUILD="Unknown"
+		INSTALLED_PLATFORM="$(egrep -o '(Linux|FreeBSD)' $INSTANCE_LOG_FILE)"
+	fi
 
 	if [ -f TEMP_VERSION.txt ]; then
 		rm TEMP_VERSION.txt
@@ -921,12 +929,12 @@ while read paths; do
 
 	# Check installed version against latest version
 	# If latest version is not equal installed version ask the user for the update
-	if [ "$INSTALLED_RELEASE" == "$LATEST_RELEASE" ] || [ "$INSTALLED_RELEASE" == "Unknown" ]; then
+	if [ "$INSTALLED_RELEASE" == "$LATEST_RELEASE" ]; then
 		if [ "$CRONJOB_AUTO_UPDATE" == "true" ]; then
-			echo -en "Latest version is already installed. Nothing to do!";
+			echo -en "Latest release is already installed. Nothing to do!";
 			echo -e "\t[ INFO ]";
 		else
-			echo -en "${SCurs}Latest version is already installed. Nothing to do!";
+			echo -en "${SCurs}Latest release is already installed. Nothing to do!";
 			echo -e "${RCurs}${MCurs}[ ${Cya}INFO ${RCol}]";
 		fi
 	else

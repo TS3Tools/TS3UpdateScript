@@ -20,6 +20,14 @@ History:
 ----------------------------------
 
 ==================================
+||      Version 3.9.3           ||
+==================================
+
+* Fixed issue with detecting installed release and binary, cause of not installed 'telnet' package
+* Renamed sentence 'Latest version is already installed. Nothing to do!' to 'Latest release is already installed. Nothing to do!'
+! If the installed release is not known, the script will expect it as older version yet
+
+==================================
 ||      Version 3.8.9           ||
 ==================================
 
