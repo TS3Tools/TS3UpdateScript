@@ -15,13 +15,13 @@ Support and assistance
 ============
 We offer managed service as well as installation and configuration help for less money. The website is currently just available in german, but if you need some information, you can write us in english and we will answer and help you as fast as possible.
 
-Our services can be found on www.ts3-tools.info
+Our services can be found on https://www.ts3-tools.info/
 
 Our ticket system can be found on https://support.ts3-tools.info/
 
 Stay tuned!
 ============
-Official Project Homepage: www.ts3-tools.info
+Official Project Homepage: https://www.ts3-tools.info/
 
 facebook Fanpage: https://www.facebook.com/TS3Tools
 
