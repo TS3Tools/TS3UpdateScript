@@ -7,7 +7,17 @@ Sebastian Kraetzig [info@ts3-tools.info]
 
 What is the TS3 UpdateScript?
 ============
-It's a bash script which checks, if a newer version for your TeamSpeak 3 server is available. If yes, you can choose, if the script should update the server or not. You also have some parameters like "delete old logs files" and so on. Well... If you don't want to update your TeamSpeak 3 server manually, you can use this script. This script is doing ALL steps for a correct update process of your TeamSpeak 3 server.
+It is the most used bash-script to automate and optimaze the TeamSpeak 3 server update process by big companies. It is the fastest script you have ever seen for this task.
+
+It checks, if a newer version for your TeamSpeak 3 server instance is available or not. If yes, you can choose, if the script should update the server or not. You also have some parameters like "delete old logs files" and so on. Well... If you don't want to update your TeamSpeak 3 server manually, you can use this script. This script is doing ALL steps for a correct update process of your TeamSpeak 3 server.
+
+Support and assistance
+============
+We offer managed service as well as installation and configuration help for less money. The website is currently just available in german, but if you need some information, you can write us in english and we will answer and help you as fast as possible.
+
+Our services can be found on www.ts3-tools.info
+
+Our ticket system can be found on support.ts3-tools.info
 
 Stay tuned!
 ============
