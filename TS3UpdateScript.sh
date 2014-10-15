@@ -15,7 +15,7 @@ exec 5<&0
 #
 
 SCRIPT_VERSION="3.9.3"
-LAST_EDIT_DATE="2014-10-04"
+LAST_EDIT_DATE="2014-10-10"
 
 # Clear the terminal screen
 clear 2> /dev/null
