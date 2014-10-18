@@ -14,8 +14,8 @@ exec 5<&0
 # Donations: https://www.paypal.com/cgi-bin/webscr?cmd=_s-xclick&hosted_button_id=7ZRXLSC2UBVWE
 #
 
-SCRIPT_VERSION="3.9.3"
-LAST_EDIT_DATE="2014-10-10"
+SCRIPT_VERSION="3.10.1"
+LAST_EDIT_DATE="2014-10-18"
 
 # Clear the terminal screen
 clear 2> /dev/null
@@ -284,9 +284,9 @@ else
 fi
 
 # Check, if a new TS3UpdateScript version is available
-wget https://raw.githubusercontent.com/TS3Tools/TS3UpdateScript/master/docs/CHANGELOG.txt -q -O - > TEMP_latest_version.txt
-LATEST_TS3_UPDATESCRIPT_VERSION=$(grep Version TEMP_latest_version.txt | head -1 | egrep -o 'Version [0-9\.?]+' | egrep -o '[0-9\.?]+')
-rm TEMP_latest_version.txt
+wget https://raw.githubusercontent.com/TS3Tools/TS3UpdateScript/master/docs/CHANGELOG.txt -q -O - > $SCRIPT_PATH/TEMP_latest_version.txt
+LATEST_TS3_UPDATESCRIPT_VERSION=$(grep Version $SCRIPT_PATH/TEMP_latest_version.txt | head -1 | egrep -o 'Version [0-9\.?]+' | egrep -o '[0-9\.?]+')
+rm $SCRIPT_PATH/TEMP_latest_version.txt
 
 if [ "$SCRIPT_VERSION" != "$LATEST_TS3_UPDATESCRIPT_VERSION" ]; then
 	if [ "$CRONJOB_AUTO_UPDATE" == "true" ]; then
@@ -323,14 +323,14 @@ if [ "$SCRIPT_VERSION" != "$LATEST_TS3_UPDATESCRIPT_VERSION" ]; then
 			fi
 
 			# Format "latest version" into usable string for downloads
-			echo "$LATEST_TS3_UPDATESCRIPT_VERSION" > TEMP_LATEST_VERSION.txt
-			STRING_LATEST_VERSION=$(sed -r 's/ /\_/g' TEMP_LATEST_VERSION.txt)
-			rm TEMP_LATEST_VERSION.txt
+			echo "$LATEST_TS3_UPDATESCRIPT_VERSION" > $SCRIPT_PATH/TEMP_LATEST_VERSION.txt
+			STRING_LATEST_VERSION=$(sed -r 's/ /\_/g' $SCRIPT_PATH/TEMP_LATEST_VERSION.txt)
+			rm $SCRIPT_PATH/TEMP_LATEST_VERSION.txt
 
 			# Get main version number of latest version for downloads
-			echo "$STRING_LATEST_VERSION" > TEMP_STRING_LATEST_VERSION.txt;
-			NUMBER_OF_VERSION=$(grep -Po "^([0-9]+)" TEMP_STRING_LATEST_VERSION.txt)
-			rm TEMP_STRING_LATEST_VERSION.txt
+			echo "$STRING_LATEST_VERSION" > $SCRIPT_PATH/TEMP_STRING_LATEST_VERSION.txt;
+			NUMBER_OF_VERSION=$(grep -Po "^([0-9]+)" $SCRIPT_PATH/TEMP_STRING_LATEST_VERSION.txt)
+			rm $SCRIPT_PATH/TEMP_STRING_LATEST_VERSION.txt
 
 			# Install latest version
 			if [ ! $(bash $SCRIPT_PATH/.updateScript.sh &) ]; then
@@ -393,8 +393,8 @@ if [ -z "$AUTO_UPDATE_PARAMETER" ]; then
 	if [[ -z "$LATEST_STABLE_RELEASE" ]]; then
 		if [[ "$USE_LATEST_BETA_RELEASE" != "true" ]]; then
 			# Detect latest stable release
-			wget 'http://dl.4players.de/ts/releases/?C=M;O=D' -q -O - > TEMP_STABLE_RELEASES.txt
-			cat TEMP_STABLE_RELEASES.txt | grep -i dir | egrep -o '<a href=\".*\/\">.*\/<\/a>' | egrep -o '[0-9\.?]+' | uniq > TEMP_STABLE_RELEASES_NUMBERS.txt
+			wget 'http://dl.4players.de/ts/releases/?C=M;O=D' -q -O - > $SCRIPT_PATH/TEMP_STABLE_RELEASES.txt
+			cat $SCRIPT_PATH/TEMP_STABLE_RELEASES.txt | grep -i dir | egrep -o '<a href=\".*\/\">.*\/<\/a>' | egrep -o '[0-9\.?]+' | uniq > $SCRIPT_PATH/TEMP_STABLE_RELEASES_NUMBERS.txt
 
 			while read stable_release; do
 				wget --spider -q http://dl.4players.de/ts/releases/$stable_release/teamspeak3-server_linux-amd64-$stable_release.tar.gz
@@ -404,13 +404,13 @@ if [ -z "$AUTO_UPDATE_PARAMETER" ]; then
 					# Break while-loop, if the latest release could be found
 					break
 				fi
-			done < TEMP_STABLE_RELEASES_NUMBERS.txt
+			done < $SCRIPT_PATH/TEMP_STABLE_RELEASES_NUMBERS.txt
 
-			rm TEMP_STABLE_RELEASES.txt TEMP_STABLE_RELEASES_NUMBERS.txt
+			rm $SCRIPT_PATH/TEMP_STABLE_RELEASES.txt $SCRIPT_PATH/TEMP_STABLE_RELEASES_NUMBERS.txt
 		else
 			# Detect latest beta release
-			wget 'http://dl.4players.de/ts/releases/pre_releases/server/?C=M;O=D' -q -O - > TEMP_BETA_PRERELEASES.txt
-			cat TEMP_BETA_PRERELEASES.txt | grep -i dir | egrep -o '<a href=\".*\/\">.*\/<\/a>' | egrep -o '[0-9\.?]+-Beta-[0-9]+' | uniq > TEMP_BETA_PRERELEASES_NUMBERS.txt
+			wget 'http://dl.4players.de/ts/releases/pre_releases/server/?C=M;O=D' -q -O - > $SCRIPT_PATH/TEMP_BETA_PRERELEASES.txt
+			cat $SCRIPT_PATH/TEMP_BETA_PRERELEASES.txt | grep -i dir | egrep -o '<a href=\".*\/\">.*\/<\/a>' | egrep -o '[0-9\.?]+-Beta-[0-9]+' | uniq > $SCRIPT_PATH/TEMP_BETA_PRERELEASES_NUMBERS.txt
 
 			while read beta_release; do
 				BETA_RELEASE_NUMBER="$(echo $beta_release | egrep -o '^[0-9\.?]+')"
@@ -421,9 +421,9 @@ if [ -z "$AUTO_UPDATE_PARAMETER" ]; then
 					# Break while-loop, if the latest release could be found
 					break
 				fi
-			done < TEMP_BETA_PRERELEASES_NUMBERS.txt
+			done < $SCRIPT_PATH/TEMP_BETA_PRERELEASES_NUMBERS.txt
 
-			rm TEMP_BETA_PRERELEASES.txt TEMP_BETA_PRERELEASES_NUMBERS.txt
+			rm $SCRIPT_PATH/TEMP_BETA_PRERELEASES.txt $SCRIPT_PATH/TEMP_BETA_PRERELEASES_NUMBERS.txt
 		fi
 	fi
 
@@ -709,11 +709,11 @@ while read paths; do
 			echo "version"
 			sleep 1s
 			echo "quit"
-		) | telnet > TEMP_VERSION.txt 2> /dev/null
+		) | telnet > $SCRIPT_PATH/TEMP_VERSION.txt 2> /dev/null
 
-		INSTALLED_RELEASE="$(egrep -o 'version=.*platform=(Linux|FreeBSD)' TEMP_VERSION.txt | cut -d " " -f 1 | cut -d "=" -f 2)"
-		INSTALLED_BUILD="$(egrep -o 'version=.*platform=(Linux|FreeBSD)' TEMP_VERSION.txt | cut -d " " -f 2 | cut -d "=" -f 2)"
-		INSTALLED_PLATFORM="$(egrep -o 'version=.*platform=(Linux|FreeBSD)' TEMP_VERSION.txt | cut -d " " -f 3 | cut -d "=" -f 2)"
+		INSTALLED_RELEASE="$(egrep -o 'version=.*platform=(Linux|FreeBSD)' $SCRIPT_PATH/TEMP_VERSION.txt | cut -d " " -f 1 | cut -d "=" -f 2)"
+		INSTALLED_BUILD="$(egrep -o 'version=.*platform=(Linux|FreeBSD)' $SCRIPT_PATH/TEMP_VERSION.txt | cut -d " " -f 2 | cut -d "=" -f 2)"
+		INSTALLED_PLATFORM="$(egrep -o 'version=.*platform=(Linux|FreeBSD)' $SCRIPT_PATH/TEMP_VERSION.txt | cut -d " " -f 3 | cut -d "=" -f 2)"
 	else
 		INSTANCE_LOG_FILE="$(find $TEAMSPEAK_DIRECTORY/logs/ -name *_0.log | sort -nr | head -1)"
 
@@ -722,7 +722,7 @@ while read paths; do
 		INSTALLED_PLATFORM="$(egrep -o '(Linux|FreeBSD)' $INSTANCE_LOG_FILE)"
 	fi
 
-	if [ -f TEMP_VERSION.txt ]; then
+	if [ -f $SCRIPT_PATH/TEMP_VERSION.txt ]; then
 		rm TEMP_VERSION.txt
 	fi
 
@@ -816,9 +816,9 @@ while read paths; do
 			sleep 1s
 			echo "logout"
 			echo "quit"
-		) | telnet > TEMP_LOGIN.txt 2> /dev/null
+		) | telnet > $SCRIPT_PATH/TEMP_LOGIN.txt 2> /dev/null
 
-		if [[ "$(grep -Eo 'invalid[a-z\]+password' TEMP_LOGIN.txt)" != "invalid\sloginname\sor\spassword" ]]; then
+		if [[ "$(grep -Eo 'invalid[a-z\]+password' $SCRIPT_PATH/TEMP_LOGIN.txt)" != "invalid\sloginname\sor\spassword" ]]; then
 			if [ "$CRONJOB_AUTO_UPDATE" == "true" ]; then
 				echo -e "\t[ OK ]\n";
 			else
@@ -973,10 +973,10 @@ while read paths; do
 				sleep 1s
 				echo "logout"
 				echo "quit"
-			) | telnet > TEMP_SERVERLIST.txt 2> /dev/null || true
+			) | telnet > $SCRIPT_PATH/TEMP_SERVERLIST.txt 2> /dev/null || true
 
 			# Get clientlist of each virtual server
-			cat TEMP_SERVERLIST.txt | grep -Eo "virtualserver_id=[0-9]+" | grep -Eo "[0-9]+" | while read virtualserver_id; do
+			cat $SCRIPT_PATH/TEMP_SERVERLIST.txt | grep -Eo "virtualserver_id=[0-9]+" | grep -Eo "[0-9]+" | while read virtualserver_id; do
 				(
 					echo open $TEAMSPEAK_SERVER_QUERY_IP $TEAMSPEAK_SERVER_QUERY_PORT
 					sleep 2s
@@ -987,7 +987,7 @@ while read paths; do
 					sleep 1s
 					echo "logout"
 					echo "quit"
-				) | telnet > TEMP_CLIENTLIST_$virtualserver_id.txt 2> /dev/null || true
+				) | telnet > $SCRIPT_PATH/TEMP_CLIENTLIST_$virtualserver_id.txt 2> /dev/null || true
 			done
 
 			# Get client database ids of given servergroup ids
@@ -1002,9 +1002,9 @@ while read paths; do
 				done < $SCRIPT_PATH/configs/ignore_servergroups.txt
 				echo "logout"
 				echo "quit"
-			) | telnet > TEMP_SERVERGROUPCLIENTLIST.txt 2> /dev/null
+			) | telnet > $SCRIPT_PATH/TEMP_SERVERGROUPCLIENTLIST.txt 2> /dev/null
 
-			egrep -o 'cldbid=[0-9]+\|?' TEMP_SERVERGROUPCLIENTLIST.txt | tr -d "|" | cut -d "=" -f 2 > TEMP_SERVERGROUPCLIENTLIST_CLDBIDs.txt
+			egrep -o 'cldbid=[0-9]+\|?' $SCRIPT_PATH/TEMP_SERVERGROUPCLIENTLIST.txt | tr -d "|" | cut -d "=" -f 2 > $SCRIPT_PATH/TEMP_SERVERGROUPCLIENTLIST_CLDBIDs.txt
 
 			(
 				echo open $TEAMSPEAK_SERVER_QUERY_IP $TEAMSPEAK_SERVER_QUERY_PORT
@@ -1018,14 +1018,14 @@ while read paths; do
 					UPDATE_TEXT="$UPDATE_TEXT"
 				fi
 
-				cat TEMP_SERVERLIST.txt | grep -Eo "virtualserver_id=[0-9]+" | grep -Eo "[0-9]+" | while read virtualserver_id; do
+				cat $SCRIPT_PATH/TEMP_SERVERLIST.txt | grep -Eo "virtualserver_id=[0-9]+" | grep -Eo "[0-9]+" | while read virtualserver_id; do
 					echo "use sid=$virtualserver_id"
 
 					echo "clientupdate client_nickname=$DISPLAYED_USER_NAME"
 
 					# Just poke "normal" clients and no "ServerQuery" client
 					# Also ignore clients of configs/ignore_clients.txt and configs/ignore_servergroups.txt
-					cat TEMP_CLIENTLIST_$virtualserver_id.txt | tr "|" "\n" | grep "client_type=0" | grep -v "client_database_id=$(while read cldbid; do echo $cldbid; done < $SCRIPT_PATH/configs/ignore_clients.txt)" | grep -v "client_database_id=$(while read cldbid; do echo $cldbid; done < TEMP_SERVERGROUPCLIENTLIST_CLDBIDs.txt)" | awk '{print $1}' | cut -d "=" -f2 | while read client_id; do
+					cat $SCRIPT_PATH/TEMP_CLIENTLIST_$virtualserver_id.txt | tr "|" "\n" | grep "client_type=0" | grep -v "client_database_id=$(while read cldbid; do echo $cldbid; done < $SCRIPT_PATH/configs/ignore_clients.txt)" | grep -v "client_database_id=$(while read cldbid; do echo $cldbid; done < $SCRIPT_PATH/TEMP_SERVERGROUPCLIENTLIST_CLDBIDs.txt)" | awk '{print $1}' | cut -d "=" -f2 | while read client_id; do
 						echo "clientpoke msg=$UPDATE_TEXT clid=$client_id"
 					done
 				done
@@ -1034,7 +1034,7 @@ while read paths; do
 				echo "quit"
 			) | telnet > /dev/null 2> /dev/null || true
 
-			rm TEMP_SERVERGROUPCLIENTLIST_CLDBIDs.txt
+			rm $SCRIPT_PATH/TEMP_SERVERGROUPCLIENTLIST_CLDBIDs.txt
 		fi
 
 		# Wait 5 minutes, if it is a cronjob
@@ -1376,9 +1376,9 @@ while read paths; do
 		if [[ "$TEAMSPEAK_DATABASE_TYPE" == "MySQL" ]] || [[ "$TEAMSPEAK_DATABASE_TYPE" == "MariaDB" ]] || [ -f $TEAMSPEAK_DIRECTORY/ts3server.ini ]; then
 			while read line; do
 				if [[ "$line" == 'COMMANDLINE_PARAMETERS="${2}" #add any command line parameters you want to pass here' ]]; then
-					echo 'COMMANDLINE_PARAMETERS="inifile=ts3server.ini" #add any command line parameters you want to pass here' >> TEMP_ts3server_startscript.sh;
+					echo 'COMMANDLINE_PARAMETERS="inifile=ts3server.ini" #add any command line parameters you want to pass here' >> $SCRIPT_PATH/TEMP_ts3server_startscript.sh;
 				else
-					echo $line >> TEMP_ts3server_startscript.sh;
+					echo $line >> $SCRIPT_PATH/TEMP_ts3server_startscript.sh;
 				fi
 			done < $TEAMSPEAK_DIRECTORY/ts3server_startscript.sh
 
@@ -1389,7 +1389,7 @@ while read paths; do
 				echo -e "${RCurs}${MCurs}[ ${Whi}.. ${RCol}]\n";
 			fi
 
-			if [ ! $(cp -f TEMP_ts3server_startscript.sh $TEAMSPEAK_DIRECTORY/ts3server_startscript.sh) ]; then
+			if [ ! $(cp -f $SCRIPT_PATH/TEMP_ts3server_startscript.sh $TEAMSPEAK_DIRECTORY/ts3server_startscript.sh) ]; then
 				if [ "$CRONJOB_AUTO_UPDATE" == "true" ]; then
 					echo -e "\t[ OK ]";
 				else
@@ -1497,23 +1497,23 @@ while read paths; do
 		echo -e "${RCurs}${MCurs}[ ${Cya}INFO ${RCol}]";
 	fi
 
-	if [ -f TEMP_SERVERLIST.txt ]; then
-		rm TEMP_SERVERLIST.txt
+	if [ -f $SCRIPT_PATH/TEMP_SERVERLIST.txt ]; then
+		rm $SCRIPT_PATH/TEMP_SERVERLIST.txt
 	fi
 
-	rm TEMP_CLIENTLIST_*.txt 2> /dev/null
+	rm $SCRIPT_PATH/TEMP_CLIENTLIST_*.txt 2> /dev/null
 done < TeamSpeak_Directories.txt
 
 if [ -f TeamSpeak_Directories.txt ]; then
 	rm TeamSpeak_Directories.txt
 fi
 
-if [ -f TEMP_LOGIN.txt ]; then
-	rm TEMP_LOGIN.txt
+if [ -f $SCRIPT_PATH/TEMP_LOGIN.txt ]; then
+	rm $SCRIPT_PATH/TEMP_LOGIN.txt
 fi
 
-if [ -f TEMP_ts3server_startscript.sh ]; then
-	rm TEMP_ts3server_startscript.sh
+if [ -f $SCRIPT_PATH/TEMP_ts3server_startscript.sh ]; then
+	rm $SCRIPT_PATH/TEMP_ts3server_startscript.sh
 fi
 
 if [ "$CRONJOB_AUTO_UPDATE" == "true" ]; then

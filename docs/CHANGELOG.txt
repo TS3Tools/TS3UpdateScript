@@ -20,6 +20,13 @@ History:
 ----------------------------------
 
 ==================================
+||      Version 3.10.1          ||
+==================================
+
+* Set absolute path for TEMP_* files of the script
+! That should help against non-working client pokes (parameter --inform-online-clients)
+
+==================================
 ||      Version 3.9.3           ||
 ==================================
 
