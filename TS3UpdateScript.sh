@@ -723,7 +723,7 @@ while read paths; do
 	fi
 
 	if [ -f $SCRIPT_PATH/TEMP_VERSION.txt ]; then
-		rm TEMP_VERSION.txt
+		rm $SCRIPT_PATH/TTEMP_VERSION.txt
 	fi
 
 	if [[ "$INSTALLED_RELEASE" == "" ]]; then
