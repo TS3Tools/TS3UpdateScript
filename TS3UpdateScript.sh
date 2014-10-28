@@ -14,8 +14,8 @@ exec 5<&0
 # Donations: https://www.paypal.com/cgi-bin/webscr?cmd=_s-xclick&hosted_button_id=7ZRXLSC2UBVWE
 #
 
-SCRIPT_VERSION="3.10.1"
-LAST_EDIT_DATE="2014-10-18"
+SCRIPT_VERSION="3.10.4"
+LAST_EDIT_DATE="2014-10-28"
 
 # Clear the terminal screen
 clear 2> /dev/null
@@ -723,7 +723,7 @@ while read paths; do
 	fi
 
 	if [ -f $SCRIPT_PATH/TEMP_VERSION.txt ]; then
-		rm $SCRIPT_PATH/TTEMP_VERSION.txt
+		rm $SCRIPT_PATH/TEMP_VERSION.txt
 	fi
 
 	if [[ "$INSTALLED_RELEASE" == "" ]]; then
@@ -991,18 +991,21 @@ while read paths; do
 			done
 
 			# Get client database ids of given servergroup ids
-			(
-				echo open $TEAMSPEAK_SERVER_QUERY_IP $TEAMSPEAK_SERVER_QUERY_PORT
-				sleep 2s
-				echo "login serveradmin $SERVERADMIN_PASSWORD"
-				sleep 1s
-				while read sgid; do
-					echo "servergroupclientlist sgid=$sgid"
+			cat $SCRIPT_PATH/TEMP_SERVERLIST.txt | grep -Eo "virtualserver_id=[0-9]+" | grep -Eo "[0-9]+" | while read virtualserver_id; do
+				(
+					echo open $TEAMSPEAK_SERVER_QUERY_IP $TEAMSPEAK_SERVER_QUERY_PORT
+					sleep 2s
+					echo "login serveradmin $SERVERADMIN_PASSWORD"
 					sleep 1s
-				done < $SCRIPT_PATH/configs/ignore_servergroups.txt
-				echo "logout"
-				echo "quit"
-			) | telnet > $SCRIPT_PATH/TEMP_SERVERGROUPCLIENTLIST.txt 2> /dev/null
+					echo "use sid=$virtualserver_id"
+					while read sgid; do
+						echo "servergroupclientlist sgid=$sgid"
+						sleep 1s
+					done < $SCRIPT_PATH/configs/ignore_servergroups.txt
+					echo "logout"
+					echo "quit"
+				) | telnet > $SCRIPT_PATH/TEMP_SERVERGROUPCLIENTLIST.txt 2> /dev/null
+			done
 
 			egrep -o 'cldbid=[0-9]+\|?' $SCRIPT_PATH/TEMP_SERVERGROUPCLIENTLIST.txt | tr -d "|" | cut -d "=" -f 2 > $SCRIPT_PATH/TEMP_SERVERGROUPCLIENTLIST_CLDBIDs.txt
 
@@ -1203,7 +1206,7 @@ while read paths; do
 				echo -e "${RCurs}${MCurs}[ ${Whi}.. ${RCol}]\n";
 			fi
 
-			if [ ! $(cp -f /tmp/ts3server_backup$TEAMSPEAK_DIRECTORY/libts3db_mysql.so $TEAMSPEAK_DIRECTORY) ] && [ ! $(cp -f /tmp/ts3server_backup$TEAMSPEAK_DIRECTORY/serverkey.dat $TEAMSPEAK_DIRECTORY) ] && [ ! $(cp -f /tmp/ts3server_backup$TEAMSPEAK_DIRECTORY/ts3db_mysql.ini $TEAMSPEAK_DIRECTORY) ]&& [ ! $(cp -f /tmp/ts3server_backup$TEAMSPEAK_DIRECTORY/ts3server.ini $TEAMSPEAK_DIRECTORY) ]; then
+			if [ ! $(cp -f /tmp/ts3server_backup$TEAMSPEAK_DIRECTORY/libts3db_mysql.so $TEAMSPEAK_DIRECTORY) ] && [ ! $(cp -f /tmp/ts3server_backup$TEAMSPEAK_DIRECTORY/serverkey.dat $TEAMSPEAK_DIRECTORY 2> /dev/null) ] && [ ! $(cp -f /tmp/ts3server_backup$TEAMSPEAK_DIRECTORY/ts3db_mysql.ini $TEAMSPEAK_DIRECTORY) ]&& [ ! $(cp -f /tmp/ts3server_backup$TEAMSPEAK_DIRECTORY/ts3server.ini $TEAMSPEAK_DIRECTORY) ]; then
 				if [ "$CRONJOB_AUTO_UPDATE" == "true" ]; then
 					echo -e "\t[ OK ]";
 				else

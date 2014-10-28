@@ -20,6 +20,15 @@ History:
 ----------------------------------
 
 ==================================
+||      Version 3.10.4          ||
+==================================
+
+* Set default values for ignore_servergroups.txt and ignore_clients.txt
+! Do NOT remove those numbers from the config-files, because ServerQuerys can not be poked!
+* Set example text for update_text.txt and auto_update_text.txt
+* Fixed non-working pokes
+
+==================================
 ||      Version 3.10.1          ||
 ==================================
 

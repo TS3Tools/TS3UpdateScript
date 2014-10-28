@@ -21,7 +21,8 @@ T A B L E    O F    C O N T E N T
 4. Update Text Examples
 5. Usage Examples
 6. How-To get "client_database_id"
-7. Debugging
+7. How-To get "sgid"
+8. Debugging
 
 
 
@@ -77,6 +78,10 @@ d) If you want to inform online clients about coming server updates with your ow
 	- ignore_clients.txt
 		This file contains client_database_id's of users, which should not get any poke messages about updates
 		HINT: Do NOT remove the number 1 from this file!
+
+	- ignore_servergroups.txt
+		This file containts sgid's of servergroups, which should not get any poke messages about updates
+		HINT: Do NOT remove the number 1 and 2 from this file!
 
 	- password-file
 		This file contains the 'serveradmin' password to connect to your server
@@ -208,9 +213,40 @@ HINT: If you are installing a cronjob, it will look like following:
 	Here for example: 1243
 
 
+
 ----------------------------------
 
-7. D E B B U G I N G
+7) H O W - T O   G E T   "sgid"
+
+----------------------------------
+
+1. Open a telnet connection to your TeamSpeak 3 server on the ServerQuery Port (default: 10011)
+
+2. Login wih your ServerQuery account:
+        login serveradmin very$SecretPassword2014
+
+3. Connect to your virtual server if needed:
+        use sid=1
+        or
+        use port=9987
+
+4. Fetch the servergrouplist of your virtual server:
+        servergrouplist
+
+5. Copy & Paste the whole output of "servergrouplist" in your editor/notepad and search with "Strg/Ctrl" and "F" the servergroup names, which sgid you need/want
+        You will find something like this:
+	sgid=6 name=Server\sAdmin type=1 iconid=300 savedb=1 sortid=0 namemode=0 n_modifyp=75 n_member_addp=75 n_member_removep=75
+
+        HINT: Each servergroup info is between two pipes (|)!
+
+6. Save the sgid in the file 'ignore_servergroups.txt' in a extra line to ignore all clients of this group for update pokes
+        Here for example: 6
+
+
+
+----------------------------------
+
+8. D E B B U G I N G
 
 ----------------------------------
 
