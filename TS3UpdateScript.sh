@@ -14,8 +14,8 @@ exec 5<&0
 # Donations: https://www.paypal.com/cgi-bin/webscr?cmd=_s-xclick&hosted_button_id=7ZRXLSC2UBVWE
 #
 
-SCRIPT_VERSION="3.10.4"
-LAST_EDIT_DATE="2014-10-28"
+SCRIPT_VERSION="3.11"
+LAST_EDIT_DATE="2014-11-27"
 
 # Clear the terminal screen
 clear 2> /dev/null
@@ -284,7 +284,7 @@ else
 fi
 
 # Check, if a new TS3UpdateScript version is available
-wget https://raw.githubusercontent.com/TS3Tools/TS3UpdateScript/master/docs/CHANGELOG.txt -q -O - > $SCRIPT_PATH/TEMP_latest_version.txt
+wget https://raw.githubusercontent.com/TS3Tools/TS3UpdateScript/master/docs/CHANGELOG.txt --no-check-certificate -q -O - > $SCRIPT_PATH/TEMP_latest_version.txt
 LATEST_TS3_UPDATESCRIPT_VERSION=$(grep Version $SCRIPT_PATH/TEMP_latest_version.txt | head -1 | egrep -o 'Version [0-9\.?]+' | egrep -o '[0-9\.?]+')
 rm $SCRIPT_PATH/TEMP_latest_version.txt
 
@@ -568,56 +568,68 @@ fi
 # Get eMail for cronjob reports
 EMAIL="$(cat $SCRIPT_PATH/configs/administrator_eMail.txt)"
 
+# Detection for IPFire cron.d path
+if [ -d /etc/fcron.cyclic/ ]; then
+	CROND_PATH_FILE="/etc/fcron.cyclic/TS3UpdateScript"
+else
+	CROND_PATH_FILE="/etc/cron.d/TS3UpdateScript"
+fi
+
 # If option '--autoupdate yes' is set, install the cronjob for monday at 3 AM
 if [ "$AUTO_UPDATE_PARAMETER" == "yes" ]; then
-	echo -en "${SCurs}Installing new cronjob in '/etc/cron.d/TS3UpdateScript'";
+	echo -en "${SCurs}Installing new cronjob in '${CROND_PATH_FILE}'";
 	echo -e "${RCurs}${MCurs}[ ${Whi}.. ${RCol}]";
 
 	CRONJOB_MINUTE="0";
 
-	echo -en "PATH=/usr/local/bin:/usr/bin:/bin\n" > /etc/cron.d/TS3UpdateScript;
-	echo -en "MAILTO=\"$EMAIL\"\n\n" >> /etc/cron.d/TS3UpdateScript;
-	echo -en "# TS3UpdateScript: Cronjob(s) for auto updates\n\n" >> /etc/cron.d/TS3UpdateScript;
+	if [ -d /etc/fcron.cyclic/ ]; then
+		echo -en "#!/usr/bin/env bash\n" > $CROND_PATH_FILE;
+		echo -en "PATH=/usr/local/bin:/usr/bin:/bin\n" >> ${CROND_PATH_FILE};
+	else
+		echo -en "PATH=/usr/local/bin:/usr/bin:/bin\n" > ${CROND_PATH_FILE};
+	fi
+	echo -en "MAILTO=\"$EMAIL\"\n\n" >> ${CROND_PATH_FILE};
+	echo -en "# TS3UpdateScript: Cronjob(s) for auto updates\n\n" >> ${CROND_PATH_FILE};
 
 	if [ "$AUTO_UPDATE_SCRIPT" == "true" ]; then
-		echo -e "  45 2 * * 1  root $(pwd)/$(basename $0) --cronjob-auto-update --autoupdate-script\n" >> /etc/cron.d/TS3UpdateScript;
+		echo -e "  45 2 * * 1  root $(pwd)/$(basename $0) --cronjob-auto-update --autoupdate-script\n" >> ${CROND_PATH_FILE};
 	fi
 
 	while read paths; do
 		PARAMETER_PATH="$(dirname $paths)"
 
 		if [ -n "$PARAMETER_PATH" ]; then
-			echo -n "  $CRONJOB_MINUTE 3 * * 1  root $(pwd)/$(basename $0) " >> /etc/cron.d/TS3UpdateScript;
-			echo -n "--path $PARAMETER_PATH " >> /etc/cron.d/TS3UpdateScript;
-			echo -n "--cronjob-auto-update " >> /etc/cron.d/TS3UpdateScript;
+			echo -n "  $CRONJOB_MINUTE 3 * * 1  root $(pwd)/$(basename $0) " >> ${CROND_PATH_FILE};
+			echo -n "--path $PARAMETER_PATH " >> ${CROND_PATH_FILE};
+			echo -n "--cronjob-auto-update " >> ${CROND_PATH_FILE};
 			if [ "$CHECK" == "true" ]; then
-				echo -n "--check " >> /etc/cron.d/TS3UpdateScript;
+				echo -n "--check " >> ${CROND_PATH_FILE};
 			fi
 			if [ "$DELETE_OLD_LOGS" == "true" ]; then
-				echo -n "--delete-old-logs " >> /etc/cron.d/TS3UpdateScript;
+				echo -n "--delete-old-logs " >> ${CROND_PATH_FILE};
 			fi
 			if [ "$INFORM_ONLINE_CLIENTS" == "true" ]; then
-				echo -n "--inform-online-clients " >> /etc/cron.d/TS3UpdateScript;
+				echo -n "--inform-online-clients " >> ${CROND_PATH_FILE};
 			fi
 			if [ "$KEEP_BACKUPS" == "true" ]; then
-				echo -n "--keep-backups " >> /etc/cron.d/TS3UpdateScript;
+				echo -n "--keep-backups " >> ${CROND_PATH_FILE};
 			fi
-			echo -e "\n" >> /etc/cron.d/TS3UpdateScript;
+			echo -e "\n" >> ${CROND_PATH_FILE};
 
 			CRONJOB_MINUTE=`expr $CRONJOB_MINUTE + 10`
 		fi
 	done < TeamSpeak_Directories.txt
 
-	echo -en "# ^ ^ ^ ^ ^\n" >> /etc/cron.d/TS3UpdateScript;
-	echo -en "# | | | | |\n" >> /etc/cron.d/TS3UpdateScript;
-	echo -en "# | | | | |___ Weekday (0-7, Sunday is mostly 0)\n" >> /etc/cron.d/TS3UpdateScript;
-	echo -en "# | | | |_____ Month (1-12)\n" >> /etc/cron.d/TS3UpdateScript;
-	echo -en "# | | |_______ Day (1-31)\n" >> /etc/cron.d/TS3UpdateScript;
-	echo -en "# | |_________ Hour (0-23)\n" >> /etc/cron.d/TS3UpdateScript;
-	echo -en "# |___________ Minute (0-59)" >> /etc/cron.d/TS3UpdateScript;
+	echo -en "# ^ ^ ^ ^ ^\n" >> ${CROND_PATH_FILE};
+	echo -en "# | | | | |\n" >> ${CROND_PATH_FILE};
+	echo -en "# | | | | |___ Weekday (0-7, Sunday is mostly 0)\n" >> ${CROND_PATH_FILE};
+	echo -en "# | | | |_____ Month (1-12)\n" >> ${CROND_PATH_FILE};
+	echo -en "# | | |_______ Day (1-31)\n" >> ${CROND_PATH_FILE};
+	echo -en "# | |_________ Hour (0-23)\n" >> ${CROND_PATH_FILE};
+	echo -en "# |___________ Minute (0-59)" >> ${CROND_PATH_FILE};
 
 	# Set correct permissions for file
-	chmod 644 /etc/cron.d/TS3UpdateScript
+	chmod 644 ${CROND_PATH_FILE}
 
 	if [[ $? -eq 0 ]]; then
 		echo -e "${RCurs}${MCurs}[ ${Gre}OK ${RCol}]";
@@ -637,8 +649,8 @@ if [ "$AUTO_UPDATE_PARAMETER" == "no" ]; then
 	echo -en "${SCurs}Deinstalling cronjob";
 	echo -e "${RCurs}${MCurs}[ ${Whi}.. ${RCol}]";
 
-	if [ -f /etc/cron.d/TS3UpdateScript ]; then
-		rm /etc/cron.d/TS3UpdateScript
+	if [ -f ${CROND_PATH_FILE} ]; then
+		rm ${CROND_PATH_FILE}
 	fi
 
 	if [[ $? -eq 0 ]]; then
@@ -768,7 +780,12 @@ while read paths; do
 	fi
 
 	# Does the INI-File 'ts3server.ini' exist?
-	INI_FILE_NAME=$(basename $(find $TEAMSPEAK_DIRECTORY -name 'ts3server.ini' 2> /dev/null | sort | tail -1))
+	INI_FILE_TEMP=$(find $TEAMSPEAK_DIRECTORY -name 'ts3server.ini' 2> /dev/null | sort | tail -1)
+	if [ "$INI_FILE_TEMP" != "" ]; then
+		INI_FILE_NAME=$(basename $INI_FILE_TEMP)
+	else
+		INI_FILE_NAME=""
+	fi
 
 	if [[ "$INI_FILE_NAME" == "" ]]; then
 		INI_FILE_NAME="Unknown"

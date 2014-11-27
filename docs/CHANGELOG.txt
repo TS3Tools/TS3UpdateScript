@@ -20,6 +20,17 @@ History:
 ----------------------------------
 
 ==================================
+||      Version 3.11	        ||
+==================================
+
+* Fixed issue with non-working detection of latest TS3UpdateScript (added --no-check-certificate)
++ Added support for IPfire
++ Added cronjob support for IPfire
+! Known issue: You will not receive any cronjob mails, because package 'mail' does not exists
+! Who works more than me with IPfire and knows the solution?
+* Fixed error message 'basename: missing operand'
+
+==================================
 ||      Version 3.10.4          ||
 ==================================
 
