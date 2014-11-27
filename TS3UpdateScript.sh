@@ -288,7 +288,7 @@ wget https://raw.githubusercontent.com/TS3Tools/TS3UpdateScript/master/docs/CHAN
 LATEST_TS3_UPDATESCRIPT_VERSION=$(grep Version $SCRIPT_PATH/TEMP_latest_version.txt | head -1 | egrep -o 'Version [0-9\.?]+' | egrep -o '[0-9\.?]+')
 rm $SCRIPT_PATH/TEMP_latest_version.txt
 
-if [ "$SCRIPT_VERSION" != "$LATEST_TS3_UPDATESCRIPT_VERSION" ]; then
+if [[ "$SCRIPT_VERSION" != "$LATEST_TS3_UPDATESCRIPT_VERSION" ]] && [[ "$LATEST_TS3_UPDATESCRIPT_VERSION" != "" ]]; then
 	if [ "$CRONJOB_AUTO_UPDATE" == "true" ]; then
 		echo -en "\n'TS3 UpdateScript' version '$LATEST_TS3_UPDATESCRIPT_VERSION' released. Execute './$SCRIPT_NAME --update-script' to update the script";
 		echo -e "\t[ INFO ]\n";

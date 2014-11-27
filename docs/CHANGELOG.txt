@@ -29,6 +29,7 @@ History:
 ! Known issue: You will not receive any cronjob mails, because package 'mail' does not exists
 ! Who works more than me with IPfire and knows the solution?
 * Fixed error message 'basename: missing operand'
++ Added mechanism to prevent TS3UpdateScript updates to version '' (unknown)
 
 ==================================
 ||      Version 3.10.4          ||
