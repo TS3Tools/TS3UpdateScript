@@ -28,15 +28,15 @@ let "BCOL = $(tput cols) - 23"
 
 
 #########################
-#   C O L O U R S   #
+#   C O L O U R S       #
 #########################
 
-SCurs='\e[s';       # Save Cursor
-MCurs="\e[${COL}C"; # Move Cursor
-MCursB="\e[55C";    # Move Cursor a bit
+SCurs='\e[s';           # Save Cursor
+MCurs="\e[${COL}C";     # Move Cursor
+MCursB="\e[55C";        # Move Cursor a bit
 MCursBB="\e[${BCOL}C";  # Move Cursor a bit more
-RCurs='\e[u';       # Reset Cursor
-RCol='\e[0m';       # Text Reset
+RCurs='\e[u';           # Reset Cursor
+RCol='\e[0m';           # Text Reset
 
 # Regular           Bold                Underline           High Intensity      BoldHigh Intens     Background          High Intensity Backgrounds
 Bla='\e[0;30m';     BBla='\e[1;30m';    UBla='\e[4;30m';    IBla='\e[0;90m';    BIBla='\e[1;90m';   On_Bla='\e[40m';    On_IBla='\e[0;100m';
@@ -566,7 +566,9 @@ if [ "$AUTO_UPDATE_PARAMETER" != "no" ]; then
 fi
 
 # Get eMail for cronjob reports
-EMAIL="$(cat $SCRIPT_PATH/configs/administrator_eMail.txt)"
+if [ -f $SCRIPT_PATH/configs/administrator_eMail.txt ]; then
+    EMAIL="$(cat $SCRIPT_PATH/configs/administrator_eMail.txt)"
+fi
 
 # Detection for IPFire cron.d path
 if [ -d /etc/fcron.cyclic/ ]; then
