@@ -88,7 +88,7 @@ fi
 
 # Check given parameters
 while [ -n "$1" ]; do
-	case "$1" in
+	case $(echo "$1" | tr -s '[:upper:]' '[:lower:]') in
 
 	-h | --help)
 		echo -e "Usage: ./$SCRIPT_NAME OPTION(S)";
