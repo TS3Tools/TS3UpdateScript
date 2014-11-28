@@ -61,7 +61,7 @@ SCRIPT_NAME="$(basename $0)"
 SCRIPT_PATH="$(dirname $0)"
 
 # Make sure, that the user has root permissions
-if [[ "$(whoami)" != "root" ]]; then
+if (( $EUID != 0 )); then
 	# Get absolute path of script
 	cd "$(dirname $0)"
 	SCRIPT="$(pwd)/$(basename $0)"
