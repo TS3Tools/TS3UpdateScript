@@ -20,7 +20,7 @@ History:
 ----------------------------------
 
 ==================================
-||      Version 3.11.x          ||
+||      Version 3.11.3          ||
 ==================================
 
 * Replaced $(whoami) with $EUID for reliable user identification (Thanks to https://github.com/psypanda)
