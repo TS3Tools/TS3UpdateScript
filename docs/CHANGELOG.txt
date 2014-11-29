@@ -20,6 +20,14 @@ History:
 ----------------------------------
 
 ==================================
+||      Version 3.11.x          ||
+==================================
+
+* Replaced $(whoami) with $EUID for reliable user identification (Thanks to https://github.com/psypanda)
+* Parameters are now case insensitive (Thanks to https://github.com/psypanda)
+* Fix error `cat: ./configs/administrator_eMail.txt: No such file or directory` if administrator_eMail.txt does not exist (Thanks to https://github.com/psypanda)
+
+==================================
 ||      Version 3.11	        ||
 ==================================
 

@@ -14,8 +14,8 @@ exec 5<&0
 # Donations: https://www.paypal.com/cgi-bin/webscr?cmd=_s-xclick&hosted_button_id=7ZRXLSC2UBVWE
 #
 
-SCRIPT_VERSION="3.11"
-LAST_EDIT_DATE="2014-11-27"
+SCRIPT_VERSION="3.11.1"
+LAST_EDIT_DATE="2014-11-28"
 
 # Clear the terminal screen
 clear 2> /dev/null
@@ -61,7 +61,7 @@ SCRIPT_NAME="$(basename $0)"
 SCRIPT_PATH="$(dirname $0)"
 
 # Make sure, that the user has root permissions
-if [[ "$(whoami)" != "root" ]]; then
+if [[ "$EUID" != 0 ]]; then
 	# Get absolute path of script
 	cd "$(dirname $0)"
 	SCRIPT="$(pwd)/$(basename $0)"
@@ -88,7 +88,7 @@ fi
 
 # Check given parameters
 while [ -n "$1" ]; do
-	case "$1" in
+	case $(echo "$1" | tr -s '[:upper:]' '[:lower:]') in
 
 	-h | --help)
 		echo -e "Usage: ./$SCRIPT_NAME OPTION(S)";
@@ -566,7 +566,9 @@ if [ "$AUTO_UPDATE_PARAMETER" != "no" ]; then
 fi
 
 # Get eMail for cronjob reports
-EMAIL="$(cat $SCRIPT_PATH/configs/administrator_eMail.txt)"
+if [ -f $SCRIPT_PATH/configs/administrator_eMail.txt ]; then
+	EMAIL="$(cat $SCRIPT_PATH/configs/administrator_eMail.txt)"
+fi
 
 # Detection for IPFire cron.d path
 if [ -d /etc/fcron.cyclic/ ]; then
