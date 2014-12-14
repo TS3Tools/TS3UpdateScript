@@ -20,6 +20,12 @@ History:
 ----------------------------------
 
 ==================================
+||      Version 3.11.4          ||
+==================================
+
+* Fixed issue with parameter conversion from upper to lower case (--keep-backups -> --kep-backups for example) (Thanks to https://github.com/kam1kaze for this hint)
+
+==================================
 ||      Version 3.11.3          ||
 ==================================
 

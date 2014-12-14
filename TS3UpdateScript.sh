@@ -14,8 +14,8 @@ exec 5<&0
 # Donations: https://www.paypal.com/cgi-bin/webscr?cmd=_s-xclick&hosted_button_id=7ZRXLSC2UBVWE
 #
 
-SCRIPT_VERSION="3.11.3"
-LAST_EDIT_DATE="2014-11-28"
+SCRIPT_VERSION="3.11.4"
+LAST_EDIT_DATE="2014-12-14"
 
 # Clear the terminal screen
 clear 2> /dev/null
@@ -88,7 +88,7 @@ fi
 
 # Check given parameters
 while [ -n "$1" ]; do
-	case $(echo "$1" | tr -s '[:upper:]' '[:lower:]') in
+	case $(echo "$1" | tr '[:upper:]' '[:lower:]') in
 
 	-h | --help)
 		echo -e "Usage: ./$SCRIPT_NAME OPTION(S)";
