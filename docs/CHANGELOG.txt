@@ -20,6 +20,18 @@ History:
 ----------------------------------
 
 ==================================
+||      Version 3.11.5          ||
+==================================
+
+* Added a hyphen to each 'su -c' command to prevent unknown issues
+! For further information view issue on GitHub: https://github.com/TS3Tools/TS3UpdateScript/issues/4
++ Added new parameter '--waiting-time' to give the user the ability to tell the script, that it should wait X minutes before it starts the update process
++ Added waiting time to output
+! Example: ./TS3UpdateScript.sh --check --waiting-time 10 --delete-old-logs
++ Added better detection of log paths
++ Added log path to output
+
+==================================
 ||      Version 3.11.4          ||
 ==================================
 

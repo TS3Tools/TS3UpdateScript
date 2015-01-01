@@ -14,8 +14,8 @@ exec 5<&0
 # Donations: https://www.paypal.com/cgi-bin/webscr?cmd=_s-xclick&hosted_button_id=7ZRXLSC2UBVWE
 #
 
-SCRIPT_VERSION="3.11.4"
-LAST_EDIT_DATE="2014-12-14"
+SCRIPT_VERSION="3.11.5"
+LAST_EDIT_DATE="2015-01-01"
 
 # Clear the terminal screen
 clear 2> /dev/null
@@ -71,7 +71,7 @@ if [[ "$EUID" != 0 ]]; then
 	echo -en "${SCurs}This script needs root permissions. Please enter your root password...";
 	echo -e "${RCurs}${MCurs}[ ${Red}HINT ${RCol}]";
 
-	su -c "$SCRIPT $1 $2 $3 $4 $5 $6 $7 $8 $9 ${10} ${11}"
+	su -c "$SCRIPT $1 $2 $3 $4 $5 $6 $7 $8 $9 ${10} ${11} ${12}"
 
 	exit 0
 fi
@@ -108,6 +108,9 @@ while [ -n "$1" ]; do
 
 		echo -en "${SCurs}--path /path/to/ts3server/";
 		echo -e "${RCurs}${MCursB}Just check the server in this directory and do not search for directories on the whole server\n";
+
+		echo -en "${SCurs}--waiting-time 5";
+		echo -e "${RCurs}${MCursB}Optionally the script can wait X minutes before it starts the update process\n";
 
 		echo -en "${SCurs}--beta-release";
 		echo -e "${RCurs}${MCursB}With this parameter you are able to detect and update your TeamSpeak server to the latest beta release\n";
@@ -178,6 +181,16 @@ while [ -n "$1" ]; do
 		fi
 		PARAMETER_PATH="$(pwd)"
 		cd "$OLDPWD"
+		shift
+		shift
+	;;
+
+	--waiting-time)
+		if [ -z "$2" ]; then
+			echo "Error: Parameter $1 needs a value.";
+			exit 1;
+		fi
+		WAITING_TIME="$2"
 		shift
 		shift
 	;;
@@ -697,7 +710,7 @@ while read paths; do
 	GROUP="$(stat --format='%G' $(find $TEAMSPEAK_DIRECTORY -name 'ts3server_startscript.sh' 2> /dev/null | sort | tail -1))"
 	GROUP_ID=$(grep "$USER" /etc/passwd | cut -d ":" -f 4)
 
-	# Get ServerQuery Port and IP
+	# Get ServerQuery Port, IP and Logpath
 	if [ -f $TEAMSPEAK_DIRECTORY/ts3server.ini ]; then
 		TEAMSPEAK_SERVER_QUERY_PORT=$(cat $TEAMSPEAK_DIRECTORY/ts3server.ini | grep query_port | cut -d "=" -f 2)
 
@@ -710,9 +723,20 @@ while read paths; do
 		if [[ "$TEAMSPEAK_SERVER_QUERY_IP" == "" ]] && [[ "$TEAMSPEAK_SERVER_QUERY_IP" == "0.0.0.0" ]]; then
 			TEAMSPEAK_SERVER_QUERY_IP="Unknown"
 		fi
+
+		INSTANCE_LOG_PATH_TEMP=$(cat $TEAMSPEAK_DIRECTORY/ts3server.ini | grep logpath | cut -d "=" -f 2)
+		# Absolute or relative path?
+		if [[ "$INSTANCE_LOG_PATH_TEMP" = /* ]]; then
+			INSTANCE_LOG_PATH="$INSTANCE_LOG_PATH_TEMP"
+		else
+			cd $TEAMSPEAK_DIRECTORY/$INSTANCE_LOG_PATH_TEMP
+			INSTANCE_LOG_PATH="$(pwd)"
+			cd - > /dev/null
+		fi
 	else
 		TEAMSPEAK_SERVER_QUERY_PORT="10011"
 		TEAMSPEAK_SERVER_QUERY_IP="127.0.0.1"
+		INSTANCE_LOG_PATH="$TEAMSPEAK_DIRECTORY/logs"
 	fi
 
 	if [ "$INFORM_ONLINE_CLIENTS" == "true" ]; then
@@ -729,7 +753,7 @@ while read paths; do
 		INSTALLED_BUILD="$(egrep -o 'version=.*platform=(Linux|FreeBSD)' $SCRIPT_PATH/TEMP_VERSION.txt | cut -d " " -f 2 | cut -d "=" -f 2)"
 		INSTALLED_PLATFORM="$(egrep -o 'version=.*platform=(Linux|FreeBSD)' $SCRIPT_PATH/TEMP_VERSION.txt | cut -d " " -f 3 | cut -d "=" -f 2)"
 	else
-		INSTANCE_LOG_FILE="$(find $TEAMSPEAK_DIRECTORY/logs/ -name *_0.log | sort -nr | head -1)"
+		INSTANCE_LOG_FILE="$(find $INSTANCE_LOG_PATH/ -name *_0.log | sort -nr | head -1)"
 
 		INSTALLED_RELEASE="$(egrep -o 'TeamSpeak\s3\sServer\s[0-9\.?]+' $INSTANCE_LOG_FILE | cut -d " " -f 4)"
 		INSTALLED_BUILD="Unknown"
@@ -874,6 +898,7 @@ while read paths; do
 	echo "	Installed Binary	: $INSTALLED_PLATFORM";
 	echo
 	echo "	Installation Directory	: $TEAMSPEAK_DIRECTORY";
+	echo "	Instance Log Directory	: $INSTANCE_LOG_PATH";
 	echo "	Files Owner		: $USER (UID $USER_ID)";
 	echo "	Files Group		: $GROUP (GID $GROUP_ID)";
 	echo
@@ -891,6 +916,13 @@ while read paths; do
 		echo "	TSDNS			: $TSDNS_STATUS (PID $TSDNS_PID)";
 	else
 		echo "	TSDNS			: $TSDNS_STATUS";
+	fi
+
+	echo
+	if [ ! -z "$WAITING_TIME" ]; then
+		echo "	Waiting Time		: ${WAITING_TIME} Minutes";
+	else
+		echo "	Waiting Time		: None/Immediately";
 	fi
 
 	if [ "$INFORM_ONLINE_CLIENTS" == "true" ]; then
@@ -1059,9 +1091,11 @@ while read paths; do
 			rm $SCRIPT_PATH/TEMP_SERVERGROUPCLIENTLIST_CLDBIDs.txt
 		fi
 
-		# Wait 5 minutes, if it is a cronjob
+		# Wait 5 minutes, if it is a cronjob or X minutes, if the user want it
 		if [ "$CRONJOB_AUTO_UPDATE" == "true" ]; then
 			sleep 5m
+		elif [ ! -z "$WAITING_TIME" ]; then
+			sleep ${WAITING_TIME}m
 		fi
 
 		# Build download link for the TeamSpeak 3 server download
@@ -1368,7 +1402,7 @@ while read paths; do
 				echo -e "${RCurs}${MCurs}[ ${Whi}.. ${RCol}]\n";
 			fi
 
-			su -c "./tsdnsserver_"$LINUX_OR_FREEBSD"_"$ARCHITECTURE" &" $USER
+			su -c "./tsdnsserver_"$LINUX_OR_FREEBSD"_"$ARCHITECTURE" &" - $USER
 
 			# Change to root directory of TeamSpeak 3 server
 			cd - > /dev/null
@@ -1426,7 +1460,7 @@ while read paths; do
 			fi
 		fi
 
-		su -c "$TEAMSPEAK_DIRECTORY/ts3server_startscript.sh start" $USER
+		su -c "$TEAMSPEAK_DIRECTORY/ts3server_startscript.sh start" - $USER
 
 		# Check, if the './ts3server_startscript.sh start' command was successfull
 		if [[ $? -eq 0 ]]; then
@@ -1442,7 +1476,7 @@ while read paths; do
 			sleep 15s
 
 			# Check, if TS3 server is still runing
-			TS_SERVER_STATUS=$(su -c "$TEAMSPEAK_DIRECTORY/ts3server_startscript.sh status" $USER)
+			TS_SERVER_STATUS=$(su -c "$TEAMSPEAK_DIRECTORY/ts3server_startscript.sh status" - $USER)
 
 			if [[ "$TS_SERVER_STATUS" == "Server is running" ]]; then
 				if [ "$CRONJOB_AUTO_UPDATE" == "true" ]; then
@@ -1484,9 +1518,9 @@ while read paths; do
 
 			# Start TeamSpeak 3 server
 			if [[ "$TEAMSPEAK_DATABASE_TYPE" == "MySQL" ]] || [[ "$TEAMSPEAK_DATABASE_TYPE" == "MariaDB" ]]; then
-				su -c "rm teamspeak3-server_$LINUX_OR_FREEBSD-$ARCHITECTURE-$LATEST_RELEASE.tar.gz && $TEAMSPEAK_DIRECTORY/ts3server_startscript.sh start inifile=ts3server.ini" $USER
+				su -c "rm teamspeak3-server_$LINUX_OR_FREEBSD-$ARCHITECTURE-$LATEST_RELEASE.tar.gz && $TEAMSPEAK_DIRECTORY/ts3server_startscript.sh start inifile=ts3server.ini" - $USER
 			else
-				su -c "rm teamspeak3-server_$LINUX_OR_FREEBSD-$ARCHITECTURE-$LATEST_RELEASE.tar.gz && $TEAMSPEAK_DIRECTORY/ts3server_startscript.sh start" $USER
+				su -c "rm teamspeak3-server_$LINUX_OR_FREEBSD-$ARCHITECTURE-$LATEST_RELEASE.tar.gz && $TEAMSPEAK_DIRECTORY/ts3server_startscript.sh start" - $USER
 			fi
 
 			if [ "$CRONJOB_AUTO_UPDATE" == "true" ]; then
