@@ -28,7 +28,7 @@ History:
 + Added new parameter '--waiting-time' to give the user the ability to tell the script, that it should wait X minutes before it starts the update process
 + Added waiting time to output
 ! Example: ./TS3UpdateScript.sh --check --waiting-time 10 --delete-old-logs
-+ Added better detection of log paths
++ Added better detection of log paths (Thanks to https://github.com/Gertjanpfsense for this hint)
 + Added log path to output
 
 ==================================
