@@ -20,6 +20,13 @@ History:
 ----------------------------------
 
 ==================================
+||      Version 3.11.5.1        ||
+==================================
+
+* Set default waiting time for cronjob (5 minutes)
+* Parameter '--waiting-time' is now also working in cronjobs
+
+==================================
 ||      Version 3.11.5          ||
 ==================================
 

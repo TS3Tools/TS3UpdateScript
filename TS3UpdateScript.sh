@@ -14,8 +14,8 @@ exec 5<&0
 # Donations: https://www.paypal.com/cgi-bin/webscr?cmd=_s-xclick&hosted_button_id=7ZRXLSC2UBVWE
 #
 
-SCRIPT_VERSION="3.11.5"
-LAST_EDIT_DATE="2015-01-01"
+SCRIPT_VERSION="3.11.5.1"
+LAST_EDIT_DATE="2015-01-03"
 
 # Clear the terminal screen
 clear 2> /dev/null
@@ -104,13 +104,14 @@ while [ -n "$1" ]; do
 
 		echo -en "${SCurs}--inform-online-clients";
 		echo -e "${RCurs}${MCursB}Sends the configured poke message to each online client on each virtual server, that the server will be updated (if you enter 'Yes, update!')";
-		echo -e "${RCurs}\n${MCursB}The 'password-file' in the root directory of your TeamSpeak 3 server must content your 'serveradmin' password. It's needed to poke the clients.\n";
+		echo -e "${RCurs}\n${MCursB}The 'password-file' in the root directory of your TeamSpeak 3 server must content your 'serveradmin' password. It's needed to poke the clients\n";
 
 		echo -en "${SCurs}--path /path/to/ts3server/";
 		echo -e "${RCurs}${MCursB}Just check the server in this directory and do not search for directories on the whole server\n";
 
-		echo -en "${SCurs}--waiting-time 5";
-		echo -e "${RCurs}${MCursB}Optionally the script can wait X minutes before it starts the update process\n";
+		echo -en "${SCurs}--waiting-time X";
+		echo -e "${RCurs}${MCursB}Optionally the script can wait X minutes before it starts the update process";
+		echo -e "${RCurs}\n${MCursB}This parameter is available for manually and cronjob updates\n";
 
 		echo -en "${SCurs}--beta-release";
 		echo -e "${RCurs}${MCursB}With this parameter you are able to detect and update your TeamSpeak server to the latest beta release\n";
@@ -921,6 +922,10 @@ while read paths; do
 	echo
 	if [ ! -z "$WAITING_TIME" ]; then
 		echo "	Waiting Time		: ${WAITING_TIME} Minutes";
+	elif [ "$CRONJOB_AUTO_UPDATE" == "true"] && [ ! -z "$WAITING_TIME" ]; then
+		echo "	Waiting Time		: ${WAITING_TIME} Minutes";
+	elif [ "$CRONJOB_AUTO_UPDATE" == "true"]; then
+		echo "	Waiting Time		: 5 Minutes";
 	else
 		echo "	Waiting Time		: None/Immediately";
 	fi
@@ -1092,10 +1097,12 @@ while read paths; do
 		fi
 
 		# Wait 5 minutes, if it is a cronjob or X minutes, if the user want it
-		if [ "$CRONJOB_AUTO_UPDATE" == "true" ]; then
-			sleep 5m
-		elif [ ! -z "$WAITING_TIME" ]; then
+		if [ ! -z "$WAITING_TIME" ]; then
 			sleep ${WAITING_TIME}m
+		elif [ "$CRONJOB_AUTO_UPDATE" == "true"] && [ ! -z "$WAITING_TIME" ]; then
+			sleep ${WAITING_TIME}m
+		elif [ "$CRONJOB_AUTO_UPDATE" == "true"]; then
+			sleep 5m
 		fi
 
 		# Build download link for the TeamSpeak 3 server download
