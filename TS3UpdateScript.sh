@@ -14,8 +14,8 @@ exec 5<&0
 # Donations: https://www.paypal.com/cgi-bin/webscr?cmd=_s-xclick&hosted_button_id=7ZRXLSC2UBVWE
 #
 
-SCRIPT_VERSION="3.11.5.1"
-LAST_EDIT_DATE="2015-01-03"
+SCRIPT_VERSION="3.11.6"
+LAST_EDIT_DATE="2015-01-04"
 
 # Clear the terminal screen
 clear 2> /dev/null
@@ -33,7 +33,7 @@ let "BCOL = $(tput cols) - 23"
 
 SCurs='\e[s';		# Save Cursor
 MCurs="\e[${COL}C";	# Move Cursor
-MCursB="\e[55C";	# Move Cursor a bit
+MCursB="\e[45C";	# Move Cursor a bit
 MCursBB="\e[${BCOL}C";	# Move Cursor a bit more
 RCurs='\e[u';		# Reset Cursor
 RCol='\e[0m';		# Text Reset
@@ -364,7 +364,9 @@ if [[ "$SCRIPT_VERSION" != "$LATEST_TS3_UPDATESCRIPT_VERSION" ]] && [[ "$LATEST_
 				echo -en "\n${SCurs}Your TS3 UpdateScript was NOT updated";
 				echo -e "${RCurs}${MCurs}[ ${Cya}INFO ${RCol}]\n";
 			fi
-			exit 1;
+			if [ -z "$AUTO_UPDATE_SCRIPT" ]; then
+				exit 1;
+			fi
 		fi
 	fi
 else
@@ -375,23 +377,6 @@ else
 		echo -en "${SCurs}You are using the latest TS3 UpdateScript";
 		echo -e "${RCurs}${MCurs}[ ${Cya}INFO ${RCol}]\n";
 	fi
-fi
-
-# If the script just should update itself: Stop it here and do not check all installed TeamSpeak server instances
-if [[ "$AUTO_UPDATE_SCRIPT" == "true" ]]; then
-	if [[ "$SCRIPT_WAS_UPDATED" == "true" ]]; then
-		LINES="$(echo $LATEST_TS3_UPDATESCRIPT_VERSION | cut -d "." -f 3)"
-
-		sleep 15s
-		echo "History:"
-		echo "        + Added something"
-		echo "        - Removed something"
-		echo "        * Changed/Fixed something"
-		echo "        ! Hint/Warning"
-		echo -e "\nCHANGELOG:\n\n"
-		egrep -o "(^[\+\-\*\!]{1}\s{1}.*)$" docs/CHANGELOG.txt | head -${LINES}
-	fi
-	exit 1;
 fi
 
 if [ -z "$AUTO_UPDATE_PARAMETER" ]; then
@@ -597,6 +582,7 @@ if [ "$AUTO_UPDATE_PARAMETER" == "yes" ]; then
 	echo -e "${RCurs}${MCurs}[ ${Whi}.. ${RCol}]";
 
 	CRONJOB_MINUTE="0";
+	CRONJOB_HOUR="3";
 
 	if [ -d /etc/fcron.cyclic/ ]; then
 		echo -en "#!/usr/bin/env bash\n" > $CROND_PATH_FILE;
@@ -615,11 +601,14 @@ if [ "$AUTO_UPDATE_PARAMETER" == "yes" ]; then
 		PARAMETER_PATH="$(dirname $paths)"
 
 		if [ -n "$PARAMETER_PATH" ]; then
-			echo -n "  $CRONJOB_MINUTE 3 * * 1  root $(pwd)/$(basename $0) " >> ${CROND_PATH_FILE};
+			echo -n "  $CRONJOB_MINUTE $CRONJOB_HOUR * * 1  root $(pwd)/$(basename $0) " >> ${CROND_PATH_FILE};
 			echo -n "--path $PARAMETER_PATH " >> ${CROND_PATH_FILE};
 			echo -n "--cronjob-auto-update " >> ${CROND_PATH_FILE};
 			if [ "$CHECK" == "true" ]; then
 				echo -n "--check " >> ${CROND_PATH_FILE};
+			fi
+			if [ "$USE_LATEST_BETA_RELEASE" == "true" ]; then
+				echo -n "--beta-release " >> ${CROND_PATH_FILE};
 			fi
 			if [ "$DELETE_OLD_LOGS" == "true" ]; then
 				echo -n "--delete-old-logs " >> ${CROND_PATH_FILE};
@@ -630,9 +619,17 @@ if [ "$AUTO_UPDATE_PARAMETER" == "yes" ]; then
 			if [ "$KEEP_BACKUPS" == "true" ]; then
 				echo -n "--keep-backups " >> ${CROND_PATH_FILE};
 			fi
+			if [ ! -z "$WAITING_TIME" ]; then
+				echo -n "--waiting-time ${WAITING_TIME}" >> ${CROND_PATH_FILE};
+			fi
 			echo -e "\n" >> ${CROND_PATH_FILE};
 
-			CRONJOB_MINUTE=`expr $CRONJOB_MINUTE + 10`
+			if [ "$CRONJOB_MINUTE" == "50" ]; then
+				CRONJOB_MINUTE="0";
+				CRONJOB_HOUR=`expr $CRONJOB_HOUR + 1`
+			else
+				CRONJOB_MINUTE=`expr $CRONJOB_MINUTE + 10`
+			fi
 		fi
 	done < TeamSpeak_Directories.txt
 
@@ -1155,7 +1152,7 @@ while read paths; do
 		fi
 
 		if [ "$CRONJOB_AUTO_UPDATE" == "true" ]; then
-			echo -en "\tCreating Backup of existing TeamSpeak 3 server";
+			echo -en "Creating Backup of existing TeamSpeak 3 server";
 		else
 			echo -en "${SCurs}Creating Backup of existing TeamSpeak 3 server";
 			echo -e "${RCurs}${MCurs}[ ${Whi}.. ${RCol}]\n";

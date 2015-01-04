@@ -20,6 +20,21 @@ History:
 ----------------------------------
 
 ==================================
+||      Version 3.11.6          ||
+==================================
+
+* Fixed cronjob installer (not all parameters were saved)
+* Fixed cronjob times (from the sixth instance the minutes are invalid: 60, 70, 80, 90,...) (Thanks to Psychokiller)
+* Cronjobs can now be installed with parameter '--autoupdate-script'
+* Reduced distance between command and description in help menu
+* Removed tab before 'Creating Backup of existing TeamSpeak 3 server'
+! Hint: Faulty server archives can not be installed and you server should still run with the old version. You should see something like this in the output:
+! > tar: Does not look like a „tar“ archive.
+! > gzip: stdin: unexpected end of file
+! > tar: Child returned status 1
+! > tar: Error is not recoverable: exiting now
+
+==================================
 ||      Version 3.11.5.1        ||
 ==================================
 
