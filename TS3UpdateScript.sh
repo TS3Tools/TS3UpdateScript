@@ -14,8 +14,8 @@ exec 5<&0
 # Donations: https://www.paypal.com/cgi-bin/webscr?cmd=_s-xclick&hosted_button_id=7ZRXLSC2UBVWE
 #
 
-SCRIPT_VERSION="3.11.6"
-LAST_EDIT_DATE="2015-01-04"
+SCRIPT_VERSION="3.11.6.1"
+LAST_EDIT_DATE="2015-01-05"
 
 # Clear the terminal screen
 clear 2> /dev/null
@@ -377,6 +377,10 @@ else
 		echo -en "${SCurs}You are using the latest TS3 UpdateScript";
 		echo -e "${RCurs}${MCurs}[ ${Cya}INFO ${RCol}]\n";
 	fi
+fi
+
+if [ ! -z "$AUTO_UPDATE_SCRIPT" ] && [ -z "$CHECK" ]; then
+	exit 0;
 fi
 
 if [ -z "$AUTO_UPDATE_PARAMETER" ]; then

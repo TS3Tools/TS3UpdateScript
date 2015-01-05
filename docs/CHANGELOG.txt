@@ -20,6 +20,13 @@ History:
 ----------------------------------
 
 ==================================
+||      Version 3.11.6.1        ||
+==================================
+
+* Fixed issue with update of script self (it also updated ALL instances)
+! Important update! Please update as fast as possible or the script may will update all instances, also if do not wanted
+
+==================================
 ||      Version 3.11.6          ||
 ==================================
 
