@@ -364,9 +364,6 @@ if [[ "$SCRIPT_VERSION" != "$LATEST_TS3_UPDATESCRIPT_VERSION" ]] && [[ "$LATEST_
 				echo -en "\n${SCurs}Your TS3 UpdateScript was NOT updated";
 				echo -e "${RCurs}${MCurs}[ ${Cya}INFO ${RCol}]\n";
 			fi
-			if [ -z "$AUTO_UPDATE_SCRIPT" ]; then
-				exit 1;
-			fi
 		fi
 	fi
 else
@@ -379,7 +376,7 @@ else
 	fi
 fi
 
-if [ ! -z "$AUTO_UPDATE_SCRIPT" ] && [ -z "$CHECK" ]; then
+if [ ! -z "$AUTO_UPDATE_SCRIPT" ] || [ ! -z "$UPDATE_SCRIPT" ] && [ -z "$CHECK" ]; then
 	exit 0;
 fi
 
