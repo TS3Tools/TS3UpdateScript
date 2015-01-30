@@ -14,8 +14,8 @@ exec 5<&0
 # Donations: https://www.paypal.com/cgi-bin/webscr?cmd=_s-xclick&hosted_button_id=7ZRXLSC2UBVWE
 #
 
-SCRIPT_VERSION="3.11.6.1"
-LAST_EDIT_DATE="2015-01-05"
+SCRIPT_VERSION="3.11.7"
+LAST_EDIT_DATE="2015-01-18"
 
 # Clear the terminal screen
 clear 2> /dev/null
@@ -920,9 +920,9 @@ while read paths; do
 	echo
 	if [ ! -z "$WAITING_TIME" ]; then
 		echo "	Waiting Time		: ${WAITING_TIME} Minutes";
-	elif [ "$CRONJOB_AUTO_UPDATE" == "true"] && [ ! -z "$WAITING_TIME" ]; then
+	elif [[ "$CRONJOB_AUTO_UPDATE" == "true" ]] && [[ ! -z "$WAITING_TIME" ]]; then
 		echo "	Waiting Time		: ${WAITING_TIME} Minutes";
-	elif [ "$CRONJOB_AUTO_UPDATE" == "true"]; then
+	elif [ "$CRONJOB_AUTO_UPDATE" == "true" ]; then
 		echo "	Waiting Time		: 5 Minutes";
 	else
 		echo "	Waiting Time		: None/Immediately";
