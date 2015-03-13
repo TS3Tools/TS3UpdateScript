@@ -14,8 +14,11 @@ exec 5<&0
 # Donations: https://www.paypal.com/cgi-bin/webscr?cmd=_s-xclick&hosted_button_id=7ZRXLSC2UBVWE
 #
 
-SCRIPT_VERSION="3.11.7"
-LAST_EDIT_DATE="2015-01-18"
+SCRIPT_VERSION="4.0"
+LAST_EDIT_DATE="2015-03-11"
+
+# Time measurement whole script START
+TIME_MEASUREMENT_SCRIPT_START=`date +%s`
 
 # Clear the terminal screen
 clear 2> /dev/null
@@ -1097,9 +1100,9 @@ while read paths; do
 		# Wait 5 minutes, if it is a cronjob or X minutes, if the user want it
 		if [ ! -z "$WAITING_TIME" ]; then
 			sleep ${WAITING_TIME}m
-		elif [ "$CRONJOB_AUTO_UPDATE" == "true"] && [ ! -z "$WAITING_TIME" ]; then
+		elif [ "$CRONJOB_AUTO_UPDATE" == "true" ] && [ ! -z "$WAITING_TIME" ]; then
 			sleep ${WAITING_TIME}m
-		elif [ "$CRONJOB_AUTO_UPDATE" == "true"]; then
+		elif [ "$CRONJOB_AUTO_UPDATE" == "true" ]; then
 			sleep 5m
 		fi
 
@@ -1584,6 +1587,11 @@ else
 	echo -en "${SCurs}Finish!";
 	echo -e "${RCurs}${MCurs}[ ${Cya}INFO ${RCol}]";
 fi
+
+# Time measurement whole script END
+TIME_MEASUREMENT_SCRIPT_END=`date +%s`
+
+echo "Script execution time: $((TIME_MEASUREMENT_SCRIPT_END-TIME_MEASUREMENT_SCRIPT_START))"s;
 
 echo -e "\nSupport the development of this script and donate: https://www.paypal.com/cgi-bin/webscr?cmd=_s-xclick&hosted_button_id=7ZRXLSC2UBVWE Thank you very much!";
 

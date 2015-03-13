@@ -20,6 +20,13 @@ History:
 ----------------------------------
 
 ==================================
+||      Version 3.11.7.1        ||
+==================================
+
+* Fixed issue with missing `]' in line 1100 and 1102
++ Added script execution time measurement (e.g. Script execution time: 8s)
+
+==================================
 ||      Version 3.11.7	        ||
 ==================================
 
