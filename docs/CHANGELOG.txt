@@ -20,6 +20,12 @@ History:
 ----------------------------------
 
 ==================================
+||      Version 3.11.7.2        ||
+==================================
+
+* Fixed wrong text for word 'Successful'
+
+==================================
 ||      Version 3.11.7.1        ||
 ==================================
 
@@ -368,8 +374,8 @@ History:
 ==================================
 
 + Added feature to inform online clients
-	Cronjob message: 
-	Normal message: 
+	Cronjob message:
+	Normal message:
 * Adjusted cronjob feature (use all parameters also for cronjobs)
 * Adjusted cronjob entry: sh -> /bin/bash
 	Reason: The script is written for the bash
