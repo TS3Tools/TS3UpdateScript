@@ -14,8 +14,8 @@ exec 5<&0
 # Donations: https://www.paypal.com/cgi-bin/webscr?cmd=_s-xclick&hosted_button_id=7ZRXLSC2UBVWE
 #
 
-SCRIPT_VERSION="3.11.7.1"
-LAST_EDIT_DATE="2015-03-13"
+SCRIPT_VERSION="3.11.7.3"
+LAST_EDIT_DATE="2015-03-14"
 
 # Time measurement whole script START
 TIME_MEASUREMENT_SCRIPT_START=`date +%s`
@@ -397,7 +397,7 @@ if [ -z "$AUTO_UPDATE_PARAMETER" ]; then
 		if [[ "$USE_LATEST_BETA_RELEASE" != "true" ]]; then
 			# Detect latest stable release
 			wget 'http://dl.4players.de/ts/releases/?C=M;O=D' -q -O - > $SCRIPT_PATH/TEMP_STABLE_RELEASES.txt
-			cat $SCRIPT_PATH/TEMP_STABLE_RELEASES.txt | grep -i dir | egrep -o '<a href=\".*\/\">.*\/<\/a>' | egrep -o '[0-9\.?]+' | uniq > $SCRIPT_PATH/TEMP_STABLE_RELEASES_NUMBERS.txt
+			cat $SCRIPT_PATH/TEMP_STABLE_RELEASES.txt | grep -i dir | egrep -o '<a href=\".*\/\">.*\/<\/a>' | egrep -o '[0-9\.?]+' | uniq | sort -V -r > $SCRIPT_PATH/TEMP_STABLE_RELEASES_NUMBERS.txt
 
 			while read stable_release; do
 				wget --spider -q http://dl.4players.de/ts/releases/$stable_release/teamspeak3-server_linux-amd64-$stable_release.tar.gz
@@ -413,7 +413,7 @@ if [ -z "$AUTO_UPDATE_PARAMETER" ]; then
 		else
 			# Detect latest beta release
 			wget 'http://dl.4players.de/ts/releases/pre_releases/server/?C=M;O=D' -q -O - > $SCRIPT_PATH/TEMP_BETA_PRERELEASES.txt
-			cat $SCRIPT_PATH/TEMP_BETA_PRERELEASES.txt | grep -i dir | egrep -o '<a href=\".*\/\">.*\/<\/a>' | egrep -o '[0-9\.?]+-Beta-[0-9]+' | uniq > $SCRIPT_PATH/TEMP_BETA_PRERELEASES_NUMBERS.txt
+			cat $SCRIPT_PATH/TEMP_BETA_PRERELEASES.txt | grep -i dir | egrep -o '<a href=\".*\/\">.*\/<\/a>' | egrep -o '[0-9\.?]+-Beta-[0-9]+' | uniq | sort -V -r > $SCRIPT_PATH/TEMP_BETA_PRERELEASES_NUMBERS.txt
 
 			while read beta_release; do
 				BETA_RELEASE_NUMBER="$(echo $beta_release | egrep -o '^[0-9\.?]+')"
@@ -870,7 +870,7 @@ while read paths; do
 				echo -e "${RCurs}${MCurs}[ ${Gre}OK ${RCol}]\n";
 			fi
 
-			LOGIN_STATUS="Successfull";
+			LOGIN_STATUS="Successful";
 		else
 			if [ "$CRONJOB_AUTO_UPDATE" == "true" ]; then
 				echo -e "\t[ FAILED ]\n";
@@ -884,7 +884,7 @@ while read paths; do
 				echo -e "${RCurs}${MCurs}[ ${Cya}INFO ${RCol}]\n";
 			fi
 
-			LOGIN_STATUS="Unsuccessfull";
+			LOGIN_STATUS="Unsuccessful";
 		fi
 	fi
 
@@ -1015,7 +1015,7 @@ while read paths; do
 	# Run the update process, if the user want to
 	if [[ "$ANSWER" == "y" ]] || [[ "$ANSWER" == "yes" ]]; then
 		# Inform online clients, that the server will be updated
-		if [[ "$LOGIN_STATUS" == "Successfull" ]]; then
+		if [[ "$LOGIN_STATUS" == "Successful" ]]; then
 			echo -e "\nInforming online clients... This may take a while.\n";
 
 			DISPLAYED_USER_NAME=$(sed -r 's/ /\\s/g' $SCRIPT_PATH/configs/displayed_user_name.txt)
@@ -1470,7 +1470,7 @@ while read paths; do
 
 		su -c "$TEAMSPEAK_DIRECTORY/ts3server_startscript.sh start" - $USER
 
-		# Check, if the './ts3server_startscript.sh start' command was successfull
+		# Check, if the './ts3server_startscript.sh start' command was Successful
 		if [[ $? -eq 0 ]]; then
 			if [ "$CRONJOB_AUTO_UPDATE" == "true" ]; then
 				echo -en "Script is checking TeamSpeak 3 server status";
@@ -1488,15 +1488,15 @@ while read paths; do
 
 			if [[ "$TS_SERVER_STATUS" == "Server is running" ]]; then
 				if [ "$CRONJOB_AUTO_UPDATE" == "true" ]; then
-					echo -en "Your server was updated successfull";
+					echo -en "Your server was updated Successfully";
 					echo -e "\t[ INFO ]";
 				else
-					echo -en "${SCurs}Your server was updated successfull";
+					echo -en "${SCurs}Your server was updated Successfully";
 					echo -e "${RCurs}${MCurs}[ ${Cya}INFO ${RCol}]";
 				fi
 
 				if [[ -z "$KEEP_BACKUPS" ]]; then
-					# Delete backup after successfull job
+					# Delete backup after Successful job
 					BASE_DIRECTORY=$(echo "$TEAMSPEAK_DIRECTORY" | cut -d "/" -f2)
 					rm -rf /tmp/ts3server_backup/$BASE_DIRECTORY 2> /dev/null
 				fi
