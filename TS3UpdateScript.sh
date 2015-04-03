@@ -14,7 +14,11 @@ exec 5<&0
 # Donations: https://www.paypal.com/cgi-bin/webscr?cmd=_s-xclick&hosted_button_id=7ZRXLSC2UBVWE
 #
 
+<<<<<<< HEAD
 SCRIPT_VERSION="3.11.7.3"
+=======
+SCRIPT_VERSION="3.11.7.2"
+>>>>>>> da7a08193af8cd7a29c97e4efb3cc68c6fe8cc4b
 LAST_EDIT_DATE="2015-03-14"
 
 # Time measurement whole script START
