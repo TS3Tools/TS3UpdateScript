@@ -538,7 +538,7 @@ if [ "$AUTO_UPDATE_PARAMETER" != "no" ]; then
 			exit 1;
 		fi
 	else
-		if [ ! $(find / -name 'ts3server_startscript.sh' 2> /dev/null | grep -v '/tmp/ts3server_backup' | sort > TeamSpeak_Directories.txt) ]; then
+		if [ ! $(find / -name 'ts3server_startscript.sh' -not -path '*/\.*' 2> /dev/null | grep -v '/tmp/ts3server_backup' | sort > TeamSpeak_Directories.txt) ]; then
 			if [ "$CRONJOB_AUTO_UPDATE" == "true" ]; then
 				echo -e "\t[ OK ]\n";
 			else
