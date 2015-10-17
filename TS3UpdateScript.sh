@@ -1409,9 +1409,11 @@ while read paths; do
 				echo -en "${SCurs}Starting TSDNS server ";
 				echo -e "${RCurs}${MCurs}[ ${Whi}.. ${RCol}]\n";
 			fi
-
-			su -c "./tsdnsserver_"$LINUX_OR_FREEBSD"_"$ARCHITECTURE" &" - $USER
-
+			#if the application is started with a resticted user with /bin/false the command can not be executed
+			#with the -s /bin/sh a valid shell is provided to run the command
+			#su -c "./tsdnsserver_"$LINUX_OR_FREEBSD"_"$ARCHITECTURE" &" - $USER
+			su $USER -s /bin/sh -c "./tsdnsserver_"$LINUX_OR_FREEBSD"_"$ARCHITECTURE" &"
+			
 			# Change to root directory of TeamSpeak 3 server
 			cd - > /dev/null
 
@@ -1467,9 +1469,12 @@ while read paths; do
 				fi
 			fi
 		fi
-
-		su -c "$TEAMSPEAK_DIRECTORY/ts3server_startscript.sh start" - $USER
-
+		
+		#if the application is started with a resticted user with /bin/false the command can not be executed
+		#with the -s /bin/sh a valid shell is provided to run the command
+		#su -c "$TEAMSPEAK_DIRECTORY/ts3server_startscript.sh start" - $USER
+		su $USER -s /bin/sh -c "$TEAMSPEAK_DIRECTORY/ts3server_startscript.sh start"
+		
 		# Check, if the './ts3server_startscript.sh start' command was Successful
 		if [[ $? -eq 0 ]]; then
 			if [ "$CRONJOB_AUTO_UPDATE" == "true" ]; then
@@ -1484,8 +1489,10 @@ while read paths; do
 			sleep 15s
 
 			# Check, if TS3 server is still runing
-			TS_SERVER_STATUS=$(su -c "$TEAMSPEAK_DIRECTORY/ts3server_startscript.sh status" - $USER)
-
+			#if the application is started with a resticted user with /bin/false the command can not be executed
+			#with the -s /bin/sh a valid shell is provided to run the command
+			#TS_SERVER_STATUS=$(su -c "$TEAMSPEAK_DIRECTORY/ts3server_startscript.sh status" - $USER)
+			TS_SERVER_STATUS=$(su $USER -s /bin/sh -c "$TEAMSPEAK_DIRECTORY/ts3server_startscript.sh status")
 			if [[ "$TS_SERVER_STATUS" == "Server is running" ]]; then
 				if [ "$CRONJOB_AUTO_UPDATE" == "true" ]; then
 					echo -en "Your server was updated Successfully";
@@ -1526,9 +1533,17 @@ while read paths; do
 
 			# Start TeamSpeak 3 server
 			if [[ "$TEAMSPEAK_DATABASE_TYPE" == "MySQL" ]] || [[ "$TEAMSPEAK_DATABASE_TYPE" == "MariaDB" ]]; then
-				su -c "rm teamspeak3-server_$LINUX_OR_FREEBSD-$ARCHITECTURE-$LATEST_RELEASE.tar.gz && $TEAMSPEAK_DIRECTORY/ts3server_startscript.sh start inifile=ts3server.ini" - $USER
+				#if the application is started with a resticted user with /bin/false the command can not be executed
+				#with the -s /bin/sh a valid shell is provided to run the command
+				#su -c "rm teamspeak3-server_$LINUX_OR_FREEBSD-$ARCHITECTURE-$LATEST_RELEASE.tar.gz && $TEAMSPEAK_DIRECTORY/ts3server_startscript.sh start inifile=ts3server.ini" - $USER
+				rm teamspeak3-server_$LINUX_OR_FREEBSD-$ARCHITECTURE-$LATEST_RELEASE.tar.gz
+				su $USER -s /bin/sh -c "$TEAMSPEAK_DIRECTORY/ts3server_startscript.sh start inifile=ts3server.ini"
 			else
-				su -c "rm teamspeak3-server_$LINUX_OR_FREEBSD-$ARCHITECTURE-$LATEST_RELEASE.tar.gz && $TEAMSPEAK_DIRECTORY/ts3server_startscript.sh start" - $USER
+				#if the application is started with a resticted user with /bin/false the command can not be executed
+				#with the -s /bin/sh a valid shell is provided to run the command
+				#su -c "rm teamspeak3-server_$LINUX_OR_FREEBSD-$ARCHITECTURE-$LATEST_RELEASE.tar.gz && $TEAMSPEAK_DIRECTORY/ts3server_startscript.sh start" - $USER
+				rm teamspeak3-server_$LINUX_OR_FREEBSD-$ARCHITECTURE-$LATEST_RELEASE.tar.gz
+				su $USER -s /bin/sh -c "$TEAMSPEAK_DIRECTORY/ts3server_startscript.sh start"
 			fi
 
 			if [ "$CRONJOB_AUTO_UPDATE" == "true" ]; then
