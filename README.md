@@ -184,7 +184,7 @@ Parameter | Description
   - Fedora 21
   - IPFire 2
 - One or more installed TeamSpeak 3 server instances on a Root server/VPS/virtual machine
-- Software packagesa
+- Software packages
   - Required
     - bash
     - rsync
@@ -207,7 +207,7 @@ Parameter | Description
 - Linux and FreeBSD binary
 - SQLite and MySQL as well as MariaDB database setups
 - TSDNS
-- Virtual server temporary passwords
+- Temporary virtual server passwords
 
 ## Work flow of the script
 
