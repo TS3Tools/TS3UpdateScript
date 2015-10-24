@@ -469,7 +469,11 @@ function checkServeradminPassword() {
 		cat <<- LOGIN
 			spawn telnet "$1" "$2"
 			expect "Welcome to the TeamSpeak 3 ServerQuery"
-			send "login serveradmin ${SERVERADMIN_PASSWORD}\r"
+			send {login serveradmin ${SERVERADMIN_PASSWORD}}
+			expect "login serveradmin"
+			send "\r"
+			expect "error id="
+			send "logout\r"
 			expect "error id="
 			send "quit\r"
 		LOGIN
@@ -747,7 +751,7 @@ function getTS3ServerInstanceLogPath() {
 # Par 1: TeamSpeakRootDirectory:string
 # Return: ServerQueryIP:string
 function getServerQueryIP() {
-	if INIFileExists; then
+	if ! INIFileExists; then
 		SERVER_QUERY_IP="$(grep -E '^query_ip=(?:[0-9]{1,3}\.){3}[0-9]{1,3}$' < ${1}/ts3server.ini | cut -d '=' -f 2)"
 
 		if [[ -n "$SERVER_QUERY_IP" ]]; then
