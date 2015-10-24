@@ -240,7 +240,7 @@ function setUpBashCompletion() {
 
 # Write warning message, that the checked software package is not installed
 function warn() {
-	printf >&2 "$SCRIPT_NAME: $*\n"
+	printf >&2 "$*\n" >> SELF_TEST_STATUS.txt
 }
 
 # Check, if the software package is installed/installed/usable
@@ -253,7 +253,7 @@ function checkdeps() {
 	local -i not_found
 	for cmd; do
 		iscmd "$cmd" || {
-			warn $"$cmd is not found. Please install this package" >> SELF_TEST_STATUS.txt
+			warn $"$cmd is not found. Please install this package"
 			let not_found++
 			return 1;
 		}
@@ -286,7 +286,7 @@ function testInternetConnectivity() {
 # Get latest script version
 # Return: LatestScriptVersion:string or 1:boolean
 function getLatestScriptVersion() {
-	LATEST_SCRIPT_VERSION="$(wget https://raw.githubusercontent.com/TS3Tools/TS3UpdateScript/master/docs/CHANGELOG.txt --no-check-certificate -q -O - | grep Version | head -1 | grep -Eo '[0-9\.?]+')"
+	LATEST_SCRIPT_VERSION="$(wget https://raw.githubusercontent.com/TS3Tools/TS3UpdateScript/master/docs/CHANGELOG.md --no-check-certificate -q -O - | grep Version | head -1 | grep -Eo '[0-9\.?]+')"
 
 	if [[ -n "$LATEST_SCRIPT_VERSION" ]]; then
 		echo -n "$LATEST_SCRIPT_VERSION";
