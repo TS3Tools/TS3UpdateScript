@@ -1611,7 +1611,7 @@ function main() {
 
 	# Enable debugging by commenting out the following line
 	if [[ -n "$PAR_DEBUG" ]] && [[ "$PAR_DEBUG" == 1 ]]; then
-		echo "$TXT_DEBUG_INFO";
+		echo "$TXT_DEBUG_INFO: ${PAR_LIST}";
 		set -x
 	fi
 
@@ -1659,7 +1659,7 @@ function main() {
 	if [[ "$LATEST_SCRIPT_VERSION" != 1 ]]; then
 		if [[ -n "$LATEST_SCRIPT_VERSION" ]]; then
 			if [[ "$SCRIPT_VERSION" != "$LATEST_SCRIPT_VERSION" ]]; then
-				echo -e "${TXT_SELF_TEST_TS3UPDATESCRIPT_RELEASED}: ${LATEST_SCRIPT_VERSION}\n" >> SELF_TEST_STATUS.txt;
+				echo -e "${TXT_SELF_TEST_TS3UPDATESCRIPT_RELEASED}: ./$SCRIPT_NAME --update-script\n" >> SELF_TEST_STATUS.txt;
 			fi
 		else
 			echo "${TXT_SELF_TEST_DETECTION_FAILED}" >> SELF_TEST_STATUS.txt;
@@ -1757,9 +1757,9 @@ function main() {
 					if [ "$INSTANCE_COUNT" -eq 0 ]; then
 						echo "${TXT_COLLECTING_INFORMATION_NO_TS3SERVER_INSTANCES_FOUND}" > COLLECTING_INFORMATION_STATUS.txt;
 					elif [ "$INSTANCE_COUNT" -eq 1 ]; then
-						echo "${TXT_COLLECTING_INFORMATION_FOUND_ONE_TS3SERVER_INSTANCE}" > COLLECTING_INFORMATION_STATUS.txt;
+						echo "${INSTANCE_COUNT} ${TXT_COLLECTING_INFORMATION_FOUND_ONE_TS3SERVER_INSTANCE}" > COLLECTING_INFORMATION_STATUS.txt;
 					else
-						echo "${TXT_COLLECTING_INFORMATION_FOUND_MORE_TS3SERVER_INSTANCES}" > COLLECTING_INFORMATION_STATUS.txt;
+						echo "${INSTANCE_COUNT} ${TXT_COLLECTING_INFORMATION_FOUND_MORE_TS3SERVER_INSTANCES}" > COLLECTING_INFORMATION_STATUS.txt;
 					fi
 
 					while read instancePath; do
@@ -1993,7 +1993,7 @@ function main() {
 
 				if [ -n "$STATUS_FLAG" ]; then
 					if [ "$STATUS_FLAG" == "FAILED" ]; then
-						echo "${TXT_VALIDATION_DETECTION_FAILED}" >> VALIDATION_STATUS.txt;
+						echo "${INSTANCE_PATH}: ${TXT_VALIDATION_DETECTION_FAILED}" >> VALIDATION_STATUS.txt;
 					fi
 
 					# Check serveradmin password
@@ -2003,7 +2003,7 @@ function main() {
 							VALIDATION_STATUS=1;
 						fi
 					else
-						echo "${TXT_VALIDATION_TS3SERVER_OFFLINE}" >> VALIDATION_STATUS.txt;
+						echo "${INSTANCE_PATH}: ${TXT_VALIDATION_TS3SERVER_OFFLINE}" >> VALIDATION_STATUS.txt;
 					fi
 				fi
 			done < TS3InstanceInfos.txt
@@ -2349,11 +2349,11 @@ function main() {
 								
 									# Wait some minutes
 									if [[ "$PAR_WAITING_TIME_MINS" -ne 0 ]]; then
-										echo "${TXT_EXECUTION_MECHANISM_WAITING_INFO}";
+										echo "${PAR_WAITING_TIME_MINS} ${TXT_EXECUTION_MECHANISM_WAITING_INFO}";
 										sleep ${PAR_WAITING_TIME_MINS}m
 									elif [[ "$PAR_CRONJOB_TASK" -eq 1 ]] && [[ "$PAR_WAITING_TIME_IN_MINUTES" -eq 0 ]]; then
 										PAR_WAITING_TIME_MINS=5;
-										echo "${TXT_EXECUTION_MECHANISM_WAITING_INFO}";
+										echo "${PAR_WAITING_TIME_MINS} ${TXT_EXECUTION_MECHANISM_WAITING_INFO}";
 										sleep 5m
 									fi
 
@@ -2443,7 +2443,7 @@ function main() {
 																EXECUTION_MECHANISM_STATUS=1;
 															fi
 														else
-															echo "${TXT_EXECUTION_MECHANISM_UPDATE_FAILED}";
+															echo "${TXT_EXECUTION_MECHANISM_UPDATE_FAILED} '${INSTANCE_PATH}'?";
 															EXECUTION_MECHANISM_STATUS=1;
 														fi
 													else
@@ -2545,7 +2545,7 @@ function main() {
 															EXECUTION_MECHANISM_STATUS=1;
 														fi
 													else
-														echo "${TXT_EXECUTION_MECHANISM_UPDATE_FAILED}";
+														echo "${TXT_EXECUTION_MECHANISM_UPDATE_FAILED} '${INSTANCE_PATH}'?";
 														EXECUTION_MECHANISM_STATUS=1;
 													fi
 												else
@@ -2588,7 +2588,7 @@ function main() {
 									if [[ "$EXECUTION_MECHANISM_STATUS" -eq 1 ]]; then
 										if backup ${INSTANCE_PATH} exists; then
 											if backup ${INSTANCE_PATH} deploy; then
-												echo "${TXT_EXECUTION_MECHANISM_ROLLBACK_INFO}";
+												echo "${TXT_EXECUTION_MECHANISM_ROLLBACK_INFO} '${INSTALLED_TS3_SERVER_VERSION}'.";
 												EXECUTION_MECHANISM_STATUS=0;
 											else
 												echo "${TXT_EXECUTION_MECHANISM_UPDATE_AND_ROLLBACK_FAILED_INFO}";
@@ -2618,7 +2618,7 @@ function main() {
 								echo -e "\n${TXT_EXECUTION_MECHANISM_INSTANCE_STOPPED_UPDATE_NEEDED}: ${INSTANCE_PATH} (${TXT_EXECUTION_MECHANISM_INSTALLED_VERSION}: ${INSTALLED_TS3_SERVER_VERSION})";
 							fi
 						else
-							echo "${TXT_EXECUTION_MECHANISM_TS3SERVER_ALREADY_UP2DATE}";
+							echo "${INSTANCE_PATH}: ${TXT_EXECUTION_MECHANISM_TS3SERVER_ALREADY_UP2DATE}";
 						fi
 					fi
 				done < TS3InstanceInfos.txt
