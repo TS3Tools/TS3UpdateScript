@@ -18,7 +18,7 @@ This file shows all the adjustments which were done in this TS3UpdateScript. For
 + Added pre-validation feature to prevent possible update issues
 + Added best practices analyzer
 + Added script licenses
-! Read README.md for further information regarding script licenses
+! [Read README.md](https://github.com/TS3Tools/TS3UpdateScript#script-licenses) for further information regarding script licenses
 + Added multiple language support
 * Improved performance especially for detecting your installed TeamSpeak 3 server version and poking thousands of clients
 * Updated screenshots in img/ directory
