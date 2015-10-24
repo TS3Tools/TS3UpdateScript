@@ -1,8 +1,8 @@
-# I N S T A L L    A N D    U S A G E    G U I D E
+# INSTALL AND USAGE GUIDE
 
 This file shows you, how you can install and use the TS3 UpdateScript. This file is always referred to the attached TS3 UpdateScript.
 
-## T A B L E    O F    C O N T E N T
+## Table of content
 
 1. Requirements
 2. Installation
@@ -13,11 +13,11 @@ This file shows you, how you can install and use the TS3 UpdateScript. This file
 7. How-To get "sgid"
 8. Debugging
 
-## R E Q U I R E M E N T S
+## Requirements
 
 [Show requirements](https://github.com/TS3Tools/TS3UpdateScript/blob/master/README.md#requirements)
 
-## I N S T A L L A T I O N
+## Installation
 
 a) Download the TS3 UpdateScript from addons.teamspeak.com: http://addons.teamspeak.com/directory/tools/miscellaneous/Script-Automated-TeamSpeak-3-update-with-version-checker.html
 					or from GitHub.com: https://github.com/TS3Tools/TS3UpdateScript/
@@ -56,7 +56,7 @@ d) Set your configuration values:
 
 f) Finish! Read the USAGE below to see, how you can use it
 
-## U S A G E
+## Usage
 
 HINT: The script needs root permissions, because it's detecting all informations automatical and it's also using some commands, which are just available with root permissions.
 
@@ -67,9 +67,10 @@ a) Simply start the script with following syntax:
 b) The script has an included "help"-page:
 
   user@tux:~$ ./TS3UpdateScript --help
+
   user@tux:~$ ./TS3UpdateScript -h
 
-## U P D A T E   T E X T   E X A M P L E S
+## Update text examples
 
 Following you can see some examples, how you can fill your 'auto_update_text.txt' and 'update_text.txt' files:
 
@@ -83,7 +84,7 @@ Following you can see some examples, how you can fill your 'auto_update_text.txt
 
   * $VERSION (returns latest version; for example: 3.0.11.4)
 
-## U S A G E   E X A M P L E S
+## Usage examples
 
 Following you can see some examples how you can use the script.
 
@@ -136,7 +137,7 @@ HINT: If you are installing a cronjob, it will look like following:
 
 The "TS3 UpdateScript" cronjob can be found here: /etc/cron.d/TS3UpdateScript
 
-## H O W - T O   G E T   "client_database_id"
+## How-To get "client_database_id"
 
 1. Open a telnet connection to your TeamSpeak 3 server on the ServerQuery Port (default: 10011)
 
@@ -166,7 +167,7 @@ or
 6. Save the client_database_id in the file 'ignore_clients.txt' in a extra line to ignore that client for update pokes
    Here for example: 1243
 
-## H O W - T O   G E T   "sgid"
+## How-To get "sgid"
 
 1. Open a telnet connection to your TeamSpeak 3 server on the ServerQuery Port (default: 10011)
 
@@ -196,7 +197,7 @@ or
 6. Save the sgid in the file 'ignore_servergroups.txt' in a extra line to ignore all clients of this group for update pokes
    Here for example: 6
 
-## D E B B U G I N G
+## Debugging
 
 You will not need to debug and fix the issue by yourself. Just enable debugging of the script and send me the debug file via eMail to info@ts3-tools.info.
 

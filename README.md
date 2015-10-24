@@ -5,8 +5,11 @@
 It checks, if a newer version for your TeamSpeak 3 server instance is available or not. If yes, you can choose, if the script should update the server or not. You also have some parameters like "delete old logs files" and so on. Well... If you don't want to update your TeamSpeak 3 server manually, you can use this script. This script is doing ALL steps for a correct update process of your TeamSpeak 3 server.
 
 [Open CHANGELOG](https://github.com/TS3Tools/TS3UpdateScript/blob/master/docs/CHANGELOG.md)
+
 [Open install and usage guide](https://github.com/TS3Tools/TS3UpdateScript/blob/master/docs/INSTALL_USAGE_GUIDE.md)
+
 [Open upgrade guide](https://github.com/TS3Tools/TS3UpdateScript/blob/master/docs/UPDATE_GUIDE.md)
+
 [Open GNU GPLv3 license](https://github.com/TS3Tools/TS3UpdateScript/blob/master/LICENSE_GNU_GPL.md)
 
 ![Help menu](https://raw.githubusercontent.com/TS3Tools/TS3UpdateScript/master/img/TS3UpdateScript_Help_Page.png)
@@ -55,7 +58,6 @@ It checks, if a newer version for your TeamSpeak 3 server instance is available 
 
 Verified:
 - en_US
-- de_DE
 
 Need Review:
 - None
@@ -108,6 +110,7 @@ All you need to do to execute an update process is:
 You also can use the tab auto-completion of this script, which will be installed after the first execution of the TS3UpdateScript:
 
   user@tux:~$ sudo ./TS3UpdateScript --check [TAB][TAB]
+
   user@tux:~$ sudo ./TS3UpdateScript --check --del[TAB]
 
 ## Parameters / Options
@@ -116,45 +119,59 @@ You also can use the tab auto-completion of this script, which will be installed
 
 ### Multi usable
 
-  * --check                                 Checks, if a newer version for your instance is available
-  * --delete-old-logs                       Deletes old TeamSpeak 3 server logs while update process
-  * --inform-online-clients                 Sends the configured poke message to each online client on each virtual server, that the server will be updated (if you enter 'Yes, update!')
-  * --keep-backups                          Keep created backups by the script
-  * --waiting-time-in-minutes <MINUTES>     Optionally the script can wait X minutes before it starts the update process
-  * --disable-temporary-password-backup     Disable feature to backup temporary passwords
-  * --set-release                           Do not use the official latest release. Use instead the set release from the given file configs/latestStableRelease.txt
-  * --beta-release                          With this parameter you are able to detect and update your TeamSpeak server to the latest beta release
-  * --locale <LANGUAGE-CODE>                Change language of this script to some of the available under languages/verified/ directory. Default is en_US.
-  * --debug <DEBUG_FILENAME>                Enables debugging and writes output to file
-  * --install-cronjob                       Installs weekly cronjob for monday at 3 AM (= 03:00 O'clock) with your given options
+Parameter | Description
+:------------- | :-------------
+--check | Checks, if a newer version for your instance is available
+--delete-old-logs | Deletes old TeamSpeak 3 server logs while update process
+--inform-online-clients | Sends the configured poke message to each online client on each virtual server, that the server will be updated (if you enter 'Yes, update!')
+--keep-backups | Keep created backups by the script
+--waiting-time-in-minutes [MINUTES] | Optionally the script can wait X minutes before it starts the update process
+--disable-temporary-password-backup | Disable feature to backup temporary passwords
+--set-release | Do not use the official latest release. Use instead the set release from the given file configs/latestStableRelease.txt
+--beta-release | With this parameter you are able to detect and update your TeamSpeak server to the latest beta release
+--locale [LANGUAGE-CODE] | Change language of this script to some of the available under languages/verified/ directory. Default is en_US.
+--debug [DEBUG_FILENAME] | Enables debugging and writes output to file
+--install-cronjob | Installs weekly cronjob for monday at 3 AM (= 03:00 O'clock) with your given options
 
 #### Examples
 
-  user@tux:~$ sudo ./TS3UpdateScript --check 
+  user@tux:~$ sudo ./TS3UpdateScript --check
+
   user@tux:~$ sudo ./TS3UpdateScript --check --delete-old-logs
+
   user@tux:~$ sudo ./TS3UpdateScript --check --keep-backups
+
   user@tux:~$ sudo ./TS3UpdateScript --check --delete-old-logs --inform-online-clients 
+
   user@tux:~$ sudo ./TS3UpdateScript --check --delete-old-logs --waiting-time-in-minutes 30
+
   user@tux:~$ sudo ./TS3UpdateScript --check --delete-old-logs --waiting-time-in-minutes 30 --inform-online-clients --keep-backups
 
 ### Single usable
 
-  * -h OR --help                            Displays this help page
-  * -v OR --version                         Displays version of this script
-  * --display-settings                      Displays settings from config files in configs/
-  * --test-inform-online-clients            Execute test poke with current settings
-  * --update-script                         Updates the TS3UpdateScript to the latest version
-  * --show-license-key                      Displays TS3UpdateScript license key
-  * --send-license-information <EMAIL>      Sends license information to info@ts3-tools.com to get hoster license (view README.txt section 'Script Licenses'!)
-  * --deinstall-cronjob                     Deinstalls weekly cronjob
+Parameter | Description
+:------------- | :-------------
+-h OR --help | Displays this help page
+-v OR --version | Displays version of this script
+--display-settings | Displays settings from config files in configs/
+--test-inform-online-clients | Execute test poke with current settings
+--update-script | Updates the TS3UpdateScript to the latest version
+--show-license-key | Displays TS3UpdateScript license key
+--send-license-information [EMAIL] | Sends license information to info@ts3-tools.com to get hoster license (view README.txt section 'Script Licenses'!)
+--deinstall-cronjob | Deinstalls weekly cronjob
 
 #### Examples
 
   user@tux:~$ sudo ./TS3UpdateScript -h
+
   user@tux:~$ sudo ./TS3UpdateScript --help
+
   user@tux:~$ sudo ./TS3UpdateScript --display-settings
+
   user@tux:~$ sudo ./TS3UpdateScript --test-inform-online-clients
+
   user@tux:~$ sudo ./TS3UpdateScript --update-script
+
   user@tux:~$ sudo ./TS3UpdateScript --send-license-information mail@example.com
 
 ## Requirements

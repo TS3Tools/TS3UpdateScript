@@ -1,14 +1,14 @@
-# U P D A T E    G U I D E
+# UPDATE GUIDE
 
 This file shows you, how you can update the TS3 UpdateScript.
 
-## T A B L E    O F    C O N T E N T
+## Table of content
 
 1. How-To Update manually
 2. How-To Update automate
 3. How-To Update automate using cronjob
 
-## H O W - T O    U P D A T E    M A N U A L L Y
+## How-To Update manually
 
 1. Download the latest version from https://github.com/TS3Tools/TS3UpdateScript
 2. Check the requirements for this script (can be found in INSTALL_USAGE_GUIDE.txt as well as README.md)
@@ -16,13 +16,13 @@ This file shows you, how you can update the TS3 UpdateScript.
 4. Unzip and replace the old TS3UpdateScript.sh with the latest version
 5. Check, if your used parameters have been changed or not and adjust them, if needed (read CHANGELOG.txt therefore)
 
-## H O W - T O    U P D A T E    A U T O M A T E
+## How-To Update automate
 
 1. Run the script with your needed/used parameters or just with '--check'
 2. The script will check for newer version and will ask you, if you want to update the script. Enter 'y' or 'yes', if you want to start the update process for the script
 3. Check, if your used parameters have been changed or not and adjust them, if needed (read CHANGELOG.txt therefore)
 
-## H O W - T O    U P D A T E    A U T O M A T E    U S I N G    C R O N J O B
+## How-To Update automate using cronjob
 
 1. Deinstall old cronjob:
 
