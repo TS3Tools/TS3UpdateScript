@@ -1,0 +1,3142 @@
+#!/usr/bin/env bash
+# Save stdin to file descriptor 5
+exec 5<&0
+#
+# About: This is the most widely used and fastest shell script to update all your TeamSpeak 3 server instances.
+# Author: Sebastian Kraetzig <info@ts3-tools.info>
+# Project: www.ts3-tools.info
+# facebook: www.facebook.com/TS3Tools
+# License: GNU GPLv3
+# _____ ____ _____       _              _       _        __
+#|_   _/ ___|___ /      | |_ ___   ___ | |___  (_)_ __  / _| ___
+#  | | \___ \ |_ \ _____| __/ _ \ / _ \| / __| | | '_ \| |_ / _ \
+#  | |  ___) |__) |_____| || (_) | (_) | \__ \_| | | | |  _| (_) |
+#  |_| |____/____/       \__\___/ \___/|_|___(_)_|_| |_|_|  \___/
+#
+# Donations: https://www.paypal.com/cgi-bin/webscr?cmd=_s-xclick&hosted_button_id=7ZRXLSC2UBVWE
+#
+
+SCRIPT_VERSION="4.0.0"
+LAST_EDIT_DATE="2015-10-24"
+
+# DO NOT REMOVE OR CHANGE
+SOFTWARE_ABOUT="This is the most widely used and fastest shell script to update all your TeamSpeak 3 server instances."
+SOFTWARE_AUTHOR="Sebastian Kraetzig <info@ts3-tools.info>"
+SOFTWARE_HOMEPAGE="www.ts3-tools.info"
+SOFTWARE_FACEBOOK="www.facebook.com/TS3Tools"
+SOFTWARE_LICENSE="GNU GPLv3"
+
+NEEDED_LICENSE_KEY='aHR0cHM6Ly93d3cudHMzLXRvb2xzLmluZm8vdHMzdXMvY2hlY2tsaWNlbnNlLnBocD9za2V5PQo='
+NEEDED_LICENSE_IP='aHR0cHM6Ly93d3cudHMzLXRvb2xzLmluZm8vdHMzdXMvY2hlY2tsaWNlbnNlLnBocAo='
+NEEDED_LICENSE_SECRET='7dc3d819fb42ed9006df79e2642d026c5faef1fb9959b29810718d034fc50a0556d868ae5e15cfe58159bcfcb7026b5852b1d8a2cc194d8e6ca35cf9a203f225'
+
+# Code structure:
+#	1) COLOURS
+#	2) FUNCTIONS
+#	3) MAIN PROGRAM
+#	3) MENU / HELP
+#	4) Call to main()
+#		a) SELFTESTS
+#		b) COLLECTING INFORMATION (if all selftests were successfull)
+#		c) VALIDATION (if all selftests were successfull)
+#		d) EXECUTION MECHANISM (if all selftests were successfull)
+#		e) CLEANUP
+#		f) STATISTICS
+
+# Get screen width
+export TERM=xterm
+let "COL = $(tput cols) - 10"
+let "BCOL = $(tput cols) - 23"
+
+##
+## COLOURS
+##
+
+SCurs='\e[s';           # Save Cursor
+MCurs="\e[${COL}C";     # Move Cursor
+MCursB="\e[45C";        # Move Cursor a bit
+MCursBB="\e[${BCOL}C";  # Move Cursor a bit more
+RCurs='\e[u';           # Reset Cursor
+RCol='\e[0m';           # Text Reset
+
+# Regular           Bold                Underline           High Intensity      BoldHigh Intens     Background          High Intensity Backgrounds
+Bla='\e[0;30m';     BBla='\e[1;30m';    UBla='\e[4;30m';    IBla='\e[0;90m';    BIBla='\e[1;90m';   On_Bla='\e[40m';    On_IBla='\e[0;100m';
+Red='\e[0;31m';     BRed='\e[1;31m';    URed='\e[4;31m';    IRed='\e[0;91m';    BIRed='\e[1;91m';   On_Red='\e[41m';    On_IRed='\e[0;101m';
+Gre='\e[0;32m';     BGre='\e[1;32m';    UGre='\e[4;32m';    IGre='\e[0;92m';    BIGre='\e[1;92m';   On_Gre='\e[42m';    On_IGre='\e[0;102m';
+Yel='\e[0;33m';     BYel='\e[1;33m';    UYel='\e[4;33m';    IYel='\e[0;93m';    BIYel='\e[1;93m';   On_Yel='\e[43m';    On_IYel='\e[0;103m';
+Blu='\e[0;34m';     BBlu='\e[1;34m';    UBlu='\e[4;34m';    IBlu='\e[0;94m';    BIBlu='\e[1;94m';   On_Blu='\e[44m';    On_IBlu='\e[0;104m';
+Pur='\e[0;35m';     BPur='\e[1;35m';    UPur='\e[4;35m';    IPur='\e[0;95m';    BIPur='\e[1;95m';   On_Pur='\e[45m';    On_IPur='\e[0;105m';
+Cya='\e[0;36m';     BCya='\e[1;36m';    UCya='\e[4;36m';    ICya='\e[0;96m';    BICya='\e[1;96m';   On_Cya='\e[46m';    On_ICya='\e[0;106m';
+Whi='\e[0;37m';     BWhi='\e[1;37m';    UWhi='\e[4;37m';    IWhi='\e[0;97m';    BIWhi='\e[1;97m';   On_Whi='\e[47m';    On_IWhi='\e[0;107m';
+
+##
+## FUNCTIONS
+##
+
+# Clear terminal screen
+function clearTerminalScreen() {
+	clear 2> /dev/null
+}
+
+# Checks consistency of script
+# Return: 0:boolean or 1:boolean
+function checkConsistency() {
+	CHKSUM=$(cat $0 | grep -v "ORIGIN=" | head -202 | sha256sum | cut -d " " -f 1)
+	ORIGIN="09b4717c3a011de8d075d948ddcc8ee84d4822a3305e2a89f29c44c941f22d19"
+
+	if [[ "$CHKSUM" == "$ORIGIN" ]]; then
+		return 0;
+	else
+		return 1;
+	fi
+}
+
+# Creates license code
+# Return: 0:boolean or 1:boolean
+function createLicense() {
+	LICENSE_DIRECTORY="/var/cache/ts3us"
+	SEED_FILE="${LICENSE_DIRECTORY}/seed"
+
+	if [[ ! -d "$LICENSE_DIRECTORY" ]]; then
+		if [[ $(mkdir -m 0755 $LICENSE_DIRECTORY) ]]; then
+			return 1;
+		fi
+	fi
+
+	if [[ ! -f "$SEED_FILE" ]]; then
+		if [[ ! $(dd if=/dev/urandom bs=1k count=1 2>/dev/null | od -t x1 -v | cut -d " " -f 2- | grep -E "^([0-9a-f]{2} )+[0-9a-f]{2}$" > $SEED_FILE) ]]; then
+			return 0;
+		else
+			return 1;
+		fi
+	else
+		return 0;
+	fi
+}
+
+# Creates license key
+# Return: 0:boolean or 1:boolean
+function getLicenseKey() {
+	if [[ ! -f license_key ]]; then
+		if createLicense; then
+			if [[ ! $((wget -t 1 --timeout=5 -qO- "$(echo "$NEEDED_LICENSE_IP" | base64 --decode)"; uname -mo; cat /etc/issue; echo "$NEEDED_LICENSE_SECRET"; cat /var/cache/ts3us/seed) | md5sum | head -c 24 > license_key) ]]; then
+				return 0;
+			else
+				return 1;
+			fi
+		else
+			return 1;
+		fi
+	else
+		return 0;
+	fi
+}
+
+# Get verify key for license key
+# Return: VerifyKey:string
+function getVerifyKey() {
+	if [[ -n "$1" ]]; then
+		echo -n $( (date +'%Y%m%d' --date="$1"; echo ${NEEDED_LICENSE_SECRET}; echo ${LICENSE_KEY}) | md5sum | cut -d " " -f 1 );
+	else
+		echo -n $( (date +'%Y%m%d' --date="today"; echo ${NEEDED_LICENSE_SECRET}; echo ${LICENSE_KEY}) | md5sum | cut -d " " -f 1 );
+	fi
+}
+
+# Get script license
+# Return: 0:boolean or 1:boolean
+function checkLicense() {
+	if getLicenseKey; then
+		LICENSE="DENIED";
+		LICENSE_KEY=$(cat license_key)
+		LICENSE_VERIFY_KEY="/var/cache/ts3us/license"
+
+		if [[ -f ${LICENSE_VERIFY_KEY} ]]; then
+			VERIFY_KEY=$(cat ${LICENSE_VERIFY_KEY})
+
+			if [[ ${VERIFY_KEY} == $(getVerifyKey) ]]; then
+				LICENSE="ACCEPTED";
+			elif [[ ${VERIFY_KEY} == $(getVerifyKey "1 days ago") ]]; then
+				LICENSE="ACCEPTED";
+			elif [[ ${VERIFY_KEY} == $(getVerifyKey "2 days ago") ]]; then
+				LICENSE="ACCEPTED";
+			elif [[ ${VERIFY_KEY} == $(getVerifyKey "3 days ago") ]]; then
+				LICENSE="ACCEPTED";
+			elif [[ ${VERIFY_KEY} == $(getVerifyKey "4 days ago") ]]; then
+				LICENSE="ACCEPTED";
+			elif [[ ${VERIFY_KEY} == $(getVerifyKey "5 days ago") ]]; then
+				LICENSE="ACCEPTED";
+			else
+				VERIFY=$(wget -t 1 --timeout=5 -qO- "$(echo "${NEEDED_LICENSE_KEY}" | base64 --decode)${LICENSE_KEY}")
+
+				if [[ "$VERIFY" == "ACCEPTED" ]]; then
+					getVerifyKey > ${LICENSE_VERIFY_KEY}
+					LICENSE="ACCEPTED";
+				else
+					rm -rf ${LICENSE_VERIFY_KEY} license_key
+				fi
+			fi
+		else
+			VERIFY=$(wget -t 1 --timeout=5 -qO- "$(echo "${NEEDED_LICENSE_KEY}" | base64 --decode)${LICENSE_KEY}")
+
+			if [[ "$VERIFY" == "ACCEPTED" ]]; then
+				getVerifyKey > ${LICENSE_VERIFY_KEY}
+				LICENSE="ACCEPTED";
+			else
+				rm -rf license_key
+			fi
+		fi
+
+		if [[ "$LICENSE" == "ACCEPTED" ]]; then
+			echo -n "1";
+		else
+			echo -n "0";
+		fi
+	else
+		echo -n "0";
+	fi
+}
+
+if [[ "$EUID" == 0 ]]; then
+	SCRIPT_LICENSE=$(checkLicense)
+else
+	SCRIPT_LICENSE=0;
+fi
+
+# Check, if bash-completion is installed
+# Return: 0:boolean or 1:boolean
+function isBashCompletionInstalled() {
+	if [ -f /etc/bash_completion.d/ts3updatescript ]; then
+		if [[ "$(stat --format='%U' /etc/bash_completion.d/ts3updatescript)" == "root" ]] && [[ "$(stat --format='%G' /etc/bash_completion.d/ts3updatescript)" == "root" ]]; then
+			return 0;
+		else
+			return 1;
+		fi
+	else
+		return 1;
+	fi
+}
+
+# Sets up bash-completion
+# Return: 0:boolean or 1:boolean
+function setUpBashCompletion() {
+	if [ -f /etc/bash_completion.d/ts3updatescript ]; then
+		if [[ ! $(chown root:root /etc/bash_completion.d/ts3updatescript) ]]; then
+			return 0;
+		else
+			return 1;
+		fi
+	else
+		if [[ ! $(cp .ts3updatescript /etc/bash_completion.d/ts3updatescript) ]]; then
+			if [[ ! $(chown root:root /etc/bash_completion.d/ts3updatescript) ]]; then
+				return 0;
+			else
+				return 1;
+			fi
+		else
+			return 1;
+		fi
+	fi
+}
+
+# Write warning message, that the checked software package is not installed
+function warn() {
+	printf >&2 "$SCRIPT_NAME: $*\n"
+}
+
+# Check, if the software package is installed/installed/usable
+function iscmd() {
+	command -v >&- "$@"
+}
+
+# Checks list of given software packages
+function checkdeps() {
+	local -i not_found
+	for cmd; do
+		iscmd "$cmd" || {
+			warn $"$cmd is not found. Please install this package" >> SELF_TEST_STATUS.txt
+			let not_found++
+			return 1;
+		}
+	done
+}
+
+# Returns time difference
+# Return: Difference:integer or 1:boolean
+function getTimeDifference() {
+	DIFFERENCE=$(($2-$1))
+
+	if [[ -n "$DIFFERENCE" ]]; then
+		echo -n "$DIFFERENCE";
+	else
+		return 1;
+	fi
+}
+
+# Test internet connectivity
+# Par 1: Host:string
+# Return: 0:boolean or 1:boolean
+function testInternetConnectivity() {
+	if [[ $(ping -w 1 "$1" 2> /dev/null) ]]; then
+		return 0;
+	else
+		return 1;
+	fi
+}
+
+# Get latest script version
+# Return: LatestScriptVersion:string or 1:boolean
+function getLatestScriptVersion() {
+	LATEST_SCRIPT_VERSION="$(wget https://raw.githubusercontent.com/TS3Tools/TS3UpdateScript/master/docs/CHANGELOG.txt --no-check-certificate -q -O - | grep Version | head -1 | grep -Eo '[0-9\.?]+')"
+
+	if [[ -n "$LATEST_SCRIPT_VERSION" ]]; then
+		echo -n "$LATEST_SCRIPT_VERSION";
+	else
+		return 1;
+	fi
+}
+
+# Updates TS3UpdateScript to the latest version
+# Return: 0:boolean or 1:boolean
+function updateTS3UpdateScript() {
+	if [ ! $(bash ${ABSOLUTE_PATH}/.updateScript.sh &) ]; then
+		return 0;
+	else
+		return 1;
+	fi
+}
+
+# Detect known cron.d path
+# Return: KnownPath:string or 1:boolean
+function detectKnownCronDPath() {
+	if [[ -d "/etc/cron.d/" ]]; then
+		# Debian, Ubuntu,...
+		echo -n "/etc/cron.d/";
+	elif [[ -d "/etc/fcron.cyclic/" ]]; then
+		# IPFire
+		echo -n "/etc/fcron.cyclic/";
+	else
+		return 1;
+	fi
+}
+
+# Check if the settings of the script have been changed
+# Return: 0:boolean or 1:boolean
+function scriptSettingsChanged() {
+	ADMIN_EMAIL_MD5SUM="$(cd ${ABSOLUTE_PATH}/configs && tr -d '\n' < administrator_eMail.txt | md5sum | cut -d " " -f 1 && cd - > /dev/null)";
+
+	if [[ "$ADMIN_EMAIL_MD5SUM" != "b1a4b2518dbbdd47dd4a713d5cd1df94" ]]; then
+		return 0;
+	else
+		return 1;
+	fi
+}
+
+# Get latest TS3 server version by file
+# Return: ServerVersion:string or 1:boolean
+function getLatestTSServerVersionByFile() {
+	TS3_SERVER_VERSION="$(cd ${ABSOLUTE_PATH}/configs && cat latestStableRelease.txt && cd - > /dev/null)";
+
+	if [[ -n "$TS3_SERVER_VERSION" ]]; then
+		echo -n "$TS3_SERVER_VERSION";
+	else
+		return 1;
+	fi
+}
+
+# Get latest beta TS3 server version
+# Return: ServerVersion:string or 1:boolean
+function getLatestBetaTS3ServerVersion() {
+	wget 'http://dl.4players.de/ts/releases/pre_releases/server/?C=M;O=D' -q -O - | grep -i dir | grep -Eo '<a href=\".*\/\">.*\/<\/a>' | grep -Eo '[0-9\.?]+-Beta-[0-9]+' | uniq | sort -V -r > BETA_RELEASES.txt
+
+	while read release; do
+		RELEASE_NUMBER="$(echo $release | grep -Eo '^[0-9\.?]+')"
+
+		wget --spider -q http://dl.4players.de/ts/releases/pre_releases/server/${release}/teamspeak3-server_linux-amd64-${RELEASE_NUMBER}.tar.gz
+		if [[ $? == 0 ]]; then
+			TS3_SERVER_VERSION="$release"
+			# Break while-loop, if the latest release could be found
+			break
+		fi
+	done < BETA_RELEASES.txt
+
+	rm BETA_RELEASES.txt
+
+	if [[ -n "$TS3_SERVER_VERSION" ]]; then
+		echo -n "$TS3_SERVER_VERSION";
+	else
+		return 1;
+	fi
+}
+
+# Get latest stable TS3 server version
+# Return: ServerVersion:string or 1:boolean
+function getLatestStableTS3ServerVersion() {
+	wget 'http://dl.4players.de/ts/releases/?C=M;O=D' -q -O - | grep -i dir | grep -Eo '<a href=\".*\/\">.*\/<\/a>' | grep -Eo '[0-9\.?]+' | uniq | sort -V -r > STABLE_RELEASES.txt
+
+	while read release; do
+		wget --spider -q http://dl.4players.de/ts/releases/${release}/teamspeak3-server_linux-amd64-${release}.tar.gz
+		if [[ $? == 0 ]]; then
+			TS3_SERVER_VERSION="$release"
+			# Break while-loop, if the latest release could be found
+			break
+		fi
+	done < STABLE_RELEASES.txt
+
+	rm STABLE_RELEASES.txt
+
+	if [[ -n "$TS3_SERVER_VERSION" ]]; then
+		echo -n "$TS3_SERVER_VERSION";
+	else
+		return 1;
+	fi
+}
+
+# Get latest TS3 server version (stable by default)
+# Return: ServerVersion:string or 1:boolean
+function getLatestTSServerVersion() {
+	TS3_SERVER_VERSION=0;
+
+	if [[ "$PAR_LATEST_RELEASE" -eq 1 ]]; then
+		# Release by file
+		TS3_SERVER_VERSION="$(getLatestTSServerVersionByFile)";
+
+		if [[ "$TS3_SERVER_VERSION" != "0" ]]; then
+			echo -n "$TS3_SERVER_VERSION";
+		else
+			return 1;
+		fi
+	elif [[ "$PAR_BETA_RELEASE" -eq 1 ]]; then
+		# Beta release
+		TS3_SERVER_VERSION="$(getLatestBetaTS3ServerVersion)";
+
+		if [[ "$TS3_SERVER_VERSION" != "0" ]]; then
+			echo -n "$TS3_SERVER_VERSION";
+		else
+			return 1;
+		fi
+	else
+		# Stable release
+		TS3_SERVER_VERSION="$(getLatestStableTS3ServerVersion)";
+
+		if [[ "$TS3_SERVER_VERSION" != "0" ]]; then
+			echo -n "$TS3_SERVER_VERSION";
+		else
+			return 1;
+		fi
+	fi
+}
+
+# Find all TeamSpeak 3 server instances
+# Return: 0:boolean or 1:boolean
+function findTS3ServerInstances() {
+	if [[ "$SCRIPT_LICENSE" == "1" ]]; then
+		if [[ "$PAR_PATH_DIRECTORY" == "/" ]]; then
+			find / -name 'ts3server_startscript.sh' 2> /dev/null | grep -iv "/tmp/TS3Tools/TS3UpdateScript" | sort > TS3InstancePaths.txt
+		else
+			echo "$PAR_PATH_DIRECTORY/ts3server_startscript.sh" > TS3InstancePaths.txt
+		fi
+	else
+		find / -name 'ts3server_startscript.sh' 2> /dev/null | grep -iv "/tmp/TS3Tools/TS3UpdateScript" | sort | head -1 > TS3InstancePaths.txt
+	fi
+
+	if [[ -s TS3InstancePaths.txt ]]; then
+		return 0;
+	else
+		return 1;
+	fi
+}
+
+# Check serveradmin password
+# Par 1: Host:string
+# Par 2: ServerQueryPort:string
+# Par 3: TeamSpeakRootDirectory:String
+# Return: 0:boolean or 1:boolean
+function checkServeradminPassword() {
+	if [ -f "${3}/password-file" ]; then
+		mv ${3}/password-file ${3}/.password-file
+		chmod 0 ${3}/.password-file
+	fi
+
+	if [ -f "${3}/.password-file" ]; then
+		SERVERADMIN_PASSWORD="$(cat ${3}/.password-file)"
+	else
+		echo "verySecretServeradminPassword" > ${3}/.password-file;
+		chmod 0 ${3}/.password-file
+		return 1;
+	fi
+
+	(
+		cat <<- LOGIN
+			spawn telnet "$1" "$2"
+			expect "Welcome to the TeamSpeak 3 ServerQuery"
+			send "login serveradmin ${SERVERADMIN_PASSWORD}\r"
+			expect "error id="
+			send "quit\r"
+		LOGIN
+	) | expect 2> /dev/null | grep -Eo "error id=[0-9]+ msg=[a-z]+" | head -1 | grep -Eo "=[a-z]+" | grep -Eo "[a-z]+" > RESULT.txt
+
+	RESULT="$(cat RESULT.txt)"
+
+	rm RESULT.txt
+
+	if [[ "$RESULT" == "ok" ]]; then
+		return 0;
+	else
+		return 1;
+	fi
+}
+
+# Get version of installed TS3 server
+# Par 1: Host:string or TS3ServerRootDirectory:string
+# Par 2: ServerQueryPort:string
+# Return: Version:string or 1:boolean
+function getVersionOfInstalledTS3Server() {
+	PAR_COUNTER=$(echo "$*" | wc -w)
+
+	if [[ "$PAR_COUNTER" -eq 2 ]]; then
+		(
+			cat <<- VERSION
+				spawn telnet "$1" "$2"
+				expect "Welcome to the TeamSpeak 3 ServerQuery"
+				send "version\r"
+				expect "error id="
+				send "quit\r"
+			VERSION
+		) | expect 2> /dev/null | grep -Eo "version=[0-9\.?]+" | cut -d "=" -f 2 > VERSION.txt
+
+		VERSION="$(cat VERSION.txt)"
+
+		rm VERSION.txt
+
+		if [[ -n "$VERSION" ]]; then
+			echo -n "$VERSION";
+		else
+			return 1;
+		fi
+	elif [[ "$PAR_COUNTER" -eq 1 ]]; then
+		INSTANCE_LOG_FILE="$(find $(getTS3ServerInstanceLogPath ${1}) -name *_0.log | sort -nr | head -1)"
+		VERSION="$(grep -Eo 'TeamSpeak\s3\sServer\s[0-9\.?]+' $INSTANCE_LOG_FILE | cut -d " " -f 4)"
+
+		if [[ -n "$VERSION" ]]; then
+			echo -n "$VERSION";
+		else
+			return 1;
+		fi
+	fi
+}
+
+# Get build of installed TS3 server
+# Par 1: Host:string
+# Par 2: ServerQueryPort:string
+# Return: Build:string or 1:boolean
+function getBuildOfInstalledTS3Server() {
+	PAR_COUNTER=$(echo "$*" | wc -w)
+
+	if [[ "$PAR_COUNTER" -eq 2 ]]; then
+		(
+			cat <<- VERSION
+				spawn telnet "$1" "$2"
+				expect "Welcome to the TeamSpeak 3 ServerQuery"
+				send "version\r"
+				expect "error id="
+				send "quit\r"
+			VERSION
+		) | expect 2> /dev/null | grep -Eo "build=[0-9]+" | cut -d "=" -f 2 > BUILD.txt
+
+		BUILD="$(cat BUILD.txt)"
+
+		rm BUILD.txt
+
+		if [[ -n "$BUILD" ]]; then
+			echo -n "$BUILD";
+		else
+			return 1;
+		fi
+	elif [[ "$PAR_COUNTER" -eq 1 ]]; then
+		echo -n "Unknown";
+	fi
+}
+
+# Get platform of installed TS3 server
+# Par 1: Host:string or TS3ServerRootDirectory:string
+# Par 2: ServerQueryPort:string
+# Return: Platform:string or 1:boolean
+function getPlatformOfInstalledTS3Server() {
+	PAR_COUNTER=$(echo "$*" | wc -w)
+
+	if [[ "$PAR_COUNTER" -eq 2 ]]; then
+		(
+			cat <<- VERSION
+				spawn telnet "$1" "$2"
+				expect "Welcome to the TeamSpeak 3 ServerQuery"
+				send "version\r"
+				expect "error id="
+				send "quit\r"
+			VERSION
+		) | expect 2> /dev/null | grep -Eo "platform=[a-zA-Z]+" | cut -d "=" -f 2 > PLATFORM.txt
+
+		PLATFORM="$(cat PLATFORM.txt)"
+
+		rm PLATFORM.txt
+
+		if [[ -n "$PLATFORM" ]]; then
+			echo -n "$PLATFORM";
+		else
+			return 1;
+		fi
+	elif [[ "$PAR_COUNTER" -eq 1 ]]; then
+		INSTANCE_LOG_FILE="$(find $(getTS3ServerInstanceLogPath ${1}) -name *_0.log | sort -nr | head -1)"
+		PLATFORM="$(grep -Eo '(Linux|FreeBSD)' $INSTANCE_LOG_FILE)"
+
+		if [[ -n "$PLATFORM" ]]; then
+			echo -n "$PLATFORM";
+		else
+			return 1;
+		fi
+	fi
+}
+
+# Get architecture of installed TS3 server
+# Par 1: TS3ServerRootDirectory:string
+# Return: Architecture:string or 1:boolean
+function getArchitectureOfInstalledTS3Server() {
+	ARCHITECTURE="$(ls $(find ${1} -name 'ts3server_*_*' 2> /dev/null | grep -v 'ts3server_minimal_runscript.sh' | sort | tail -1) | grep -Eo  '(amd64|x86)' | tail -1)"
+
+	if [[ -n "$ARCHITECTURE" ]]; then
+		echo -n "$ARCHITECTURE";
+	else
+		return 1;
+	fi
+}
+
+# Get owner of TS3 server files 
+# Par 1: TS3ServerRootDirectory:string
+# Return: Owner:string or 1:boolean
+function getOwnerOfTS3ServerFiles() {
+	OWNER="$(stat --format='%U' $(find ${1} -name 'ts3server_startscript.sh' 2> /dev/null | sort | tail -1))"
+
+	if [[ -n "$OWNER" ]]; then
+		echo -n "$OWNER";
+	else
+		return 1;
+	fi
+}
+
+# Get ID of owner
+# Par 1: TS3ServerRootDirectory:string
+# Return: OwnerID:string or 1:boolean
+function getOwnerID() {
+	OWNER_ID=$(grep $(getOwnerOfTS3ServerFiles ${1}) /etc/passwd | cut -d ":" -f 3)
+
+	if [[ -n "$OWNER_ID" ]]; then
+		echo -n "$OWNER_ID";
+	else
+		return 1;
+	fi
+}
+
+# Get group of TS3 server files
+# Par 1: TS3ServerRootDirectory:string
+# Return: Group:string or 1:boolean
+function getGroupOfTS3ServerFiles() {
+	GROUP="$(stat --format='%G' $(find ${1} -name 'ts3server_startscript.sh' 2> /dev/null | sort | tail -1))"
+
+	if [[ -n "$GROUP" ]]; then
+		echo -n "$GROUP";
+	else
+		return 1;
+	fi
+}
+
+# Get ID of group
+# Par 1: TS3ServerRootDirectory:string
+# Return: GroupID:string or 1:boolean
+function getGroupID() {
+	GROUP_ID=$(grep $(getGroupOfTS3ServerFiles ${1}) /etc/passwd | cut -d ":" -f 4)
+
+	if [[ -n "$GROUP_ID" ]]; then
+		echo -n "$GROUP_ID";
+	else
+		return 1;
+	fi
+}
+
+# Check, if shell of owner is valid (bash, sh, ksh,...)
+# Par 1: Owner
+# Return: 0:boolean or 1:boolean
+function isShellOfOwnerValid() {
+	SHELL="$(grep $1 /etc/passwd | cut -d ':' -f 7)"
+
+	if [[ "$SHELL" == "/bin/false" ]] || [[ "$SHELL" == "/usr/sbin/nologin" ]]; then
+		return 1;
+	else
+		return 0;
+	fi
+}
+
+# Does INI-File exists?
+# Par 1: TS3ServerRootDirectory:string
+# Return: 0:boolean or 1:boolean
+function INIFileExists() {
+	if [[ -f "${1}/ts3server.ini" ]]; then
+		return 0;
+	else
+		return 1;
+	fi
+}
+
+# Get database INI-File
+# Par 1: TeamSpeakRootDirectory:string
+# Return: DatabaseINIFile:string or 1:boolean
+function getDatabaseINIFile() {
+	if INIFileExists; then
+		DATABASE_INI_FILE="$(grep -E '^dbpluginparameter=[\w\.?]+$' < ${1}/ts3server.ini | cut -d '=' -f 2)"
+
+		if [[ -n "$DATABASE_INI_FILE" ]]; then
+			echo -n "$DATABASE_INI_FILE";
+		else
+			return 1;
+		fi
+	else
+		return 1;
+	fi
+}
+
+# Get database type
+# Par 1: TeamSpeakRootDirectory:string
+# Return: DatabaseType:string or 1:boolean
+function getDatabaseType() {
+	DATABASE_TYPE="$(grep -Eo 'dbPlugin name:.*plugin' $(find ${1}/logs/ -name 'ts3server*_0.log' 2> /dev/null | sort | tail -1) | tr -d " " | cut -d ":" -f 2 | grep -Eo 'SQLite|MySQL|MariaDB')"
+
+	if [[ -n "$DATABASE_TYPE" ]]; then
+		echo -n "$DATABASE_TYPE";
+	else
+		return 1;
+	fi
+}
+
+# Get TS3 server instance log path
+# Par 1: TS3ServerRootDirectory:string
+# Return: InstanceLogPath:string or 1:boolean
+function getTS3ServerInstanceLogPath() {
+	INSTANCE_LOG_PATH=""
+
+	if INIFileExists ${1}; then
+		INSTANCE_LOG_PATH_TEMP="$(grep logpath < ${1}/ts3server.ini | cut -d '=' -f 2)"
+	else
+		INSTANCE_LOG_PATH_TEMP="${1}/logs/"
+	fi
+
+	# Absolute or relative path?
+	if [[ "$INSTANCE_LOG_PATH_TEMP" = /* ]]; then
+		INSTANCE_LOG_PATH="$INSTANCE_LOG_PATH_TEMP"
+	else
+		cd ${1}/$INSTANCE_LOG_PATH_TEMP
+		INSTANCE_LOG_PATH="$(pwd)"
+		cd - > /dev/null
+	fi
+
+	if [[ -n "$INSTANCE_LOG_PATH" ]]; then
+		echo -n "$INSTANCE_LOG_PATH";
+	else
+		return 1;
+	fi
+}
+
+# Get ServerQuery IP
+# Par 1: TeamSpeakRootDirectory:string
+# Return: ServerQueryIP:string
+function getServerQueryIP() {
+	if INIFileExists; then
+		SERVER_QUERY_IP="$(grep -E '^query_ip=(?:[0-9]{1,3}\.){3}[0-9]{1,3}$' < ${1}/ts3server.ini | cut -d '=' -f 2)"
+
+		if [[ -n "$SERVER_QUERY_IP" ]]; then
+			echo -n "$SERVER_QUERY_IP";
+		else
+			echo -n "127.0.0.1";
+		fi
+	else
+		echo -n "127.0.0.1";
+	fi
+}
+
+# Get ServerQuery Port
+# Par 1: TeamSpeakRootDirectory:string
+# Return: ServerQueryPort:string
+function getServerQueryPort() {
+	if INIFileExists; then
+		SERVER_QUERY_PORT="$(grep -E '^query_port=[0-9]{4,5}$' < ${1}/ts3server.ini | cut -d '=' -f 2)"
+
+		if [[ -n "$SERVER_QUERY_PORT" ]]; then
+			echo -n "$SERVER_QUERY_PORT";
+		else
+			echo -n "10011";
+		fi
+	else
+		echo -n "10011";
+	fi
+}
+
+# Get ServerQuery displayed name (clear text)
+# Return: ServerQueryDisplayedName:string or 1:boolean
+function getServerQueryDisplayedName() {
+	SERVER_QUERY_DISPLAYED_NAME="$(cd ${ABSOLUTE_PATH}/configs && tr -d '\n' < displayed_user_name.txt && cd - > /dev/null)"
+
+	if [[ -n "$SERVER_QUERY_DISPLAYED_NAME" ]]; then
+		if [[ $(echo -n "$SERVER_QUERY_DISPLAYED_NAME" | wc -c) -lt 30 ]]; then
+			echo -n "$SERVER_QUERY_DISPLAYED_NAME";
+		else
+			return 1;
+		fi
+	else
+		return 1;
+	fi
+}
+
+# Get ServerQuery displayed name (escaped)
+# Return: ServerQueryDisplayedNameEscaped:string or 1:boolean
+function getServerQueryDisplayedNameEscaped() {
+	SERVER_QUERY_DISPLAYED_NAME="$(cd ${ABSOLUTE_PATH}/configs && tr -d '\n' < displayed_user_name.txt && cd - > /dev/null)"
+
+	if [[ -n "$SERVER_QUERY_DISPLAYED_NAME" ]]; then
+		SERVER_QUERY_DISPLAYED_NAME_ESCAPED="$(echo ${SERVER_QUERY_DISPLAYED_NAME} | sed -r 's/ /\\\\s/g')"
+
+		if [[ $(echo -n "$SERVER_QUERY_DISPLAYED_NAME_ESCAPED" | wc -c) -lt 30 ]]; then
+			echo -n "$SERVER_QUERY_DISPLAYED_NAME_ESCAPED";
+		else
+			return 1;
+		fi
+	else
+		return 1;
+	fi
+}
+
+# Get administrator eMail
+# Return: AdministratorEmail:string or 1:boolean
+function getAdministratorEmail() {
+	ADMINISTRATOR_EMAIL="$(cd ${ABSOLUTE_PATH}/configs && tr -d '\n' < administrator_eMail.txt && cd - > /dev/null)"
+
+	if [[ -n "$ADMINISTRATOR_EMAIL" ]]; then
+		echo -n "$ADMINISTRATOR_EMAIL";
+	else
+		return 1;
+	fi
+}
+
+# Get manually poke message (clear text)
+# Par 1: LatestServerVersion:string
+# Return: PokeMessage:string or 1:boolean
+function getManuallyPokeMessage() {
+	POKE_MESSAGE="$(cd ${ABSOLUTE_PATH}/configs && tr -d '\n' < update_text.txt && cd - > /dev/null)"
+
+	if [[ -n "$POKE_MESSAGE" ]]; then
+		POKE_MESSAGE="$(echo ${POKE_MESSAGE} | sed -e 's/\$VERSION/'${1}'/g')"
+
+		if [[ $(echo -n "$POKE_MESSAGE" | wc -c) -lt 100 ]]; then
+			echo -n "$POKE_MESSAGE";
+		else
+			return 1;
+		fi
+	else
+		return 1;
+	fi
+}
+
+# Get manually poke message (escaped)
+# Par 1: LatestServerVersion:string
+# Return: PokeMessageEscaped:string or 1:boolean
+function getManuallyPokeMessageEscaped() {
+	POKE_MESSAGE="$(cd ${ABSOLUTE_PATH}/configs && tr -d '\n' < update_text.txt && cd - > /dev/null)"
+
+	if [[ -n "$POKE_MESSAGE" ]]; then
+		POKE_MESSAGE_ESCAPED="$(echo ${POKE_MESSAGE} | sed -r 's/ /\\\\s/g' | sed -e 's/\$VERSION/'${1}'/g')"
+
+		if [[ $(echo -n "$POKE_MESSAGE_ESCAPED" | wc -c) -lt 100 ]]; then
+			echo -n "$POKE_MESSAGE_ESCAPED";
+		else
+			return 1;
+		fi
+	else
+		return 1;
+	fi
+}
+
+# Get cronjob poke message (clear text)
+# Par 1: LatestServerVersion:string
+# Return: PokeMessage:string or 1:boolean
+function getCronjobPokeMessage() {
+	POKE_MESSAGE="$(cd ${ABSOLUTE_PATH}/configs && tr -d '\n' < auto_update_text.txt && cd - > /dev/null)"
+
+	if [[ -n "$POKE_MESSAGE" ]]; then
+		POKE_MESSAGE="$(echo ${POKE_MESSAGE} | sed -e 's/\$VERSION/'${1}'/g')"
+
+		if [[ $(echo -n "$POKE_MESSAGE" | wc -c) -lt 100 ]]; then
+			echo -n "$POKE_MESSAGE";
+		else
+			return 1;
+		fi
+	else
+		return 1;
+	fi
+}
+
+# Get cronjob poke message (escaped)
+# Par 1: LatestServerVersion:string
+# Return: PokeMessageEscaped:string or 1:boolean
+function getCronjobPokeMessageEscaped() {
+	POKE_MESSAGE="$(cd ${ABSOLUTE_PATH}/configs && tr -d '\n' < auto_update_text.txt && cd - > /dev/null)"
+
+	if [[ -n "$POKE_MESSAGE" ]]; then
+		POKE_MESSAGE_ESCAPED="$(echo ${POKE_MESSAGE} | sed -r 's/ /\\\\s/g' | sed -e 's/\$VERSION/'${1}'/g')"
+
+		if [[ $(echo -n "$POKE_MESSAGE_ESCAPED" | wc -c) -lt 100 ]]; then
+			echo -n "$POKE_MESSAGE_ESCAPED";
+		else
+			return 1;
+		fi
+	else
+		return 1;
+	fi
+}
+
+# Get ignore client list (comata)
+# Return: IgnoreClientList:string or 1:boolean
+function getIgnoreClientList {
+	IGNORE_CLIENT_LIST="$(cat ${ABSOLUTE_PATH}/configs/ignore_clients.txt | sed ':a;N;$!ba;s/\n/, /g')"
+
+	if [[ -n "$IGNORE_CLIENT_LIST" ]]; then
+		echo -n "$IGNORE_CLIENT_LIST";
+	else
+		return 1;
+	fi
+}
+
+# Get ignore server groups list (comata)
+# Return: IgnoreServerGroupsList:string or 1:boolean
+function getIgnoreServerGroupsList {
+	IGNORE_SERVERGROUPS_LIST="$(cat ${ABSOLUTE_PATH}/configs/ignore_servergroups.txt | sed ':a;N;$!ba;s/\n/, /g')"
+
+	if [[ -n "$IGNORE_SERVERGROUPS_LIST" ]]; then
+		echo -n "$IGNORE_SERVERGROUPS_LIST";
+	else
+		return 1;
+	fi
+}
+
+# Get list of virtual server
+# Par 1: ServerQueryIP:string
+# Par 2: ServerQueryPort:string
+# Return: 0:boolean or 1:boolean
+# Save Format: SID (One line per virtualserver_id)
+function getListOfVirtualServer() {
+	SERVERADMIN_PASSWORD="$(cat ${INSTANCE_PATH}/.password-file)"
+
+	(
+		cat <<- SERVERLIST
+			spawn telnet "$1" "$2"
+			expect "Welcome to the TeamSpeak 3 ServerQuery"
+			send "login serveradmin ${SERVERADMIN_PASSWORD}\r"
+			expect "error id=0 msg=ok"
+			send "serverlist\r"
+			expect "error id=0 msg=ok"
+			send "logout\r"
+		SERVERLIST
+	) | expect 2> /dev/null | grep -E "virtualserver_id=" | tr "|" "\n" | grep -Ev "virtualserver_status=offline" | grep -Eo "virtualserver_id=[0-9]+" | grep -Eo "[0-9]+" > SERVERLIST.txt
+
+	if [[ -s SERVERLIST.txt ]]; then
+		return 0;
+	else
+		return 1;
+	fi
+}
+
+# Get list of online clients for each virtual server
+# Par 1: ServerQueryIP:string
+# Par 2: ServerQueryPort:string
+# Return: 0:boolean or 1:boolean
+# Save Format: sid=21|clid=1|clid=4|clid=5| (One line per server)
+function getListOfOnlineClients() {
+	if getListOfVirtualServer ${1} ${2}; then
+		SERVERADMIN_PASSWORD="$(cat ${INSTANCE_PATH}/.password-file)"
+
+		(
+			cat <<- LOGIN
+				spawn telnet "$1" "$2"
+				expect "Welcome to the TeamSpeak 3 ServerQuery"
+				send "login serveradmin ${SERVERADMIN_PASSWORD}\r"
+				expect "error id=0 msg=ok"
+			LOGIN
+
+			while read sid; do
+				cat <<- CLIENTLIST
+					send "use sid=${sid}\r"
+					expect "error id=0 msg=ok"
+					send "clientlist\r"
+					expect "error id=0 msg=ok"
+				CLIENTLIST
+			done < SERVERLIST.txt
+
+			cat <<- LOGOUT
+				expect "error id=0 msg=ok"
+				send "logout\r"
+			LOGOUT
+		) | expect 2> /dev/null | grep -E "use sid|clid=" | tr "|" "\n" | sed 's/use/\nuse/g' | cut -d " " -f 1-3,5 | grep -Eo "sid=[0-9]+|clid=[0-9]+.*client_type=[0123]" | tr "\n" "|" | sed 's/sid/\nsid/g' > CLIENTLIST.txt
+
+		if [[ -s CLIENTLIST.txt ]]; then
+			return 0;
+		else
+			return 1;
+		fi
+	else
+		return 1;
+	fi
+}
+
+# Get list of client database id, which should be ignored
+# Par 1: ServerQueryIP:string
+# Par 2: ServerQueryPort:string
+# Return: 0:boolean or 1:boolean
+# Save Format: cldbid=1 (One cldbid per line)
+function getListOfClientsWhichShouldBeIgnored() {
+	if getListOfVirtualServer ${1} ${2}; then
+		SERVERADMIN_PASSWORD="$(cat ${INSTANCE_PATH}/.password-file)"
+
+		(
+			cat <<- LOGIN
+				spawn telnet "$1" "$2"
+				expect "Welcome to the TeamSpeak 3 ServerQuery"
+				send "login serveradmin ${SERVERADMIN_PASSWORD}\r"
+			LOGIN
+
+			while read sid; do
+				cat <<- USE
+					expect "error id=0 msg=ok"
+					send "use sid=${sid}\r"
+				USE
+
+				while read sgid; do
+					cat <<- SERVERGROUPCLIENTLIST
+						expect "error id=0 msg=ok"
+						send "servergroupclientlist sgid=${sgid}\r"
+					SERVERGROUPCLIENTLIST
+				done < ${ABSOLUTE_PATH}/configs/ignore_servergroups.txt
+			done < SERVERLIST.txt
+
+			cat <<- LOGOUT
+				expect "error id=0 msg=ok"
+				send "logout\r"
+			LOGOUT
+		) | expect 2> /dev/null | grep -E "cldbid" | tr "|" "\n" > IGNORE_CLIENTLIST.txt
+
+		if [[ -s IGNORE_CLIENTLIST.txt ]]; then
+			return 0;
+		else
+			return 1;
+		fi
+	else
+		return 1;
+	fi
+}
+
+# Get list of allowed clients to poke
+# Par 1: ServerQueryIP:string
+# Par 2: ServerQueryPort:string
+# Return: ListOfAllowedClientsToPoke:string
+# Save Format: SID=21|CLID|CLID|CLID[...]
+function getListOfAllowedClientsToPoke() {
+	if getListOfOnlineClients $1 $2 && getListOfClientsWhichShouldBeIgnored $1 $2; then
+		# Make sure that no unsorted pokelist exist
+		if [[ -f POKELIST_UNSORTED.txt ]]; then
+			rm POKELIST_UNSORTED.txt
+		fi
+
+		cat CLIENTLIST.txt | tr "|" "\n" | while read clientlist; do
+			SID=$(echo "$clientlist" | grep -Eo 'sid=[0-9]+' | grep -Eo '[0-9]+')
+
+			if [[ -n "$SID" ]]; then
+				echo -n "SID=${SID}|" >> POKELIST_UNSORTED.txt
+			fi
+
+			if [[ ! $(grep -Fxq "$clientlist" IGNORE_CLIENTLIST.txt) ]] && [[ ! $(echo "$clientlist" | grep -Eo 'client_type=1') ]]; then
+				CLID=$(echo "$clientlist" | grep -Eo 'clid=[0-9]+' | grep -Eo '[0-9]+')
+
+				if [[ -n "$CLID" ]]; then
+					echo -n "$CLID|" >> POKELIST_UNSORTED.txt
+				fi
+			fi
+		done
+
+		cat POKELIST_UNSORTED.txt | sed 's/SID/\nSID/g' > POKELIST.txt
+
+		if [[ -s POKELIST.txt ]]; then
+			return 0;
+		else
+			return 1;
+		fi
+	else
+		return 1;
+	fi
+}
+
+
+# Poke all allowed clients
+# Par 1: ServerQueryIP:string
+# Par 2: ServerQueryPort:string
+# Par 3: PokeMessage:string
+# Return: 0:boolean or 1:boolean
+function pokeAllowedClients() {
+	if getListOfAllowedClientsToPoke ${1} ${2}; then
+		POKE_MESSAGE="${3}"
+		SERVER_QUERY_DISPLAYED_NAME="$(getServerQueryDisplayedNameEscaped)"
+		SERVERADMIN_PASSWORD="$(cat ${INSTANCE_PATH}/.password-file)"
+
+		if [[ -n "$SERVER_QUERY_DISPLAYED_NAME" ]] && [[ -n "$SERVERADMIN_PASSWORD" ]]; then
+			# Time measurement poke clients realtime START
+			TIME_MEASUREMENT_POKE_CLIENTS_REALTIME_START=$(date +%s)
+
+			(
+				cat <<- LOGIN
+					spawn telnet "$1" "$2"
+					expect "Welcome to the TeamSpeak 3 ServerQuery"
+					send "login serveradmin ${SERVERADMIN_PASSWORD}\r"
+				LOGIN
+
+				while read sid; do
+					cat <<- USE
+						expect "error id=0 msg=ok"
+						send "use sid=${sid}\r"
+						expect "error id=0 msg=ok"
+						send "clientupdate client_nickname=${SERVER_QUERY_DISPLAYED_NAME}\r"
+					USE
+
+					grep -E "SID=${sid}" POKELIST.txt | tr "|" "\n" | grep -v "SID=${sid}" | while read clid; do
+						if [[ -n "$clid" ]]; then
+							cat <<- POKE
+								expect "error id=0 msg=ok"
+								send "clientpoke msg=${POKE_MESSAGE} clid=${clid}\r"
+							POKE
+						fi
+					done
+				done < SERVERLIST.txt
+
+				cat <<- LOGOUT
+					expect "error id=0 msg=ok"
+					send "logout\r"
+					expect "error id=0 msg=ok"
+					send "quit\r"
+				LOGOUT
+			) | expect | grep "error id" | tail -2 | head -1 | grep -Eo "id=[0-9]+" | grep -Eo "[0-9]+" > POKE_RESULT.txt
+
+			# Time measurement poke clients realtime END
+			TIME_MEASUREMENT_POKE_CLIENTS_REALTIME_END=$(date +%s)
+
+			RESULT="$(cat POKE_RESULT.txt)"
+
+			rm POKE_RESULT.txt
+
+			if [[ "$RESULT" == "0" ]]; then
+				return 0;
+			else
+				return 1;
+			fi
+		else
+			return 1;
+		fi
+	else
+		return 1;
+	fi
+}
+
+# Get list of temporary server passwords
+# Par 1: ServerQueryIP:string
+# Par 2: ServerQueryPort:string
+# Return: 0:boolean or 1:boolean
+# Save Format: SID=SID|TCID|TSPW|TCPW|DURATION|DESC (One line per temporary server password)
+function getTemporaryServerPasswords() {
+	SERVERADMIN_PASSWORD="$(cat ${INSTANCE_PATH}/.password-file)"
+
+	(
+		cat <<- LOGIN
+			spawn telnet "$1" "$2"
+			expect "Welcome to the TeamSpeak 3 ServerQuery"
+			send "login serveradmin ${SERVERADMIN_PASSWORD}\r"
+		LOGIN
+
+		while read sid; do
+			cat <<- USE
+				expect "error id=0 msg=ok"
+				send "use sid=${sid}\r"
+				expect "error id=0 msg=ok"
+				send "clientupdate client_nickname=${SERVER_QUERY_DISPLAYED_NAME}\r"
+			USE
+
+			grep -E "SID=${sid}" POKELIST.txt | tr "|" "\n" | grep -v "SID=${sid}" | while read clid; do
+				if [[ -n "$clid" ]]; then
+					cat <<- SERVERTEMPPASSWORDLIST
+						expect "error id=0 msg=ok"
+						send "servertemppasswordlist\r"
+					SERVERTEMPPASSWORDLIST
+				fi
+			done
+		done < SERVERLIST.txt
+
+		cat <<- LOGOUT
+			expect "error id=0 msg=ok"
+			send "logout\r"
+			expect "error id=0 msg=ok"
+			send "quit\r"
+		LOGOUT
+	) | expect | grep -E "use sid|nickname=" | grep -v "clientupdate" | tr "|" "\n" > TEMP_SERVERTEMPPASSWORDLIST.txt
+
+	cat TEMP_SERVERTEMPPASSWORDLIST.txt | tr -d '^M' | while read temppass_line; do
+		SID=$(echo ${temppass_line} | grep -Eo 'sid=[0-9]+' | cut -d '=' -f 2)
+		TCID=$(echo ${temppass_line} | grep -Eo 'tcid=[0-9]+' | cut -d '=' -f 2)
+		TSPW="$(echo ${temppass_line} | grep -Eo 'pw_clear=[^ ]*' | cut -d '=' -f 2)"
+		TCPW="$(echo ${temppass_line} | grep -Eo 'tcpw=?[^ ]*' | cut -d '=' -f 2)"
+		START_DATE=$(date +%s)
+		END_DATE=$(echo ${temppass_line} | grep -Eo 'end=[0-9]+' | cut -d '=' -f 2)
+		DURATION=$((END_DATE-START_DATE))
+		DESC="$(echo ${temppass_line} | grep -Eo 'desc=?[^ ]*' | cut -d '=' -f 2)"
+
+		if [[ "${TCPW}" =~ ^tcpw.*$ ]]; then
+			TCPW=""
+		fi
+
+		if [[ "${DESC}" =~ ^desc.*$ ]]; then
+			DESC=""
+		fi
+
+		if [[ "${SID}" != "" ]]; then
+			SERVER_ID=${SID}
+		else
+			echo "SID=${SERVER_ID}|${TCID}|${TSPW}|${TCPW}|${DURATION}|${DESC}" >> SERVERTEMPPASSWORDLIST.txt;
+		fi
+	done
+
+	rm TEMP_SERVERTEMPPASSWORDLIST.txt
+
+	if [[ -s SERVERTEMPPASSWORDLIST.txt ]]; then
+		return 0;
+	else
+		return 1;
+	fi
+}
+
+# Set temporary server passwords
+# Par 1: ServerQueryIP:string
+# Par 2: ServerQueryPort:string
+# Return: 0:boolean or 1:boolean
+function setTemporaryServerPasswords() {
+	SERVERADMIN_PASSWORD="$(cat ${INSTANCE_PATH}/.password-file)"
+
+	(
+		cat <<- LOGIN
+			spawn telnet "$1" "$2"
+			expect "Welcome to the TeamSpeak 3 ServerQuery"
+			send "login serveradmin ${SERVERADMIN_PASSWORD}\r"
+		LOGIN
+
+		while read sid; do
+			cat <<- USE
+				expect "error id=0 msg=ok"
+				send "use sid=${sid}\r"
+				expect "error id=0 msg=ok"
+				send "clientupdate client_nickname=${SERVER_QUERY_DISPLAYED_NAME}\r"
+			USE
+
+			grep -E "SID=${sid}" SERVERTEMPPASSWORDLIST.txt | while read temppass_entry; do
+				TCID=$(echo ${temppass_entry} | cut -d '|' -f 2)
+				TSPW="$(echo ${temppass_entry} | cut -d '|' -f 3)"
+				TCPW="$(echo ${temppass_entry} | cut -d '|' -f 4)"
+				DURATION="$(echo ${temppass_entry} | cut -d '|' -f 5)"
+				DESC="$(echo ${temppass_entry} | cut -d '|' -f 6)"
+
+				if [[ "${DESC}" == "" ]]; then
+					DESC="none"
+				fi
+
+				if [[ "${TCPW}" != "" ]]; then
+					cat <<- SERVERTEMPPASSWORDADD
+						expect "error id=0 msg=ok"
+						send {servertemppasswordadd pw=${TSPW} desc=${DESC} duration=${DURATION} tcid=${TCID} tcpw=${TCPW}}
+						expect "servertemppasswordadd pw="
+						send "\r"
+					SERVERTEMPPASSWORDADD
+				else
+					cat <<- SERVERTEMPPASSWORDADD
+						expect "error id=0 msg=ok"
+						send {servertemppasswordadd pw=${TSPW} desc=${DESC} duration=${DURATION} tcid=${TCID}}
+						expect "servertemppasswordadd pw="
+						send "\r"
+					SERVERTEMPPASSWORDADD
+				fi
+			done
+		done < SERVERLIST.txt
+
+		cat <<- LOGOUT
+			expect "error id=0 msg=ok"
+			send "logout\r"
+			expect "error id=0 msg=ok"
+			send "quit\r"
+		LOGOUT
+	) | expect | grep -E "^error id=" | grep -v "error id=0 msg=ok" > SERVERTEMPPASSWORDADD.txt
+
+	if [[ ! -s SERVERTEMPPASSWORDADD.txt ]]; then
+		return 0;
+	else
+		return 1;
+	fi
+}
+
+# Start, Status, Stop TS3 server instance
+# Par 1: TeamSpeakRootDirectory:string
+# Par 2: Action:string
+# Return: 0:boolean or 1:boolean
+function ts3server() {
+	case $2 in
+		start)
+			RESULT=$(su -s $(which bash) -c "cd $1 && ./ts3server_startscript.sh start && cd - > /dev/null" - $(getOwnerOfTS3ServerFiles $1))
+
+			if [[ "$RESULT" =~ 'TeamSpeak 3 server started, for details please view the log file' ]]; then
+				return 0;
+			else
+				return 1;
+			fi
+		;;
+
+		status)
+			RESULT=$(su -s $(which bash) -c "cd $1 && ./ts3server_startscript.sh status && cd - > /dev/null" - $(getOwnerOfTS3ServerFiles $1))
+
+			if [[ "$RESULT" =~ 'Server is running' ]]; then
+				return 0;
+			else
+				return 1;
+			fi
+		;;
+
+		stop)
+			RESULT=$(su -s $(which bash) -c "cd $1 && ./ts3server_startscript.sh stop && cd - > /dev/null" - $(getOwnerOfTS3ServerFiles $1))
+
+			if [[ "$RESULT" =~ 'Stopping the TeamSpeak 3 server\.+done' ]]; then
+				return 0;
+			else
+				return 1;
+			fi
+		;;
+
+		*)
+			return 1;
+		;;
+	esac
+}
+
+# Start, Status, Stop, Update TSDNS
+# Par 1: TeamSpeakRootDirectory:string
+# Par 2: Action:string
+# Return: 0:boolean or 1:boolean
+function tsdns() {
+	DIRECTORY="${1}"
+
+	while read instanceInfo; do
+		INSTANCE_PATH=$(echo "$instanceInfo" | grep -Ev "^#" | cut -d "|" -f 2)
+		INSTALLED_TS3_SERVER_PLATFORM=$(echo "$instanceInfo" | grep -Ev "^#" | cut -d "|" -f 5)
+		TS3SERVER_ARCHITECTURE=$(echo "$instanceInfo" | grep -Ev "^#" | cut -d "|" -f 7)
+
+		if [ -n "$INSTANCE_PATH" ]; then
+			if [ "$INSTANCE_PATH" == "$DIRECTORY" ]; then
+				break;
+			fi
+		fi
+	done < TS3InstanceInfos.txt
+
+	if [ $(ps opid= -C "tsdnsserver_"${INSTALLED_TS3_SERVER_PLATFORM}"_"${TS3SERVER_ARCHITECTURE}) ]; then
+		TSDNS_PID=$(ps opid= -C "tsdnsserver_"${INSTALLED_TS3_SERVER_PLATFORM}"_"${TS3SERVER_ARCHITECTURE})
+
+		if [[ -n "$TSDNS_PID" ]]; then
+			TSDNS_PATH="$(pwdx ${TSDNS_PID} | cut -d " " -f 2)"
+		fi
+	fi
+
+	case $2 in
+		start)
+			if [ -f "${DIRECTORY}/tsdns/tsdns_settings.ini" ]; then
+				RESULT=$(cd ${DIRECTORY}/tsdns/ && su -s $(which bash) -c "tsdnsserver_${INSTALLED_TS3_SERVER_PLATFORM}_${TS3SERVER_ARCHITECTURE} &" - $(getOwnerOfTS3ServerFiles $1) && cd - > /dev/null)
+
+				if [[ "$RESULT" =~ 'Scanned tsdns_settings.ini' ]]; then
+					return 0;
+				else
+					return 1;
+				fi
+			else
+				return 1;
+			fi
+		;;
+
+		status)
+			if [[ -n "$TSDNS_PID" ]]; then
+				if [[ "$TSDNS_PATH" == "$1" ]]; then
+					return 0;
+				else
+					return 1;
+				fi
+			else
+				return 1;
+			fi
+		;;
+
+		stop)
+			if [[ -n "$TSDNS_PID" ]]; then
+				if [[ "$TSDNS_PATH" == "$1" ]]; then
+					if [ $(kill -9 ${TSDNS_PID}) ]; then
+						return 0;
+					else
+						return 1;
+					fi
+				else
+					return 1;
+				fi
+			else
+				return 1;
+			fi
+		;;
+
+		update)
+			if [ -f "${DIRECTORY}/tsdns/tsdns_settings.ini" ]; then
+				RESULT=$(cd ${DIRECTORY}/tsdns/ && su -s $(which bash) -c "tsdnsserver_${INSTALLED_TS3_SERVER_PLATFORM}_${TS3SERVER_ARCHITECTURE} --update" - $(getOwnerOfTS3ServerFiles $1) && cd - > /dev/null)
+
+				if [[ "$RESULT" =~ 'Scanned tsdns_settings.ini' ]]; then
+					return 0;
+				else
+					return 1;
+				fi
+			else
+				return 1;
+			fi
+		;;
+	esac
+}
+
+# Create, Delete, Deploy, Exists Backup
+# Par 1: TeamSpeakRootDirectory:string
+# Par 2: Action:string
+# Return: 0:boolean or 1:boolean
+function backup() {
+	DIRECTORY_MD5SUM=$(echo "${1}" | md5sum | cut -d " " -f 1)
+
+	case $2 in
+		create)
+			if [ ! -d /tmp/TS3Tools/TS3UpdateScript/${DIRECTORY_MD5SUM} ]; then
+				mkdir -p /tmp/TS3Tools/TS3UpdateScript/${DIRECTORY_MD5SUM}
+			fi
+
+			if [ ! $(rsync -a --no-inc-recursive --exclude 'files' ${1}/ /tmp/TS3Tools/TS3UpdateScript/${DIRECTORY_MD5SUM} 2> /dev/null) ]; then
+				return 0;
+			else
+				return 1;
+			fi
+		;;
+
+		delete)
+			if [ ! $(rm -rf /tmp/TS3Tools/TS3UpdateScript/${DIRECTORY_MD5SUM}) ]; then
+				return 0;
+			else
+				return 1;
+			fi
+		;;
+
+		deploy)
+			if [ ! $(rsync -a /tmp/TS3Tools/TS3UpdateScript/${DIRECTORY_MD5SUM}/ ${1} 2> /dev/null) ]; then
+				if [ $(rm -rf /tmp/TS3Tools/TS3UpdateScript/${DIRECTORY_MD5SUM}) ]; then
+					return 0;
+				else
+					return 1;
+				fi
+			else
+				return 1;
+			fi
+		;;
+
+		exists)
+			if [ -d /tmp/TS3Tools/TS3UpdateScript/${DIRECTORY_MD5SUM} ]; then
+				return 0;
+			else
+				return 1;
+			fi
+		;;
+
+		*)
+			return 1;
+		;;
+	esac
+}
+
+# Updates TeamSpeak 3 server instance
+# Par 1: TeamSpeakRootDirectory:string
+# Return: 0:boolean or 1:boolean
+function updateTeamSpeakInstance() {
+	UPDATE_STATUS_FLAG=0;
+	DIRECTORY="${1}"
+
+	if [ -n "$DIRECTORY" ] && [ -d "$DIRECTORY" ]; then
+		DIRECTORY_MD5SUM=$(echo "${1}" | md5sum | cut -d " " -f 1)
+		LATEST_RELEASE="$(getLatestTSServerVersion)"
+
+		while read instanceInfo; do
+			STATUS_FLAG=$(echo "$instanceInfo" | grep -Ev "^#" | cut -d "|" -f 1)
+			INSTANCE_PATH=$(echo "$instanceInfo" | grep -Ev "^#" | cut -d "|" -f 2)
+			INSTALLED_TS3_SERVER_VERSION=$(echo "$instanceInfo" | grep -Ev "^#" | cut -d "|" -f 3)
+			INSTALLED_TS3_SERVER_BUILD=$(echo "$instanceInfo" | grep -Ev "^#" | cut -d "|" -f 4)
+			INSTALLED_TS3_SERVER_PLATFORM=$(echo "$instanceInfo" | grep -Ev "^#" | cut -d "|" -f 5 | tr '[:upper:]' '[:lower:]')
+			TS3SERVER_INSTANCE_LOG_PATH=$(echo "$instanceInfo" | grep -Ev "^#" | cut -d "|" -f 6)
+			TS3SERVER_ARCHITECTURE=$(echo "$instanceInfo" | grep -Ev "^#" | cut -d "|" -f 7)
+			OWNER=$(echo "$instanceInfo" | grep -Ev "^#" | cut -d "|" -f 8)
+			OWNER_ID=$(echo "$instanceInfo" | grep -Ev "^#" | cut -d "|" -f 9)
+			GROUP=$(echo "$instanceInfo" | grep -Ev "^#" | cut -d "|" -f 10)
+			GROUP_ID=$(echo "$instanceInfo" | grep -Ev "^#" | cut -d "|" -f 11)
+			SERVERQUERY_IP=$(echo "$instanceInfo" | grep -Ev "^#" | cut -d "|" -f 12)
+			SERVERQUERY_PORT=$(echo "$instanceInfo" | grep -Ev "^#" | cut -d "|" -f 13)
+			DATABASE_TYPE=$(echo "$instanceInfo" | grep -Ev "^#" | cut -d "|" -f 14)
+
+			if [ -n "$INSTANCE_PATH" ]; then
+				if [ "$INSTANCE_PATH" == "$DIRECTORY" ]; then
+					break;
+				fi
+			fi
+		done < TS3InstanceInfos.txt
+
+		cd ${INSTANCE_PATH}
+
+		# Build download link for the TeamSpeak 3 server download
+		TS3_SERVER_DOWNLOAD_LINK="http://dl.4players.de/ts/releases/${LATEST_RELEASE}/teamspeak3-server_${INSTALLED_TS3_SERVER_PLATFORM}-${TS3SERVER_ARCHITECTURE}-${LATEST_RELEASE}.tar.gz"
+
+		# Download latest TS3 Server files
+		wget ${TS3_SERVER_DOWNLOAD_LINK} -q -O teamspeak3-server_${INSTALLED_TS3_SERVER_PLATFORM}-${TS3SERVER_ARCHITECTURE}-${LATEST_RELEASE}.tar.gz
+
+		# Extract downloaded archive
+		tar xf teamspeak3-server_${INSTALLED_TS3_SERVER_PLATFORM}-${TS3SERVER_ARCHITECTURE}-${LATEST_RELEASE}.tar.gz && cp -R teamspeak3-server_${INSTALLED_TS3_SERVER_PLATFORM}-${TS3SERVER_ARCHITECTURE}/* . && rm -rf teamspeak3-server_${INSTALLED_TS3_SERVER_PLATFORM}-${TS3SERVER_ARCHITECTURE}/
+
+		# Delete downloaded TeamSpeak 3 server archive
+		rm teamspeak3-server_${INSTALLED_TS3_SERVER_PLATFORM}-${TS3SERVER_ARCHITECTURE}-${LATEST_RELEASE}.tar.gz 2> /dev/null
+
+		# Importing SQLite database
+		if [ "$DATABASE_TYPE" == "SQLite" ]; then
+			if [ $(cp -f /tmp/TS3Tools/TS3UpdateScript/${DIRECTORY_MD5SUM}/ts3server.sqlitedb ${INSTANCE_PATH}) ]; then
+				UPDATE_STATUS_FLAG=1;
+			fi
+		# Importing MySQL database and associated files
+		elif [[ "$DATABASE_TYPE" == "MySQL" ]]; then
+			if [ $(cp -f /tmp/TS3Tools/TS3UpdateScript/${DIRECTORY_MD5SUM}/libts3db_mysql.so ${INSTANCE_PATH}) ] && [ $(cp -f /tmp/TS3Tools/TS3UpdateScript/${DIRECTORY_MD5SUM}/serverkey.dat ${INSTANCE_PATH}) ] && [ $(cp -f /tmp/TS3Tools/TS3UpdateScript/${DIRECTORY_MD5SUM}/ts3db_mysql.ini ${INSTANCE_PATH}) ]&& [ $(cp -f /tmp/TS3Tools/TS3UpdateScript/${DIRECTORY_MD5SUM}/ts3server.ini ${INSTANCE_PATH}) ]; then
+				UPDATE_STATUS_FLAG=1;
+			fi
+		# Importing MariaDB database and associated files
+		elif [[ "$DATABASE_TYPE" == "MariaDB" ]]; then
+			if [ $(cp -f /tmp/TS3Tools/TS3UpdateScript/${DIRECTORY_MD5SUM}/libts3db_mariadb.so ${INSTANCE_PATH}) ] && [ $(cp -f /tmp/TS3Tools/TS3UpdateScript/${DIRECTORY_MD5SUM}/serverkey.dat ${INSTANCE_PATH}) ] && [ $(cp -f /tmp/TS3Tools/TS3UpdateScript/${DIRECTORY_MD5SUM}/libts3db_mariadb.so ${INSTANCE_PATH}) ]&& [ $(cp -f /tmp/TS3Tools/TS3UpdateScript/${DIRECTORY_MD5SUM}/ts3server.ini ${INSTANCE_PATH}) ]; then
+				UPDATE_STATUS_FLAG=1;
+			fi
+		fi
+
+		# If database MySQL was used, update database to MariaDB
+		# Installed Build 1388593719 is latest version 3.0.10.3 with MySQL support
+		if [[ "$DATABASE_TYPE" == "MySQL" ]] && [[ "$INSTALLED_BUILD" == "1388593719" ]]; then
+			if [ $(mysql --user=${DB_USER_NAME} --password=${DB_PASSWORD} ${DB_NAME} < ${INSTANCE_PATH}/sql/updates_and_fixes/convert_mysql_to_mariadb.sql) ] && [ $(mysql --user=${DB_USER_NAME} --password=${DB_PASSWORD} ${DB_NAME} < ${INSTANCE_PATH}/sql/updates_and_fixes/mariadb_fix_latin_utf8.sql) ]; then
+				UPDATE_STATUS_FLAG=1;
+			fi
+		fi
+
+		# Importing licensekey
+		if [ -f /tmp/TS3Tools/TS3UpdateScript/${DIRECTORY_MD5SUM}/licensekey.dat ]; then
+			if [ $(mv /tmp/TS3Tools/TS3UpdateScript/${DIRECTORY_MD5SUM}/licensekey.dat ${INSTANCE_PATH}) ]; then
+				UPDATE_STATUS_FLAG=1;
+			fi
+		fi
+
+		# Importing Query IP white- and blacklist
+		if [ $(cp -f /tmp/TS3Tools/TS3UpdateScript/${DIRECTORY_MD5SUM}/query_ip_*.txt ${INSTANCE_PATH}) ]; then
+			UPDATE_STATUS_FLAG=1;
+		fi
+
+		# Importing 'tsdns_settings.ini' file
+		if [ -f "/tmp/TS3Tools/TS3UpdateScript/${DIRECTORY_MD5SUM}/tsdns/tsdns_settings.ini" ]; then
+			if [ $(cp -f /tmp/TS3Tools/TS3UpdateScript/${DIRECTORY_MD5SUM}/tsdns/tsdns_settings.ini ${INSTANCE_PATH}/tsdns/) ]; then
+				UPDATE_STATUS_FLAG=1;
+			fi
+		fi
+
+		# Add commandline parameter 'inifile=ts3server.ini' to ts3server_startscript.sh
+		if [[ "$TEAMSPEAK_DATABASE_TYPE" == "MySQL" ]] || [[ "$TEAMSPEAK_DATABASE_TYPE" == "MariaDB" ]] || [ -f ${INSTANCE_PATH}/ts3server.ini ]; then
+			while read line; do
+				if [[ "$line" == 'COMMANDLINE_PARAMETERS="${2}" #add any command line parameters you want to pass here' ]]; then
+					echo 'COMMANDLINE_PARAMETERS="inifile=ts3server.ini" #add any command line parameters you want to pass here' >> ${INSTANCE_PATH}/TEMP_ts3server_startscript.sh;
+				else
+					echo $line >> ${INSTANCE_PATH}/TEMP_ts3server_startscript.sh;
+				fi
+			done < ${INSTANCE_PATH}/ts3server_startscript.sh
+
+			if [ ! $(rm -rf ${INSTANCE_PATH}/ts3server_startscript.sh) ] && [ $(mv ${INSTANCE_PATH}/TEMP_ts3server_startscript.sh ${INSTANCE_PATH}/ts3server_startscript.sh) ]; then
+				UPDATE_STATUS_FLAG=1;
+			fi
+		fi
+
+		# Change owner and group of files
+		if [[ -z "$GROUP" ]]; then
+			chown ${OWNER} -R .
+		elif [[ -z "$OWNER" ]]; then
+			chgrp ${GROUP} -R .
+		else
+			chown ${OWNER}:${GROUP} -R .
+		fi
+
+		cd - > /dev/null
+
+		if [[ "$UPDATE_STATUS_FLAG" -eq 0 ]]; then
+			return 0;
+		else
+			return 1;
+		fi
+	else
+		return 1;
+	fi
+}
+
+# Main program
+function main() {
+	# Load text for set language
+	cd "$ABSOLUTE_PATH"
+	source $PAR_LOCALE;
+	cd - > /dev/null
+
+	# Enable debugging by commenting out the following line
+	if [[ -n "$PAR_DEBUG" ]] && [[ "$PAR_DEBUG" == 1 ]]; then
+		echo "$TXT_DEBUG_INFO";
+		set -x
+	fi
+
+	##
+	## SELFTESTS
+	##
+	# Time measurement self-tests START
+	TIME_MEASUREMENT_SELFTESTS_START=$(date +%s)
+
+	if [ "$PAR_CRONJOB_TASK" -eq 1 ]; then
+		echo -en "${TXT_SELF_TEST_INFO}";
+	else
+		echo -en "${SCurs}${TXT_SELF_TEST_INFO}";
+		echo -e "${RCurs}${MCurs}[ ${Whi}.. ${RCol}]\n";
+	fi
+
+	# Self-Tests status flag
+	SELF_TEST_STATUS=0;
+
+	# Check bash-completion of script
+	if ! isBashCompletionInstalled; then
+		if ! setUpBashCompletion; then
+			echo "${TXT_SELF_TEST_CHECK_BASH_COMPLETION}" >> SELF_TEST_STATUS.txt;
+			SELF_TEST_STATUS=1;
+		fi
+	fi
+
+	# Check consistency of script
+	if ! checkConsistency; then
+		echo "${TXT_SELF_TEST_CHECK_CONSISTENCY}" >> SELF_TEST_STATUS.txt;
+		SELF_TEST_STATUS=1;
+	fi
+
+	# Able to reach all needed remote server?
+	if [[ "$PAR_DEACTIVATE_HOST_ALIVE_CHECK" -eq 0 ]]; then
+		if ! testInternetConnectivity "www.ts3-tools.info" || ! testInternetConnectivity "dl.4players.de" || ! testInternetConnectivity "github.com" || ! testInternetConnectivity "raw.githubusercontent.com"; then
+			echo "${TXT_SELF_TEST_CONNECTIVITY}" >> SELF_TEST_STATUS.txt;
+			SELF_TEST_STATUS=1;
+		fi
+	fi
+
+	# Latest version of script installed?
+	LATEST_SCRIPT_VERSION=$(getLatestScriptVersion)
+
+	if [[ "$LATEST_SCRIPT_VERSION" != 1 ]]; then
+		if [[ -n "$LATEST_SCRIPT_VERSION" ]]; then
+			if [[ "$SCRIPT_VERSION" != "$LATEST_SCRIPT_VERSION" ]]; then
+				echo -e "${TXT_SELF_TEST_TS3UPDATESCRIPT_RELEASED}: ${LATEST_SCRIPT_VERSION}\n" >> SELF_TEST_STATUS.txt;
+			fi
+		else
+			echo "${TXT_SELF_TEST_DETECTION_FAILED}" >> SELF_TEST_STATUS.txt;
+			SELF_TEST_STATUS=1;
+		fi
+	fi
+
+	# Execute software checks
+	if [ "$PAR_INFORM_ONLINE_CLIENTS" -eq 1 ]; then
+		if ! checkdeps bash rsync wget grep sed unzip telnet expect; then
+			SELF_TEST_STATUS=1;
+		fi
+	elif [ "$PAR_CRONJOB_TASK" -eq 1 ] && [ "$PAR_INFORM_ONLINE_CLIENTS" -eq 1 ]; then
+		if ! checkdeps bash rsync wget grep sed unzip mail telnet expect; then
+			SELF_TEST_STATUS=1;
+		fi
+	elif [ "$PAR_CRONJOB_TASK" -eq 1 ]; then
+		if ! checkdeps bash rsync wget grep sed unzip mail; then
+			SELF_TEST_STATUS=1;
+		fi
+	else
+		if ! checkdeps bash rsync wget grep sed unzip; then
+			SELF_TEST_STATUS=1;
+		fi
+	fi
+
+	# Detect known cron.d path
+	if [[ "$PAR_INSTALL_CRONJOB" -eq 1 ]] || [[ "$PAR_DEINSTALL_CRONJOB" -eq 1 ]]; then
+		CROND_PATH="$(detectKnownCronDPath)"
+
+		if [[ "$CROND_PATH" == "1" ]]; then
+			echo "${TXT_SELF_TEST_SCRIPT_SUPPORT}" >> SELF_TEST_STATUS.txt;
+			SELF_TEST_STATUS=1;
+		fi
+	fi
+
+	# Set own settings in config files?
+	if ! scriptSettingsChanged; then
+		echo "${TXT_SELF_TEST_ADMINISTRATOR_EMAIL}" >> SELF_TEST_STATUS.txt;
+		SELF_TEST_STATUS=1;
+	fi
+
+	# Time measurement self-tests END
+	TIME_MEASUREMENT_SELFTESTS_END=$(date +%s)
+
+	# Run other tasks, if all self-tests were successfull
+	if [[ "$SELF_TEST_STATUS" -eq 1 ]]; then
+		if [ "$PAR_CRONJOB_TASK" -eq 1 ]; then
+			echo "[ FAILED ]";
+		else
+			echo -e "${RCurs}${MCurs}[ ${Red}FAILED ${RCol}]\n";
+		fi
+
+		# Show failed self-tests
+		cat SELF_TEST_STATUS.txt;
+
+		echo "${TXT_SELF_TEST_FAILED}";
+	else
+		if [ "$PAR_CRONJOB_TASK" -eq 1 ]; then
+			echo "[ OK ]";
+		else
+			echo -e "${RCurs}${MCurs}[ ${Gre}OK ${RCol}]\n";
+		fi
+
+		# Show TS3UpdateScript update message
+		if [[ -f SELF_TEST_STATUS.txt ]]; then
+			cat SELF_TEST_STATUS.txt
+		fi
+
+		if [[ "$PAR_DEINSTALL_CRONJOB" -eq 0 ]] && [[ "$PAR_UPDATE_SCRIPT" -eq 0 ]]; then
+			##
+			## COLLECTING INFORMATION
+			##
+			# Time measurement collecting information START
+			TIME_MEASUREMENT_COLLECTING_INFORMATION_START=$(date +%s)
+			# Collecting information status flag
+			COLLECTING_INFORMATION_STATUS=0;
+
+			if [ "$PAR_CRONJOB_TASK" -eq 1 ]; then
+				echo -en "${TXT_COLLECTING_INFORMATION_INFO}";
+			else
+				echo -en "${SCurs}${TXT_COLLECTING_INFORMATION_INFO}";
+				echo -e "${RCurs}${MCurs}[ ${Whi}.. ${RCol}]\n";
+			fi
+
+			# Detect all information for each TeamSpeak 3 instance
+			if findTS3ServerInstances; then
+				LATEST_TS3_SERVER_VERSION="$(getLatestTSServerVersion)"
+
+				if [[ "$LATEST_TS3_SERVER_VERSION" != "1" ]]; then
+					echo "# Status|InstancePath|InstalledTS3ServerVersion|InstalledTS3ServerBuild|InstalledTS3ServerPlatform|TS3ServerInstanceLogPath|TS3ServerArchitecture|Owner|OwnerID|Group|GroupID|ServerQueryIP|ServerQueryPort|DatabaseType" > TS3InstanceInfos.txt;
+
+					INSTANCE_COUNT="$(wc -l < TS3InstancePaths.txt)"
+
+					if [ "$INSTANCE_COUNT" -eq 0 ]; then
+						echo "${TXT_COLLECTING_INFORMATION_NO_TS3SERVER_INSTANCES_FOUND}" > COLLECTING_INFORMATION_STATUS.txt;
+					elif [ "$INSTANCE_COUNT" -eq 1 ]; then
+						echo "${TXT_COLLECTING_INFORMATION_FOUND_ONE_TS3SERVER_INSTANCE}" > COLLECTING_INFORMATION_STATUS.txt;
+					else
+						echo "${TXT_COLLECTING_INFORMATION_FOUND_MORE_TS3SERVER_INSTANCES}" > COLLECTING_INFORMATION_STATUS.txt;
+					fi
+
+					while read instancePath; do
+						INSTANCE_PATH=$(dirname $instancePath)
+
+						echo -e "\nCollecting as much as possible information for TeamSpeak 3 server instance '${INSTANCE_PATH}'" >> COLLECTING_INFORMATION_STATUS.txt;
+
+						if [[ "$PAR_INFORM_ONLINE_CLIENTS" -eq 1 ]] || checkdeps telnet expect; then
+							# Detect ServerQuery IP
+							SERVER_QUERY_IP="$(getServerQueryIP ${INSTANCE_PATH})";
+
+							if [[ -z "$SERVER_QUERY_IP" ]]; then
+								echo "${TXT_COLLECTING_INFORMATION_SERVERQUERY_IP_DETECTION_FAILED}" >> COLLECTING_INFORMATION_STATUS.txt;
+								COLLECTING_INFORMATION_STATUS=1;
+							fi
+
+							# Detect ServerQuery Port
+							SERVER_QUERY_PORT="$(getServerQueryPort ${INSTANCE_PATH})";
+
+							if [[ -z "$SERVER_QUERY_PORT" ]]; then
+								echo "${TXT_COLLECTING_INFORMATION_SERVERQUERY_PORT_DETECTION_FAILED}" >> COLLECTING_INFORMATION_STATUS.txt;
+								COLLECTING_INFORMATION_STATUS=1;
+							fi
+						fi
+
+						# Detect version
+						if ts3server ${INSTANCE_PATH} status; then
+							if [[ "$PAR_INFORM_ONLINE_CLIENTS" -eq 1 ]] || checkdeps telnet expect; then
+								INSTALLED_TS3_SERVER_VERSION="$(getVersionOfInstalledTS3Server ${SERVER_QUERY_IP} ${SERVER_QUERY_PORT})";
+							else
+								INSTALLED_TS3_SERVER_VERSION="$(getVersionOfInstalledTS3Server ${INSTANCE_PATH})";
+							fi
+						else
+							INSTALLED_TS3_SERVER_VERSION="$(getVersionOfInstalledTS3Server ${INSTANCE_PATH})";
+						fi
+
+						if [[ "$INSTALLED_TS3_SERVER_VERSION" == "1" ]]; then
+							echo "${TXT_COLLECTING_INFORMATION_INSTALLED_TS3SERVER_VERSION_DETECTION_FAILED}" >> COLLECTING_INFORMATION_STATUS.txt;
+							COLLECTING_INFORMATION_STATUS=1;
+						fi
+
+						# Detect build
+						if ts3server ${INSTANCE_PATH} status; then
+							if [[ "$PAR_INFORM_ONLINE_CLIENTS" -eq 1 ]] || checkdeps telnet expect; then
+								INSTALLED_TS3_SERVER_BUILD="$(getBuildOfInstalledTS3Server ${SERVER_QUERY_IP} ${SERVER_QUERY_PORT})";
+							else
+								INSTALLED_TS3_SERVER_BUILD="$(getBuildOfInstalledTS3Server)";
+							fi
+						else
+							INSTALLED_TS3_SERVER_BUILD="$(getBuildOfInstalledTS3Server)";
+						fi
+
+						if [[ "$INSTALLED_TS3_SERVER_BUILD" == "1" ]]; then
+							echo "${TXT_COLLECTING_INFORMATION_INSTALLED_TS3SERVER_BUILD_DETECTION_FAILED}" >> COLLECTING_INFORMATION_STATUS.txt;
+							COLLECTING_INFORMATION_STATUS=1;
+						fi
+
+						# Detect platform
+						if ts3server ${INSTANCE_PATH} status; then
+							if [[ "$PAR_INFORM_ONLINE_CLIENTS" -eq 1 ]] || checkdeps telnet expect; then
+								INSTALLED_TS3_SERVER_PLATFORM="$(getPlatformOfInstalledTS3Server ${SERVER_QUERY_IP} ${SERVER_QUERY_PORT})";
+							else
+								INSTALLED_TS3_SERVER_PLATFORM="$(getPlatformOfInstalledTS3Server ${INSTANCE_PATH})";
+							fi
+						else
+							INSTALLED_TS3_SERVER_PLATFORM="$(getPlatformOfInstalledTS3Server ${INSTANCE_PATH})";
+						fi
+
+						if [[ "$INSTALLED_TS3_SERVER_PLATFORM" == "1" ]]; then
+							echo "${TXT_COLLECTING_INFORMATION_INSTALLED_TS3SERVER_PLATFORM_DETECTION_FAILED}" >> COLLECTING_INFORMATION_STATUS.txt;
+							COLLECTING_INFORMATION_STATUS=1;
+						fi
+
+						# Detect instance log path
+						TS3_SERVER_INSTANCE_LOG_PATH="$(getTS3ServerInstanceLogPath ${INSTANCE_PATH})";
+
+						if [[ "$TS3_SERVER_INSTANCE_LOG_PATH" == "1" ]]; then
+							echo "${TXT_COLLECTING_INFORMATION_INSTANCE_LOG_PATH_DETECTION_FAILED}" >> COLLECTING_INFORMATION_STATUS.txt;
+							COLLECTING_INFORMATION_STATUS=1;
+						fi
+
+						# Detect architecture
+						TS3_SERVER_ARCHITECTURE="$(getArchitectureOfInstalledTS3Server ${INSTANCE_PATH})";
+
+						if [[ "$TS3_SERVER_ARCHITECTURE" == "1" ]]; then
+							echo "${TXT_COLLECTING_INFORMATION_INSTALLED_TS3SERVER_ARCHITECTURE_DETECTION_FAILED}" >> COLLECTING_INFORMATION_STATUS.txt;
+							COLLECTING_INFORMATION_STATUS=1;
+						fi
+
+						# Detect owner
+						OWNER="$(getOwnerOfTS3ServerFiles ${INSTANCE_PATH})";
+
+						if [[ "$OWNER" != "1" ]]; then
+							if [[ "$PAR_DEACTIVATE_PERMISSIONS_CHECK" -eq 0 ]]; then
+								if [[ "$OWNER" == "root" ]]; then
+									echo "${TXT_COLLECTING_INFORMATION_OWNER_ROOT_PERMISSIONS_INFO}" >> COLLECTING_INFORMATION_STATUS.txt;
+									COLLECTING_INFORMATION_STATUS=1;
+								fi
+							fi
+						else
+							echo "${TXT_COLLECTING_INFORMATION_OWNER_DETECTION_FAILED}" >> COLLECTING_INFORMATION_STATUS.txt;
+							COLLECTING_INFORMATION_STATUS=1;
+						fi
+
+						# Detect owner ID
+						OWNER_ID="$(getOwnerID ${INSTANCE_PATH})";
+
+						if [[ "$OWNER_ID" == "1" ]]; then
+							echo "${TXT_COLLECTING_INFORMATION_OWNER_USER_ID_DETECTION_FAILED}" >> COLLECTING_INFORMATION_STATUS.txt;
+							COLLECTING_INFORMATION_STATUS=1;
+						fi
+
+						# Detect group
+						GROUP="$(getGroupOfTS3ServerFiles ${INSTANCE_PATH})";
+
+						if [[ "$GROUP" != "1" ]]; then
+							if [[ "$PAR_DEACTIVATE_PERMISSIONS_CHECK" -eq 0 ]]; then
+								if [[ "$GROUP" == "root" ]]; then
+									echo "${TXT_COLLECTING_INFORMATION_GROUP_ROOT_PERMISSIONS_INFO}" >> COLLECTING_INFORMATION_STATUS.txt;
+									COLLECTING_INFORMATION_STATUS=1;
+								fi
+							fi
+						else
+							echo "${TXT_COLLECTING_INFORMATION_GROUP_DETECTION_FAILED}" >> COLLECTING_INFORMATION_STATUS.txt;
+							COLLECTING_INFORMATION_STATUS=1;
+						fi
+
+						# Detect group ID
+						GROUP_ID="$(getGroupID ${INSTANCE_PATH})";
+
+						if [[ "$GROUP_ID" == "1" ]]; then
+							echo "${TXT_COLLECTING_INFORMATION_GROUP_GROUP_ID_DETECTION_FAILED}" >> COLLECTING_INFORMATION_STATUS.txt;
+							COLLECTING_INFORMATION_STATUS=1;
+						fi
+
+						# Detect database type (SQLite, MySQL or MariaDB)
+						DATABASE_TYPE="$(getDatabaseType ${INSTANCE_PATH})"
+
+						if [[ "$DATABASE_TYPE" == "1" ]]; then
+							echo "${TXT_COLLECTING_INFORMATION_DATABASE_DETECTION_FAILED}" >> COLLECTING_INFORMATION_STATUS.txt;
+							COLLECTING_INFORMATION_STATUS=1;
+						fi
+
+						# Set textbased status flag based on collecting information status flag
+						if [[ "$COLLECTING_INFORMATION_STATUS" -eq 1 ]]; then
+							STATUS="FAILED"
+						else
+							STATUS="OK"
+						fi
+
+						echo "${STATUS}|${INSTANCE_PATH}|${INSTALLED_TS3_SERVER_VERSION}|${INSTALLED_TS3_SERVER_BUILD}|${INSTALLED_TS3_SERVER_PLATFORM}|${TS3_SERVER_INSTANCE_LOG_PATH}|${TS3_SERVER_ARCHITECTURE}|${OWNER}|${OWNER_ID}|${GROUP}|${GROUP_ID}|${SERVER_QUERY_IP}|${SERVER_QUERY_PORT}|${DATABASE_TYPE}" >> TS3InstanceInfos.txt;
+					done < TS3InstancePaths.txt
+
+					if [[ "$PAR_INFORM_ONLINE_CLIENTS" -eq 1 ]] || [[ "$PAR_TEST_INFORM_ONLINE_CLIENTS" -eq 1 ]]; then
+						# Get ServerQuery Displayed Name
+						SERVER_QUERY_DISPLAYED_NAME="$(getServerQueryDisplayedNameEscaped)"
+
+						if [[ "$SERVER_QUERY_DISPLAYED_NAME" == "1" ]]; then
+							echo "${TXT_COLLECTING_INFORMATION_SERVERQUERY_DISPLAYED_NAME_FAILED}" >> COLLECTING_INFORMATION_STATUS.txt;
+							COLLECTING_INFORMATION_STATUS=1;
+						fi
+
+						# Get poke message
+						if [[ "$PAR_CRONJOB_TASK" -eq 1 ]]; then
+							POKE_MESSAGE_ESCAPED="$(getCronjobPokeMessageEscaped ${LATEST_TS3_SERVER_VERSION})"
+
+							if [[ "$POKE_MESSAGE_ESCAPED" == "1" ]]; then
+								echo "${TXT_COLLECTING_INFORMATION_CRONJOB_POKE_MESSAGE_FAILED}" >> COLLECTING_INFORMATION_STATUS.txt;
+								COLLECTING_INFORMATION_STATUS=1;
+							fi
+						else
+							POKE_MESSAGE_ESCAPED="$(getManuallyPokeMessageEscaped ${LATEST_TS3_SERVER_VERSION})"
+
+							if [[ "$POKE_MESSAGE_ESCAPED" == "1" ]]; then
+								echo "${TXT_COLLECTING_INFORMATION_MANUALLY_POKE_MESSAGE_FAILED}" >> COLLECTING_INFORMATION_STATUS.txt;
+								COLLECTING_INFORMATION_STATUS=1;
+							fi
+						fi
+					fi
+
+					# Get administrator eMail
+					if [[ "$PAR_INSTALL_CRONJOB" -eq 1 ]]; then
+						ADMINISTRATOR_EMAIL="$(getAdministratorEmail)"
+
+						if [[ "$ADMINISTRATOR_EMAIL" == "1" ]]; then
+							echo "${TXT_COLLECTING_INFORMATION_ADMINISTRATOR_EMAIL_FAILED}" >> COLLECTING_INFORMATION_STATUS.txt;
+							COLLECTING_INFORMATION_STATUS=1;
+						fi
+					fi
+				else
+					echo "${TXT_COLLECTING_INFORMATION_LATEST_TS3SERVER_VERSION_FAILED}" >> COLLECTING_INFORMATION_STATUS.txt;
+					COLLECTING_INFORMATION_STATUS=1;
+				fi
+			else
+				echo "${TXT_COLLECTING_INFORMATION_FAILED}" >> COLLECTING_INFORMATION_STATUS.txt;
+				COLLECTING_INFORMATION_STATUS=1;
+			fi
+
+			# TSDNS
+
+			# Time measurement collecting information END
+			TIME_MEASUREMENT_COLLECTING_INFORMATION_END=$(date +%s)
+		fi
+
+		##
+		## VALIDATION
+		##
+		# Time measurement validation START
+		TIME_MEASUREMENT_VALIDATION_START=$(date +%s)
+		# Validation status flag
+		VALIDATION_STATUS=0;
+
+		echo "${TXT_VALIDATION_INFO}" > VALIDATION_STATUS.txt;
+
+		if [[ "$PAR_DEINSTALL_CRONJOB" -eq 0 ]]; then
+			while read instanceInfo; do
+				STATUS_FLAG=$(echo "$instanceInfo" | grep -Ev "^#" | cut -d "|" -f 1)
+				INSTANCE_PATH=$(echo "$instanceInfo" | grep -Ev "^#" | cut -d "|" -f 2)
+				INSTALLED_TS3_SERVER_VERSION=$(echo "$instanceInfo" | grep -Ev "^#" | cut -d "|" -f 3)
+				INSTALLED_TS3_SERVER_BUILD=$(echo "$instanceInfo" | grep -Ev "^#" | cut -d "|" -f 4)
+				INSTALLED_TS3_SERVER_PLATFORM=$(echo "$instanceInfo" | grep -Ev "^#" | cut -d "|" -f 5)
+				TS3SERVER_INSTANCE_LOG_PATH=$(echo "$instanceInfo" | grep -Ev "^#" | cut -d "|" -f 6)
+				TS3SERVER_ARCHITECTURE=$(echo "$instanceInfo" | grep -Ev "^#" | cut -d "|" -f 7)
+				OWNER=$(echo "$instanceInfo" | grep -Ev "^#" | cut -d "|" -f 8)
+				OWNER_ID=$(echo "$instanceInfo" | grep -Ev "^#" | cut -d "|" -f 9)
+				GROUP=$(echo "$instanceInfo" | grep -Ev "^#" | cut -d "|" -f 10)
+				GROUP_ID=$(echo "$instanceInfo" | grep -Ev "^#" | cut -d "|" -f 11)
+				SERVERQUERY_IP=$(echo "$instanceInfo" | grep -Ev "^#" | cut -d "|" -f 12)
+				SERVERQUERY_PORT=$(echo "$instanceInfo" | grep -Ev "^#" | cut -d "|" -f 13)
+				DATABASE_TYPE=$(echo "$instanceInfo" | grep -Ev "^#" | cut -d "|" -f 14)
+
+				if [ -n "$STATUS_FLAG" ]; then
+					if [ "$STATUS_FLAG" == "FAILED" ]; then
+						echo "${TXT_VALIDATION_DETECTION_FAILED}" >> VALIDATION_STATUS.txt;
+					fi
+
+					# Check serveradmin password
+					if ts3server ${INSTANCE_PATH} status; then
+						if ! checkServeradminPassword ${SERVERQUERY_IP} ${SERVERQUERY_PORT} ${INSTANCE_PATH}; then
+							echo "${TXT_VALIDATION_WRONG_PASSWORD}" >> VALIDATION_STATUS.txt;
+							VALIDATION_STATUS=1;
+						fi
+					else
+						echo "${TXT_VALIDATION_TS3SERVER_OFFLINE}" >> VALIDATION_STATUS.txt;
+					fi
+				fi
+			done < TS3InstanceInfos.txt
+		fi
+
+		# Time measurement validation END
+		TIME_MEASUREMENT_VALIDATION_END=$(date +%s)
+
+		if [[ "$COLLECTING_INFORMATION_STATUS" -eq 1 ]] || [[ "$VALIDATION_STATUS" -eq 1 ]]; then
+			if [ "$PAR_CRONJOB_TASK" -eq 1 ]; then
+				echo "[ FAILED ]";
+			else
+				echo -e "${RCurs}${MCurs}[ ${Red}FAILED ${RCol}]\n";
+			fi
+
+			# Show collecting information errors
+			cat COLLECTING_INFORMATION_STATUS.txt
+			# Show validation errors
+			cat VALIDATION_STATUS.txt
+
+			echo "${TXT_VALIDATION_FAILED}";
+		else
+			if [ "$PAR_CRONJOB_TASK" -eq 1 ]; then
+				echo "[ OK ]";
+
+				echo -en "${TXT_VALIDATION_INFO_SUCCESS} [ INFO ]";
+			else
+				echo -e "${RCurs}${MCurs}[ ${Gre}OK ${RCol}]\n";
+
+				echo -en "${SCurs}${TXT_VALIDATION_INFO_SUCCESS}";
+				echo -e "${RCurs}${MCurs}[ ${Cya}INFO ${RCol}]\n";
+			fi
+
+			##
+			## EXECUTION MECHANISM
+			##
+			# Time measurement update mechanism START
+			TIME_MEASUREMENT_EXECUTION_MECHANISM_START=$(date +%s)
+
+			# Execution mechanism status flag
+			EXECUTION_MECHANISM_STATUS=0;
+
+			# Update script
+			if [[ "$PAR_UPDATE_SCRIPT" -eq 1 ]]; then
+				if [ "$PAR_CRONJOB_TASK" -eq 1 ]; then
+					echo -en "${TXT_EXECUTION_MECHANISM_UPDATING_INFO}";
+				else
+					echo -en "${SCurs}${TXT_EXECUTION_MECHANISM_UPDATING_INFO}";
+					echo -e "${RCurs}${MCurs}[ ${Whi}.. ${RCol}]\n";
+				fi
+
+				if updateTS3UpdateScript; then
+					if [ "$PAR_CRONJOB_TASK" -eq 1 ]; then
+						echo "[ Should be updated ]";
+					else
+						echo -e "${RCurs}${MCurs}[ ${Gre}Should be updated ${RCol}]\n";
+					fi
+				else
+					if [ "$PAR_CRONJOB_TASK" -eq 1 ]; then
+						echo "[ FAILED ]";
+					else
+						echo -e "${RCurs}${MCurs}[ ${Red}FAILED ${RCol}]\n";
+					fi
+				fi
+			# Display settings
+			elif [[ "$PAR_DISPLAY_SETTINGS" -eq 1 ]]; then
+				echo	"Following your settings:";
+				echo    "############################################################################";
+				echo -e "	Administrator E-Mail: $(getAdministratorEmail)\n";
+
+				echo -e "	Displayed Username: $(getServerQueryDisplayedName)\n";
+
+				echo	"	Update Text (Manually): $(getManuallyPokeMessage ${LATEST_TS3_SERVER_VERSION})";
+				echo -e "	Update Text (Cronjob): $(getCronjobPokeMessage ${LATEST_TS3_SERVER_VERSION})\n";
+
+				echo -e "	Latest Stable Release: $(cat configs/latestStableRelease.txt)\n";
+
+				echo	"	Ignore Clients: $(getIgnoreClientList)";
+				echo	"	Ignore ServerGroups: $(getIgnoreServerGroupsList)";
+				echo	"############################################################################";
+			# Install cronjob
+			elif [[ "$PAR_INSTALL_CRONJOB" -eq 1 ]]; then
+				if [ "$PAR_CRONJOB_TASK" -eq 1 ]; then
+					echo -en "${TXT_EXECUTION_MECHANISM_CRONJOB_INSTALLATION_INFO}";
+				else
+					echo -en "${SCurs}${TXT_EXECUTION_MECHANISM_CRONJOB_INSTALLATION_INFO}";
+					echo -e "${RCurs}${MCurs}[ ${Whi}.. ${RCol}]\n";
+				fi
+
+				CROND_PATH_FILE="${CROND_PATH}TS3UpdateScript"
+
+				if [ "$CROND_PATH" == "/etc/fcron.cyclic/" ]; then
+					echo -en "#!/usr/bin/env bash\n" > ${CROND_PATH_FILE};
+					echo -en "PATH=/usr/local/bin:/usr/bin:/bin\n" >> ${CROND_PATH_FILE};
+				else
+					echo -en "PATH=/usr/local/bin:/usr/bin:/bin\n" > ${CROND_PATH_FILE};
+				fi
+
+				echo -en "MAILTO=\"$(getAdministratorEmail)\"\n\n" >> ${CROND_PATH_FILE};
+				echo -en "# TS3UpdateScript: Cronjob(s) for auto updates\n\n" >> ${CROND_PATH_FILE};
+
+				if [ "$PAR_UPDATE_SCRIPT" -eq 1 ]; then
+					echo -e "  45 2 * * 1  root $(pwd)/$(basename $0) --cronjob-task --autoupdate-script\n" >> ${CROND_PATH_FILE};
+				fi
+
+				CRONJOB_MINUTE="0";
+				CRONJOB_HOUR="3";
+
+				while read instanceInfo; do
+					INSTANCE_PATH=$(echo "$instanceInfo" | grep -Ev "^#" | cut -d "|" -f 2)
+
+					if [[ -n "$INSTANCE_PATH" ]]; then
+						echo -n "  ${CRONJOB_MINUTE} ${CRONJOB_HOUR} * * 1  root ${ABSOLUTE_PATH}/${SCRIPT_NAME} " >> ${CROND_PATH_FILE};
+						echo -n "--cronjob-task " >> ${CROND_PATH_FILE};
+						echo -n "--path ${INSTANCE_PATH} " >> ${CROND_PATH_FILE};
+
+						if [ "$PAR_CHECK" -eq 1 ]; then
+							echo -n "--check " >> ${CROND_PATH_FILE};
+						fi
+
+						if [ "$PAR_DELETE_OLD_LOGS" -eq 1 ]; then
+							echo -n "--delete-old-logs " >> ${CROND_PATH_FILE};
+						fi
+
+						if [ "$PAR_INFORM_ONLINE_CLIENTS" -eq 1 ]; then
+							echo -n "--inform-online-clients " >> ${CROND_PATH_FILE};
+						fi
+
+						if [ "$PAR_WAITING_TIME_IN_MINUTES" -eq 1 ]; then
+							echo -n "--waiting-time-in-minutes ${PAR_WAITING_TIME_MINS} " >> ${CROND_PATH_FILE};
+						fi
+
+						if [ "$PAR_KEEP_BACKUPS" -eq 1 ]; then
+							echo -n "--keep-backups " >> ${CROND_PATH_FILE};
+						fi
+
+						if [ "$PAR_LATEST_RELEASE" -eq 1 ]; then
+							echo "--latest-release" >> ${CROND_PATH_FILE};
+						fi
+
+						if [ "$PAR_BETA_RELEASE" -eq 1 ]; then
+							echo "--beta-release" >> ${CROND_PATH_FILE};
+						fi
+
+						if [ "$PAR_LOCALE" != "languages/verified/en_US.conf" ]; then
+							echo "--locale ${ABSOLUTE_PATH}/verified/${PAR_LOCALE}" >> ${CROND_PATH_FILE};
+						fi
+
+						echo -e "\n" >> ${CROND_PATH_FILE};
+
+						if [ "$CRONJOB_MINUTE" == "50" ]; then
+							CRONJOB_MINUTE="0";
+							CRONJOB_HOUR=`expr $CRONJOB_HOUR + 1`
+						else
+							CRONJOB_MINUTE=`expr $CRONJOB_MINUTE + 10`
+						fi
+					fi
+				done < TS3InstanceInfos.txt
+
+				echo -en "# ^ ^ ^ ^ ^\n" >> ${CROND_PATH_FILE};
+				echo -en "# | | | | |\n" >> ${CROND_PATH_FILE};
+				echo -en "# | | | | |___ Weekday (0-7, Sunday is mostly 0)\n" >> ${CROND_PATH_FILE};
+				echo -en "# | | | |_____ Month (1-12)\n" >> ${CROND_PATH_FILE};
+				echo -en "# | | |_______ Day (1-31)\n" >> ${CROND_PATH_FILE};
+				echo -en "# | |_________ Hour (0-23)\n" >> ${CROND_PATH_FILE};
+				echo -en "# |___________ Minute (0-59)" >> ${CROND_PATH_FILE};
+
+				# Set correct permissions for file
+				chmod 644 ${CROND_PATH_FILE}
+
+				if [[ $? -eq 0 ]]; then
+					echo -e "${RCurs}${MCurs}[ ${Gre}OK ${RCol}]\n";
+
+					echo "${TXT_EXECUTION_MECHANISM_CRONJOB_INSTALLATION_SUCCESSFUL} ${CROND_PATH_FILE}";
+				else
+					echo -e "${RCurs}${MCurs}[ ${Red}FAILED ${RCol}]\n";
+					EXECUTION_MECHANISM_STATUS=1;
+				fi
+			# Deinstall cronjob
+			elif [[ "$PAR_DEINSTALL_CRONJOB" -eq 1 ]]; then
+				if [ "$PAR_CRONJOB_TASK" -eq 1 ]; then
+					echo -en "${TXT_EXECUTION_MECHANISM_CRONJOB_DEINSTALLATION_INFO}";
+				else
+					echo -en "${SCurs}${TXT_EXECUTION_MECHANISM_CRONJOB_DEINSTALLATION_INFO}";
+					echo -e "${RCurs}${MCurs}[ ${Whi}.. ${RCol}]\n";
+				fi
+
+				if [ -f "$CROND_PATH/TS3UpdateScript" ]; then
+					rm $CROND_PATH/TS3UpdateScript
+				fi
+
+				if [[ $? -eq 0 ]]; then
+					if [ "$PAR_CRONJOB_TASK" -eq 1 ]; then
+						echo -en "[ OK ]";
+					else
+						echo -e "${RCurs}${MCurs}[ ${Gre}OK ${RCol}]\n";
+					fi
+
+					echo "${TXT_EXECUTION_MECHANISM_CRONJOB_DEINSTALLATION_SUCCESSFUL}: ${CROND_PATH}TS3UpdateScript";
+				else
+					if [ "$PAR_CRONJOB_TASK" -eq 1 ]; then
+						echo -en "[ FAILED ]";
+					else
+						echo -e "${RCurs}${MCurs}[ ${Red}FAILED ${RCol}]\n";
+					fi
+				fi
+			# Test inform online clients
+			elif [[ "$PAR_TEST_INFORM_ONLINE_CLIENTS" -eq 1 ]]; then
+				# Time measurement poke clients START
+				TIME_MEASUREMENT_POKE_CLIENTS_START=$(date +%s)
+
+				while read instanceInfo; do
+					INSTANCE_PATH=$(echo "$instanceInfo" | grep -Ev "^#" | cut -d "|" -f 2)
+					SERVERQUERY_IP=$(echo "$instanceInfo" | grep -Ev "^#" | cut -d "|" -f 12)
+					SERVERQUERY_PORT="$(echo "$instanceInfo" | grep -Ev "^#" | cut -d "|" -f 13)"
+
+					if [[ -n "$SERVERQUERY_IP" ]] && [[ -n "$SERVERQUERY_PORT" ]]; then
+						if ts3server ${INSTANCE_PATH} status; then
+							if [ "$PAR_CRONJOB_TASK" -eq 1 ]; then
+								echo -en "${TXT_EXECUTION_MECHANISM_POKING_INFO}: ${INSTANCE_PATH}";
+							else
+								echo -en "${SCurs}${TXT_EXECUTION_MECHANISM_POKING_INFO}: ${INSTANCE_PATH}";
+								echo -e "${RCurs}${MCurs}[ ${Whi}.. ${RCol}]\n";
+							fi
+
+							if pokeAllowedClients "${SERVERQUERY_IP}" "${SERVERQUERY_PORT}" $POKE_MESSAGE_ESCAPED; then
+								if [ "$PAR_CRONJOB_TASK" -eq 1 ]; then
+									echo -en "[ OK ]";
+								else
+									echo -e "${RCurs}${MCurs}[ ${Gre}OK ${RCol}]\n";
+								fi
+							else
+								if [ "$PAR_CRONJOB_TASK" -eq 1 ]; then
+									echo -en "[ FAILED ]";
+								else
+									echo -e "${RCurs}${MCurs}[ ${Red}FAILED ${RCol}]\n";
+								fi
+
+								echo "${TXT_EXECUTION_MECHANISM_POKE_MAY_FAILED}";
+							fi
+						fi
+					fi
+				done < TS3InstanceInfos.txt
+
+				# Time measurement poke clients END
+				TIME_MEASUREMENT_POKE_CLIENTS_END=$(date +%s)
+			# All other actions
+			else
+				INSTANCE_COUNT="$(grep -Ev '^# Status' TS3InstanceInfos.txt | wc -l)"
+
+				if [[ "$INSTANCE_COUNT" -eq 1 ]]; then
+					echo "${INSTANCE_COUNT} ${TXT_EXECUTION_MECHANISM_UPDATING_ONE_INSTANCE_INFO}";
+				else
+					echo "${INSTANCE_COUNT} ${TXT_EXECUTION_MECHANISM_UPDATING_MORE_INSTANCES_INFO}";
+				fi
+
+				while read instanceInfo; do
+					INSTANCE_PATH=$(echo "$instanceInfo" | grep -Ev "^#" | cut -d "|" -f 2)
+					INSTALLED_TS3_SERVER_VERSION=$(echo "$instanceInfo" | grep -Ev "^#" | cut -d "|" -f 3)
+					INSTALLED_TS3_SERVER_BUILD=$(echo "$instanceInfo" | grep -Ev "^#" | cut -d "|" -f 4)
+					INSTALLED_TS3_SERVER_PLATFORM=$(echo "$instanceInfo" | grep -Ev "^#" | cut -d "|" -f 5)
+					TS3SERVER_INSTANCE_LOG_PATH=$(echo "$instanceInfo" | grep -Ev "^#" | cut -d "|" -f 6)
+					TS3SERVER_ARCHITECTURE=$(echo "$instanceInfo" | grep -Ev "^#" | cut -d "|" -f 7)
+					OWNER=$(echo "$instanceInfo" | grep -Ev "^#" | cut -d "|" -f 8)
+					OWNER_ID=$(echo "$instanceInfo" | grep -Ev "^#" | cut -d "|" -f 9)
+					GROUP=$(echo "$instanceInfo" | grep -Ev "^#" | cut -d "|" -f 10)
+					GROUP_ID=$(echo "$instanceInfo" | grep -Ev "^#" | cut -d "|" -f 11)
+					SERVERQUERY_IP=$(echo "$instanceInfo" | grep -Ev "^#" | cut -d "|" -f 12)
+					SERVERQUERY_PORT=$(echo "$instanceInfo" | grep -Ev "^#" | cut -d "|" -f 13)
+					DATABASE_TYPE=$(echo "$instanceInfo" | grep -Ev "^#" | cut -d "|" -f 14)
+
+					if [[ -n "$INSTANCE_PATH" ]]; then
+						if [[ "$INSTALLED_TS3_SERVER_VERSION" != "$LATEST_TS3_SERVER_VERSION" ]]; then
+							if ts3server ${INSTANCE_PATH} status; then
+								echo	"############################################################################";
+								echo -e "	${TXT_EXECUTION_MECHANISM_UPDATE_QUESTION} ${LATEST_TS3_SERVER_VERSION}\n";
+
+								# Check shell and display warning, if a valid shell is in use
+								if isShellOfOwnerValid ${OWNER}; then
+									echo -e "	${TXT_COLLECTING_INFORMATION_IS_SHELL_VALID_FAILED}\n"
+								fi
+
+								echo	"	${TXT_EXECUTION_MECHANISM_INSTALLATION_DIRECTORY}: ${INSTANCE_PATH}";
+								echo	"	${TXT_EXECUTION_MECHANISM_INSTALLED_VERSION}: ${INSTALLED_TS3_SERVER_VERSION} (${TXT_EXECUTION_MECHANISM_INSTALLED_BUILD}: ${INSTALLED_TS3_SERVER_BUILD})";
+								echo	"	${TXT_EXECUTION_MECHANISM_INSTALLED_PLATFORM}: ${INSTALLED_TS3_SERVER_PLATFORM}";
+								echo -e "	${TXT_EXECUTION_MECHANISM_INSTALLED_ARCHITECTURE}: ${TS3SERVER_ARCHITECTURE}\n";
+								echo -e "	${TXT_EXECUTION_MECHANISM_INSTANCE_LOG_FILES}: ${TS3SERVER_INSTANCE_LOG_PATH}\n";
+								echo	"	${TXT_EXECUTION_MECHANISM_OWNER_DETAILS}: ${OWNER} (${TXT_EXECUTION_MECHANISM_UID_DETAILS}: ${OWNER_ID})";
+								echo -e "	${TXT_EXECUTION_MECHANISM_GROUP_DETAILS}: ${GROUP} (${TXT_EXECUTION_MECHANISM_GID_DETAILS}: ${GROUP_ID})\n";
+								echo	"	${TXT_EXECUTION_MECHANISM_SERVERQUERY_IP}: ${SERVERQUERY_IP}";
+								echo -e "	${TXT_EXECUTION_MECHANISM_SERVERQUERY_PORT}: ${SERVERQUERY_PORT}\n";
+								echo	"	${TXT_EXECUTION_MECHANISM_DATABASE_TYPE}: ${DATABASE_TYPE}";
+								echo	"############################################################################";
+
+								if [[ "$PAR_CRONJOB_TASK" -eq 1 ]]; then
+									ANSWER="yes"
+								else
+									ANSWER=""
+									while [[ "$ANSWER" == "" ]]; do
+										read -p "${TXT_EXECUTION_MECHANISM_UPDATE_ANSWER} " ANSWER <&5
+
+										if [[ -n "$ANSWER" ]] && [[ "$ANSWER" != "y" ]] && [[ "$ANSWER" != "yes" ]] && [[ "$ANSWER" != "n" ]] && [[ "$ANSWER" != "no" ]]; then
+											echo -en "${SCurs}${TXT_EXECUTION_MECHANISM_UPDATE_ANSWER_ERROR}";
+											echo -e "${RCurs}${MCurs}[ ${Red}ERROR ${RCol}]";
+											ANSWER=""
+										fi
+									done
+								fi
+
+								# Run the update process, if the user want to
+								if [[ "$ANSWER" == "y" ]] || [[ "$ANSWER" == "yes" ]]; then
+									# Poke online clients
+									if [[ "$PAR_INFORM_ONLINE_CLIENTS" -eq 1 ]]; then
+										# Time measurement poke clients START
+										TIME_MEASUREMENT_POKE_CLIENTS_START=$(date +%s)
+
+										if [ "$PAR_CRONJOB_TASK" -eq 1 ]; then
+											echo -en "${TXT_EXECUTION_MECHANISM_POKING_INFO}: ${INSTANCE_PATH}";
+										else
+											echo -en "${SCurs}${TXT_EXECUTION_MECHANISM_POKING_INFO}: ${INSTANCE_PATH}";
+											echo -e "${RCurs}${MCurs}[ ${Whi}.. ${RCol}]\n";
+										fi
+
+										if pokeAllowedClients "${SERVERQUERY_IP}" "${SERVERQUERY_PORT}" $POKE_MESSAGE_ESCAPED; then
+											if [ "$PAR_CRONJOB_TASK" -eq 1 ]; then
+												echo -en "[ OK ]";
+											else
+												echo -e "${RCurs}${MCurs}[ ${Gre}OK ${RCol}]\n";
+											fi
+										else
+											if [ "$PAR_CRONJOB_TASK" -eq 1 ]; then
+												echo -en "[ FAILED ]";
+											else
+												echo -e "${RCurs}${MCurs}[ ${Red}FAILED ${RCol}]\n";
+											fi
+
+											echo "${TXT_EXECUTION_MECHANISM_POKE_MAY_FAILED}";
+										fi
+
+										# Time measurement poke clients END
+										TIME_MEASUREMENT_POKE_CLIENTS_END=$(date +%s)
+									fi
+								
+									# Wait some minutes
+									if [[ "$PAR_WAITING_TIME_MINS" -ne 0 ]]; then
+										echo "${TXT_EXECUTION_MECHANISM_WAITING_INFO}";
+										sleep ${PAR_WAITING_TIME_MINS}m
+									elif [[ "$PAR_CRONJOB_TASK" -eq 1 ]] && [[ "$PAR_WAITING_TIME_IN_MINUTES" -eq 0 ]]; then
+										PAR_WAITING_TIME_MINS=5;
+										echo "${TXT_EXECUTION_MECHANISM_WAITING_INFO}";
+										sleep 5m
+									fi
+
+									## UPDATE PROCESS START ##
+									# Stop TSDNS, if running
+									if tsdns ${INSTANCE_PATH} status; then
+										if tsdns ${INSTANCE_PATH} stop; then
+											echo "${TXT_EXECUTION_MECHANISM_TSDNS_STOPPED}";
+
+											# Stop TeamSpeak 3 server, if running
+											if ts3server ${INSTANCE_PATH} status; then
+												if [[ "$PAR_DISABLE_TEMPORARY_PASSWORD_BACKUP" -eq 0 ]]; then
+													if getTemporaryServerPasswords "${SERVERQUERY_IP}" "${SERVERQUERY_PORT}"; then
+														echo "${TXT_EXECUTION_MECHANISM_GET_TEMPORARY_SERVER_PASSWORDS_SUCCESSFUL}";
+													else
+														echo "${TXT_EXECUTION_MECHANISM_GET_TEMPORARY_SERVER_PASSWORDS_FAILED}";
+													fi
+												fi
+
+												if ! ts3server ${INSTANCE_PATH} stop; then
+													echo "${TXT_EXECUTION_MECHANISM_TS3SERVER_STOPPED}";
+
+													# Make sure, that no ts3server.pid exists
+													if [ -f "${INSTANCE_PATH}/ts3server.pid" ]; then
+														echo "${TXT_EXECUTION_MECHANISM_DELETING_TS3SERVER_PID}";
+														rm -f ${INSTANCE_PATH}/ts3server.pid
+													fi
+
+													# Delete old logs if parameter is set
+													if [[ "$PAR_DELETE_OLD_LOGS" -eq 1 ]]; then
+														echo "${TXT_EXECUTION_MECHANISM_DELETING_OLD_LOG_FILES}";
+														rm -f ${TS3SERVER_INSTANCE_LOG_PATH}*
+													fi
+
+													# Create backup of instance
+													if backup ${INSTANCE_PATH} create; then
+														echo "${TXT_EXECUTION_MECHANISM_BACKUP_CREATED}";
+
+														# Update instance
+														if updateTeamSpeakInstance ${INSTANCE_PATH}; then
+															echo "${TXT_EXECUTION_MECHANISM_UPDATE_SUCCESSFUL}";
+
+															# Start TSDNS
+															if tsdns ${INSTANCE_PATH} start; then
+																echo "${TXT_EXECUTION_MECHANISM_TSDNS_STARTED}";
+
+																# Start TeamSpeak 3 server
+																if ts3server ${INSTANCE_PATH} start; then
+																	echo "${TXT_EXECUTION_MECHANISM_TS3SERVER_STARTED}";
+
+																	if [[ -s SERVERTEMPPASSWORDLIST.txt ]]; then
+																		# Wait a few seconds to be able to connect via telnet
+																		sleep 5s
+
+																		if setTemporaryServerPasswords "${SERVERQUERY_IP}" "${SERVERQUERY_PORT}"; then
+																			echo "${TXT_EXECUTION_MECHANISM_SET_TEMPORARY_SERVER_PASSWORDS_SUCCESSFUL}";
+																		else
+																			echo "${TXT_EXECUTION_MECHANISM_SET_TEMPORARY_SERVER_PASSWORDS_FAILED}";
+																		fi
+																	fi
+
+																	# Wait a few seconds
+																	echo "${TXT_EXECUTION_MECHANISM_HEALTH_CHECK_INFO}";
+																	sleep 15s
+
+																	# Check TeamSpeak 3 server status
+																	if ts3server ${INSTANCE_PATH} status; then
+																		echo "${TXT_EXECUTION_MECHANISM_TS3SERVER_STILL_RUNNING}";
+																	else
+																		echo "${TXT_EXECUTION_MECHANISM_TS3SERVER_STOPPED_UNEXPECTED}";
+																		EXECUTION_MECHANISM_STATUS=1;
+																	fi
+
+																	# Check TSDNS status
+																	if tsdns ${INSTANCE_PATH} status; then
+																		echo "${TXT_EXECUTION_MECHANISM_TSDNS_STILL_RUNNING}";
+																	else
+																		echo "${TXT_EXECUTION_MECHANISM_TSDNS_STOPPED_UNEXPECTED}";
+																		EXECUTION_MECHANISM_STATUS=1;
+																	fi
+																else
+																	echo "${TXT_EXECUTION_MECHANISM_TS3SERVER_START_FAILED}";
+																	EXECUTION_MECHANISM_STATUS=1;
+																fi
+															else
+																echo "${TXT_EXECUTION_MECHANISM_TSDNS_START_FAILED}";
+																EXECUTION_MECHANISM_STATUS=1;
+															fi
+														else
+															echo "${TXT_EXECUTION_MECHANISM_UPDATE_FAILED}";
+															EXECUTION_MECHANISM_STATUS=1;
+														fi
+													else
+														echo "${TXT_EXECUTION_MECHANISM_BACKUP_FAILED}";
+														EXECUTION_MECHANISM_STATUS=1;
+
+														# Start TSDNS
+														if tsdns ${INSTANCE_PATH} start; then
+															echo "${TXT_EXECUTION_MECHANISM_TSDNS_STARTED}"
+
+															# Start TeamSpeak 3 server
+															if ts3server ${INSTANCE_PATH} start; then
+																echo "${TXT_EXECUTION_MECHANISM_TS3SERVER_STARTED}";
+															else
+																echo "${TXT_EXECUTION_MECHANISM_TS3SERVER_START_FAILED}";
+																EXECUTION_MECHANISM_STATUS=1;
+															fi
+														else
+															echo "${TXT_EXECUTION_MECHANISM_TSDNS_START_FAILED}";
+															EXECUTION_MECHANISM_STATUS=1;
+														fi
+													fi
+												else
+													echo "${TXT_EXECUTION_MECHANISM_UPDATE_NOT_POSSIBLE_TS3SERVER_STOP_FAILED_INFO}";
+													EXECUTION_MECHANISM_STATUS=1;
+												fi
+											else
+												# TS3 Server stopped
+												echo "${TXT_EXECUTION_MECHANISM_HEALT_CHECK_FAILED_TS3SERVER_STOPPED_INFO}";
+												EXECUTION_MECHANISM_STATUS=1;
+											fi
+										else
+											echo "${TXT_EXECUTION_MECHANISM_UPDATE_NOT_POSSIBLE_TSDNS_STOP_FAILED_INFO}";
+											EXECUTION_MECHANISM_STATUS=1;
+										fi
+									# TSDNS is not running
+									else
+										# Stop TeamSpeak 3 server, if running
+										if ts3server ${INSTANCE_PATH} status; then
+											if [[ "$PAR_DISABLE_TEMPORARY_PASSWORD_BACKUP" -eq 0 ]]; then
+												if getTemporaryServerPasswords "${SERVERQUERY_IP}" "${SERVERQUERY_PORT}"; then
+													echo "${TXT_EXECUTION_MECHANISM_GET_TEMPORARY_SERVER_PASSWORDS_SUCCESSFUL}";
+												else
+													echo "${TXT_EXECUTION_MECHANISM_GET_TEMPORARY_SERVER_PASSWORDS_FAILED}";
+												fi
+											fi
+
+											if ! ts3server ${INSTANCE_PATH} stop; then
+												echo "${TXT_EXECUTION_MECHANISM_TS3SERVER_STOPPED}";
+
+												# Make sure, that no ts3server.pid exists
+												if [ -f "${INSTANCE_PATH}/ts3server.pid" ]; then
+													echo "${TXT_EXECUTION_MECHANISM_DELETING_TS3SERVER_PID}";
+													rm -f ${INSTANCE_PATH}/ts3server.pid
+												fi
+
+												# Delete old logs if parameter is set
+												if [[ "$PAR_DELETE_OLD_LOGS" -eq 1 ]]; then
+													echo "${TXT_EXECUTION_MECHANISM_DELETING_OLD_LOG_FILES}";
+													rm -f ${TS3SERVER_INSTANCE_LOG_PATH}*
+												fi
+
+												# Create backup of instance
+												if backup ${INSTANCE_PATH} create; then
+													echo "${TXT_EXECUTION_MECHANISM_BACKUP_CREATED}";
+
+													# Update instance
+													if updateTeamSpeakInstance ${INSTANCE_PATH}; then
+														echo "${TXT_EXECUTION_MECHANISM_UPDATE_SUCCESSFUL}";
+
+														# Start TeamSpeak 3 server
+														if ts3server ${INSTANCE_PATH} start; then
+															echo "${TXT_EXECUTION_MECHANISM_TS3SERVER_STARTED}";
+
+															if [[ -s SERVERTEMPPASSWORDLIST.txt ]]; then
+																# Wait a few seconds to be able to connect via telnet
+																sleep 5s
+
+																if setTemporaryServerPasswords "${SERVERQUERY_IP}" "${SERVERQUERY_PORT}"; then
+																	echo "${TXT_EXECUTION_MECHANISM_SET_TEMPORARY_SERVER_PASSWORDS_SUCCESSFUL}";
+																else
+																	echo "${TXT_EXECUTION_MECHANISM_SET_TEMPORARY_SERVER_PASSWORDS_FAILED}";
+																fi
+															fi
+
+															# Wait a few seconds
+															echo "${TXT_EXECUTION_MECHANISM_HEALTH_CHECK_INFO}";
+															sleep 15s
+
+															# Check TeamSpeak 3 server status
+															if ts3server ${INSTANCE_PATH} status; then
+																echo "${TXT_EXECUTION_MECHANISM_TS3SERVER_STILL_RUNNING}";
+															else
+																echo "${TXT_EXECUTION_MECHANISM_TS3SERVER_STOPPED_UNEXPECTED}";
+																EXECUTION_MECHANISM_STATUS=1;
+															fi
+														else
+															echo "${TXT_EXECUTION_MECHANISM_TS3SERVER_START_FAILED}";
+															EXECUTION_MECHANISM_STATUS=1;
+														fi
+													else
+														echo "${TXT_EXECUTION_MECHANISM_UPDATE_FAILED}";
+														EXECUTION_MECHANISM_STATUS=1;
+													fi
+												else
+													echo "${TXT_EXECUTION_MECHANISM_BACKUP_FAILED}";
+													EXECUTION_MECHANISM_STATUS=1;
+
+													# Start TeamSpeak 3 server
+													if ts3server ${INSTANCE_PATH} start; then
+														echo "${TXT_EXECUTION_MECHANISM_TS3SERVER_STARTED}";
+
+														if [[ -s SERVERTEMPPASSWORDLIST.txt ]]; then
+															# Wait a few seconds to be able to connect via telnet
+															sleep 5s
+
+															if setTemporaryServerPasswords "${SERVERQUERY_IP}" "${SERVERQUERY_PORT}"; then
+																echo "${TXT_EXECUTION_MECHANISM_SET_TEMPORARY_SERVER_PASSWORDS_SUCCESSFUL}";
+															else
+																echo "${TXT_EXECUTION_MECHANISM_SET_TEMPORARY_SERVER_PASSWORDS_FAILED}";
+															fi
+														fi
+													else
+														echo "${TXT_EXECUTION_MECHANISM_TS3SERVER_START_FAILED}";
+														EXECUTION_MECHANISM_STATUS=1;
+													fi
+												fi
+											else
+												echo "${TXT_EXECUTION_MECHANISM_UPDATE_NOT_POSSIBLE_TS3SERVER_STOP_FAILED_INFO}";
+												EXECUTION_MECHANISM_STATUS=1;
+											fi
+										else
+											# TS3 Server stopped
+											echo "${TXT_EXECUTION_MECHANISM_HEALT_CHECK_FAILED_TS3SERVER_STOPPED_INFO}";
+											EXECUTION_MECHANISM_STATUS=1;
+										fi
+									fi
+									## UPDATE PROCESS END ##
+
+									## ROLLBACK PROCESS START ##
+									# Rollback to version before
+									if [[ "$EXECUTION_MECHANISM_STATUS" -eq 1 ]]; then
+										if backup ${INSTANCE_PATH} exists; then
+											if backup ${INSTANCE_PATH} deploy; then
+												echo "${TXT_EXECUTION_MECHANISM_ROLLBACK_INFO}";
+												EXECUTION_MECHANISM_STATUS=0;
+											else
+												echo "${TXT_EXECUTION_MECHANISM_UPDATE_AND_ROLLBACK_FAILED_INFO}";
+												EXECUTION_MECHANISM_STATUS=1;
+											fi
+										else
+											echo "${TXT_EXECUTION_MECHANISM_ROLLBACK_FAILED}";
+											EXECUTION_MECHANISM_STATUS=1;
+										fi
+									fi
+
+									# Delete backup if parameter is not set
+									if [[ "$PAR_KEEP_BACKUPS" -eq 0 ]]; then
+										if backup ${INSTANCE_PATH} exists; then
+											if backup ${INSTANCE_PATH} delete; then
+												echo "${TXT_EXECUTION_MECHANISM_BACKUP_DELETED_INFO}";
+											else
+												echo "${TXT_EXECUTION_MECHANISM_DELETING_BACKUP_FAILED}";
+											fi
+										fi
+									fi
+								## ROLLBACK PROCESS END ##
+								elif [[ "$ANSWER" == "n" ]] || [[ "$ANSWER" == "no" ]]; then
+									echo "${TXT_EXECUTION_MECHANISM_TS3SERVER_NO_UPDATE_INFO}";
+								fi
+							else
+								echo -e "\n${TXT_EXECUTION_MECHANISM_INSTANCE_STOPPED_UPDATE_NEEDED}: ${INSTANCE_PATH} (${TXT_EXECUTION_MECHANISM_INSTALLED_VERSION}: ${INSTALLED_TS3_SERVER_VERSION})";
+							fi
+						else
+							echo "${TXT_EXECUTION_MECHANISM_TS3SERVER_ALREADY_UP2DATE}";
+						fi
+					fi
+				done < TS3InstanceInfos.txt
+			fi
+
+			# Time measurement update mechanism END
+			TIME_MEASUREMENT_EXECUTION_MECHANISM_END=$(date +%s)
+		fi
+	fi
+
+	##
+	## CLEANUP
+	##
+	# Time measurement cleanup START
+	TIME_MEASUREMENT_CLEANUP_START=$(date +%s)
+
+	echo -e "\n${TXT_CLEANUP_INFO}";
+
+	if [ -f SELF_TEST_STATUS.txt ]; then
+		rm SELF_TEST_STATUS.txt
+	fi
+
+	if [ -f COLLECTING_INFORMATION_STATUS.txt ]; then
+		rm COLLECTING_INFORMATION_STATUS.txt
+	fi
+
+	if [ -f VALIDATION_STATUS.txt ]; then
+		rm VALIDATION_STATUS.txt
+	fi
+
+	if [ -f TS3InstancePaths.txt ]; then
+		rm TS3InstancePaths.txt;
+	fi
+
+	if [ -f TS3InstanceInfos.txt ]; then
+		rm TS3InstanceInfos.txt
+	fi
+
+	if [ -f SERVERLIST.txt ]; then
+		rm SERVERLIST.txt
+	fi
+
+	if [ -f CLIENTLIST.txt ]; then
+		rm CLIENTLIST.txt
+	fi
+
+	if [ -f IGNORE_CLIENTLIST.txt ]; then
+		rm IGNORE_CLIENTLIST.txt
+	fi
+
+	if [ -f POKELIST_UNSORTED.txt ]; then
+		rm POKELIST_UNSORTED.txt
+	fi
+
+	if [ -f POKELIST.txt ]; then
+		rm POKELIST.txt
+	fi
+
+	if [ -f SERVERTEMPPASSWORDLIST.txt ]; then
+		rm SERVERTEMPPASSWORDLIST.txt
+	fi
+
+	if [ -f SERVERTEMPPASSWORDADD.txt ]; then
+		rm SERVERTEMPPASSWORDADD.txt
+	fi
+
+	if [ -f wget-log ]; then
+		rm wget-log
+	fi
+
+	if [ -d /tmp/TS3Tools/TS3UpdateScript/ ]; then
+		if [ ! "$(ls -A /tmp/TS3Tools/TS3UpdateScript/)" ]; then
+			rmdir /tmp/TS3Tools/TS3UpdateScript/
+		fi
+	fi
+
+	if [ -d /tmp/TS3Tools/ ]; then
+		if [ ! "$(ls -A /tmp/TS3Tools/)" ]; then
+			rmdir /tmp/TS3Tools/
+		fi
+	fi
+
+	# Time measurement cleanup END
+	TIME_MEASUREMENT_CLEANUP_END=$(date +%s)
+
+	# Time measurement whole script END
+	TIME_MEASUREMENT_SCRIPT_END=$(date +%s)
+
+	##
+	## STATISTICS
+	##
+	echo -e "\n${TXT_STATISTICS_INFO}";
+	echo -n "${TXT_STATISTICS_TOTAL_SCRIPT}: "; getTimeDifference $TIME_MEASUREMENT_SCRIPT_START $TIME_MEASUREMENT_SCRIPT_END; echo "s";
+	if [[ -n "$TIME_MEASUREMENT_SELFTESTS_START" ]] && [[ -n "$TIME_MEASUREMENT_SELFTESTS_END" ]]; then
+		echo -n "${TXT_STATISTICS_SELF_TEST}: "; getTimeDifference $TIME_MEASUREMENT_SELFTESTS_START $TIME_MEASUREMENT_SELFTESTS_END; echo "s";
+	fi
+	if [[ "$SELF_TEST_STATUS" -eq 0 ]]; then
+		if [[ "$PAR_INSTALL_CRONJOB" -eq 0 ]] && [[ "$PAR_DEINSTALL_CRONJOB" -eq 0 ]] && [[ "$PAR_UPDATE_SCRIPT" -eq 0 ]]; then
+			echo -n "${TXT_STATISTICS_COLLECTING_INFORMATION}: "; getTimeDifference $TIME_MEASUREMENT_COLLECTING_INFORMATION_START $TIME_MEASUREMENT_COLLECTING_INFORMATION_END; echo "s";
+			echo -n "${TXT_STATISTICS_VALIDATION}: "; getTimeDifference $TIME_MEASUREMENT_VALIDATION_START $TIME_MEASUREMENT_VALIDATION_END; echo "s";
+		fi
+		if [[ "$COLLECTING_INFORMATION_STATUS" -eq 0 ]] && [[ "$VALIDATION_STATUS" -eq 0 ]]; then
+			echo -n "${TXT_STATISTICS_EXECUTION_MECHANISM}: "; getTimeDifference $TIME_MEASUREMENT_EXECUTION_MECHANISM_START $TIME_MEASUREMENT_EXECUTION_MECHANISM_END; echo "s";
+			if [[ "$PAR_INFORM_ONLINE_CLIENTS" -eq 1 ]] || [[ "$PAR_TEST_INFORM_ONLINE_CLIENTS" -eq 1 ]]; then
+				if [[ -n "$TIME_MEASUREMENT_POKE_CLIENTS_START" ]]; then
+					echo -n "${TXT_STATISTICS_POKE}: "; getTimeDifference $TIME_MEASUREMENT_POKE_CLIENTS_START $TIME_MEASUREMENT_POKE_CLIENTS_END; echo "s";
+				fi
+				if [[ -n "$TIME_MEASUREMENT_POKE_CLIENTS_REALTIME_START" ]]; then
+					echo -n "${TXT_STATISTICS_POKE_REALTIME}: "; getTimeDifference $TIME_MEASUREMENT_POKE_CLIENTS_REALTIME_START $TIME_MEASUREMENT_POKE_CLIENTS_REALTIME_END; echo "s";
+				fi
+			fi
+		fi
+	fi
+	echo -n "${TXT_STATISTICS_CLEANUP}: "; getTimeDifference $TIME_MEASUREMENT_CLEANUP_START $TIME_MEASUREMENT_CLEANUP_END; echo "s";
+
+	echo -e "\n${TXT_SUPPORT_DEVELOPMENT}: https://www.paypal.com/cgi-bin/webscr?cmd=_s-xclick&hosted_button_id=7ZRXLSC2UBVWE";
+
+	# Restore stdin and close file descriptor 5
+	exec 0<&5 5>&-
+
+	unset TERM
+}
+
+##
+## MAIN PROGRAM
+##
+
+# Time measurement whole script START
+TIME_MEASUREMENT_SCRIPT_START=$(date +%s)
+
+clearTerminalScreen
+
+echo -e "\nAbout: ${SOFTWARE_ABOUT}";
+echo    "Author: ${SOFTWARE_AUTHOR}";
+echo    "Website: ${SOFTWARE_HOMEPAGE}";
+echo    "facebook: ${SOFTWARE_FACEBOOK}";
+echo -e "License: ${SOFTWARE_LICENSE}\n";
+
+echo	" _____ ____ _____       _              _       _        __";
+echo	"|_   _/ ___|___ /      | |_ ___   ___ | |___  (_)_ __  / _| ___";
+echo	"  | | \___ \ |_ \ _____| __/ _ \ / _ \| / __| | | '_ \| |_ / _ \\";
+echo	"  | |  ___) |__) |_____| || (_) | (_) | \__ \_| | | | |  _| (_) |";
+echo -e "  |_| |____/____/       \__\___/ \___/|_|___(_)_|_| |_|_|  \___/\n";
+
+echo	"Script Version: $SCRIPT_VERSION ($LAST_EDIT_DATE)";
+echo -n "Script License: "; if [[ "$SCRIPT_LICENSE" == "1" ]]; then echo -e "Hoster\n"; else echo -n "Non-Profit"; if [[ "$EUID" != 0 ]]; then echo -e " (Just root can check your license!)\n"; else echo -e "\n"; fi fi
+
+echo -e "Donate and support this script: https://www.paypal.com/cgi-bin/webscr?cmd=_s-xclick&hosted_button_id=7ZRXLSC2UBVWE\n";
+
+echo -e "------------------------------------------------------------------\n";
+
+echo -e "Please wait... Script is working...\n";
+
+# Detect absolute and full path as well as filename of this script
+cd "$(dirname $0)"
+ABSOLUTE_PATH=$(pwd)
+SCRIPT_NAME=$(basename $0)
+cd - > /dev/null
+
+##
+## MENU / HELP
+##
+
+# If no option is set, show the usage message
+if [ "$1" = "" ]; then
+	echo "$SCRIPT_NAME: missing option";
+	echo -e "\nMultiple option usage: ./${SCRIPT_NAME} [--check] [--delete-old-logs] [--inform-online-clients] [--latest-release | --beta-release] [--install-cronjob]";
+	echo -e "\nSingle option usage: ./${SCRIPT_NAME} [--test-inform-online-clients] | [--update-script] | [--deinstall-cronjob]";
+
+	echo -e "\nTry './$SCRIPT_NAME --help' for more options.\n";
+
+	exit 0;
+fi
+
+# Set default values for parameter/arguments
+PAR_DISPLAY_SETTINGS=0;
+PAR_CHECK=0;
+PAR_DELETE_OLD_LOGS=0;
+PAR_INFORM_ONLINE_CLIENTS=0;
+PAR_TEST_INFORM_ONLINE_CLIENTS=0;
+PAR_WAITING_TIME_IN_MINUTES=0;
+PAR_WAITING_TIME_MINS=0;
+PAR_DISABLE_TEMPORARY_PASSWORD_BACKUP=0;
+PAR_KEEP_BACKUPS=0;
+PAR_UPDATE_SCRIPT=0;
+PAR_PATH=0;
+PAR_PATH_DIRECTORY="/";
+PAR_LATEST_RELEASE=0;
+PAR_BETA_RELEASE=0;
+PAR_DEACTIVATE_HOST_ALIVE_CHECK=0;
+PAR_DEACTIVATE_PERMISSIONS_CHECK=0;
+PAR_INSTALL_CRONJOB=0;
+PAR_DEINSTALL_CRONJOB=0;
+PAR_CRONJOB_TASK=0;
+PAR_LOCALE="languages/verified/en_US.conf";
+PAR_DEBUG=0;
+
+# Save parameter list
+PAR_COUNTER=0;
+PAR_LIST="$*";
+
+# Check given arguments
+while [ -n "$1" ]; do
+	PAR_COUNTER=`expr $PAR_COUNTER + 1`;
+	case $(echo "$1" | tr '[:upper:]' '[:lower:]') in
+		-h | --help)
+			echo -e "Usage: ./${SCRIPT_NAME} OPTION(S)\n";
+
+			echo	"Available multi usable options:";
+			echo -e "--check\t				Checks, if a newer version for your instance is available";
+			echo	"--delete-old-logs			Deletes old TeamSpeak 3 server logs while update process";
+			echo -e "--inform-online-clients\t		Sends the configured poke message to each online client on each virtual server, that the server will be updated (if you enter 'Yes, update!')";
+			echo	"--keep-backups				Keep created backups by the script";
+			echo	"--waiting-time-in-minutes <MINUTES>	Optionally the script can wait X minutes before it starts the update process";
+			echo	"--disable-temporary-password-backup	Disable feature to backup temporary passwords";
+			echo	"--set-release				Do not use the official latest release. Use instead the set release from the given file configs/latestStableRelease.txt";
+			echo	"--beta-release				With this parameter you are able to detect and update your TeamSpeak server to the latest beta release";
+			if [[ "$SCRIPT_LICENSE" == "1" ]]; then
+				echo	"--path PATH				Just check the server in this directory and do not search for directories on the whole server";
+			fi
+			echo	"--locale <LANGUAGE-CODE>		Change language of this script to some of the available under languages/verified/ directory. Default is en_US.";
+			echo	"--debug <DEBUG_FILENAME>		Enables debugging and writes output to file";
+			echo -e "--install-cronjob			Installs weekly cronjob for monday at 3 AM (= 03:00 O'clock) with your given options\n";
+
+			echo	"Available single usable options:";
+			echo	"-h OR --help				Displays this help page";
+			echo -e "-v OR --version\t			Displays version of this script";
+			echo	"--display-settings			Displays settings from config files in configs/";
+			echo	"--test-inform-online-clients		Execute test poke with current settings";
+			echo -e "--update-script\t			Updates the TS3UpdateScript to the latest version";
+			echo	"--show-license-key			Displays TS3UpdateScript license key";
+			echo	"--send-license-information <EMAIL>	Sends license information to info@ts3-tools.com to get hoster license (view README.txt section 'Script Licenses'!)";
+			echo	"--deinstall-cronjob			Deinstalls weekly cronjob";
+
+			exit 0;
+		;;
+
+		--24x7)
+			echo -e "Usage: ./${SCRIPT_NAME} OPTION(S)\n";
+
+			echo    "Available multi usable options:";
+			echo -e "--check\t				Checks, if a newer version for your instance is available";
+			echo    "--delete-old-logs			Deletes old TeamSpeak 3 server logs while update process";
+			echo -e "--inform-online-clients\t		Sends the configured poke message to each online client on each virtual server, that the server will be updated (if you enter 'Yes, update!')";
+			echo    "--keep-backups				Keep created backups by the script";
+			echo    "--waiting-time-in-minutes <MINUTES>	Optionally the script can wait X minutes before it starts the update process";
+			echo	"--disable-temporary-password-backup	Disable feature to backup temporary passwords";
+			echo    "--set-release				Do not use the official latest release. Use instead the set release from the given file configs/latestStableRelease.txt";
+			echo    "--beta-release				With this parameter you are able to detect and update your TeamSpeak server to the latest beta release";
+			if [[ "$SCRIPT_LICENSE" == "1" ]]; then
+				echo    "--path PATH				Just check the server in this directory and do not search for directories on the whole server";
+			fi
+			echo -e "(--deactivate-host-alive-check)\t	Deactivates the part of self-test, which checks if all needed hosts are reachable. It is highly NOT recommended to use this parameter!";
+			echo -e "(--deactivate-permissions-check)\t	Deactivates the part of detection, which checks if the server is running as another user as root";
+			echo    "--locale <LANGUAGE-CODE>		Change language of this script to some of the available under languages/verified/ directory. Default is en_US.";
+			echo    "--debug <DEBUG_FILENAME>		Enables debugging and writes output to file";
+			echo -e "--install-cronjob			Installs weekly cronjob for monday at 3 AM (= 03:00 O'clock) with your given options\n";
+
+			echo    "Available single usable options:";
+			echo    "-h OR --help				Displays the help page";
+			echo -e "(--24x7)				Displays this help page with secret parameters. Secret parameters are marked with round brackets.";
+			echo -e "-v OR --version\t			Displays version of this script";
+			echo	"--display-settings			Displays settings from config files in configs/";
+			echo    "--test-inform-online-clients		Execute test poke with current settings";
+			echo -e "--update-script\t			Updates the TS3UpdateScript to the latest version";
+			echo -e "--show-license-key			Displays TS3UpdateScript license key";
+			echo	"--send-license-information <EMAIL>	Sends license information to info@ts3-tools.com to get hoster license (view README.txt section 'Script Licenses'!)";
+			echo    "--deinstall-cronjob			Deinstalls weekly cronjob";
+			
+			exit 0;
+		;;
+
+		-v | --version)
+			echo "The script of version $SCRIPT_VERSION was edited on $LAST_EDIT_DATE the last time.";
+
+			exit 0;
+		;;
+
+		--display-settings)
+			PAR_DISPLAY_SETTINGS=1;
+			shift;
+		;;
+
+		--check)
+			PAR_CHECK=1;
+			shift;
+		;;
+
+		--delete-old-logs)
+			PAR_DELETE_OLD_LOGS=1;
+			shift;
+		;;
+
+		--inform-online-clients)
+			PAR_INFORM_ONLINE_CLIENTS=1;
+			shift;
+		;;
+
+		--test-inform-online-clients)
+			PAR_TEST_INFORM_ONLINE_CLIENTS=1;
+			shift;
+		;;
+
+		--waiting-time-in-minutes)
+			PAR_WAITING_TIME_IN_MINUTES=1;
+
+			if [[ -n "$2" ]]; then
+				if [[ "$2" =~ ^[0-9]+$ ]]; then
+					PAR_WAITING_TIME_MINS=$2;
+				else
+					echo "Your set value '$2' is not allowed! Use integer instead. For example: --waiting-time 5";
+					exit 1;
+				fi
+			else
+				echo "Set the waiting time in minutes! For example: --waiting-time 5";
+				exit 1;
+			fi
+
+			shift;
+			shift;
+		;;
+
+		--disable-temporary-password-backup)
+			PAR_DISABLE_TEMPORARY_PASSWORD_BACKUP=1;
+			shift;
+		;;
+
+		--keep-backups)
+			PAR_KEEP_BACKUPS=1;
+			shift;
+		;;
+
+		--update-script)
+			PAR_UPDATE_SCRIPT=1;
+			shift;
+		;;
+
+		--path)
+			PAR_PATH=1;
+
+			if [[ -n "$2" ]]; then
+				if [[ -d "$2" ]]; then
+					if [[ -f "${2}/ts3server_startscript.sh" ]]; then
+						if [[ "$SCRIPT_LICENSE" == "1" ]]; then
+							PAR_PATH_DIRECTORY="$2";
+						else
+							echo "The parameter '--path' is not available under the Non-Profit license! You need to upgrade your license therefore. View README.txt for more.";
+							exit 1;
+						fi
+					else
+						echo "Your set directory '$2' is not a valid root directory of a TeamSpeak 3 server! Please set a correct one.";
+						exit 1;
+					fi
+				else
+					echo "Your set directory '$2' does not exist! Please set an existing one.";
+					exit 1;
+				fi
+			else
+				echo "Set the path to your TeamSpeak 3 server root directory! For example: --path /home/teamspeak/";
+				exit 1;
+			fi
+
+			shift;
+			shift;
+		;;
+
+		--latest-release)
+			PAR_LATEST_RELEASE=1;
+			shift;
+		;;
+
+		--beta-release)
+			PAR_BETA_RELEASE=1;
+			shift;
+		;;
+
+		--install-cronjob)
+			PAR_INSTALL_CRONJOB=1;
+			shift;
+		;;
+
+		--show-license-key)
+			echo "Your license key is as follows: $(cat license_key | sed 's/\(.\{4\}\)/\1 /g')";
+
+			exit 0;
+		;;
+
+		--send-license-information)
+			if [[ "$EUID" == 0 ]]; then
+				if [[ -n "$2" ]]; then
+					PAYMENT_EMAIL="$2";
+					IP_ADDRESS=$(wget -t 1 --timeout=5 -qO- "$(echo "${NEEDED_LICENSE_IP}" | base64 --decode)");
+					LICENSE_KEY="$(cat license_key)";
+
+					if [[ -n "$IP_ADDRESS" ]] && [[ -n "$LICENSE_KEY" ]]; then
+						(echo "Payment eMail: ${PAYMENT_EMAIL}"; echo "IP: ${IP_ADDRESS}"; echo "License key: ${LICENSE_KEY}") | mail -s "TS3-Tools.info - TS3UpdateScript Hoster License" info@ts3-tools.info -c "${PAYMENT_EMAIL}"
+						if [[ $? -eq 0 ]]; then
+							echo "Email should be sent successful to info@ts3-tools.info and ${PAYMENT_EMAIL}. If you do not receive this email within the next minutes, you server is may not able to send emails through the internet.";
+							exit 0;
+						else
+							echo "Could not send email. The 'mail' command is may not available.";
+							exit 1;
+						fi
+					else
+						echo "Could not detect your IP address or your license key. Please try again.";
+						exit 1;
+					fi
+				else
+					echo "Specify your payment email address, with which you have payed your license! For example: --send-license-information you@example.com";
+					exit 1;
+				fi
+			else
+				echo "Unable to get your license key. Run the script as root!";
+				exit 1;
+			fi
+		;;
+
+		--deinstall-cronjob)
+			PAR_DEINSTALL_CRONJOB=1;
+			shift;
+		;;
+
+		--deactivate-host-alive-check)
+			PAR_DEACTIVATE_HOST_ALIVE_CHECK=1;
+			shift;
+		;;
+
+		--deactivate-permissions-check)
+			PAR_DEACTIVATE_PERMISSIONS_CHECK=1;
+			shift;
+		;;
+
+		--locale)
+			if [[ -n "$2" ]]; then
+				if [[ -f "${ABSOLUTE_PATH}/languages/verified/${2}.conf" ]]; then
+					PAR_LOCALE="languages/verified/${2}.conf";
+				else
+					echo "This language file does not exist! Please take a look in the languages/verified/ directory for available languages.";
+					exit 1;
+				fi
+			else
+				echo "Specify the language! For example: --locale de_DE";
+				exit 1;
+			fi
+
+			shift;
+			shift;
+		;;
+
+		--debug)
+			PAR_DEBUG=1;
+
+			if [[ -n "$2" ]]; then
+				if [[ ! -f "$2" ]]; then
+					PAR_DEBUG_FILENAME="$2";
+				else
+					echo "This file does already exist! This script do not overwrite existing files. If you want to use this filename, you may should delete it.";
+					exit 1;
+				fi
+			else
+				echo "Specify the debug filename! For example: --debug error.txt";
+				exit 1;
+			fi
+
+			shift;
+			shift;
+		;;
+
+		--cronjob-task)
+			PAR_CRONJOB_TASK=1;
+			shift;
+		;;
+
+		*)
+			echo "Unregonized option: $1"
+			echo -e "\nUsage: ./$SCRIPT_NAME OPTION(S)\n";
+			echo "Try './$SCRIPT_NAME --help' for more options.";
+
+			exit 0;
+		;;
+	esac
+done
+
+# Given arguments allowed?
+if [[ "$PAR_COUNTER" -eq 1 ]]; then
+	if [[ "$PAR_CHECK" -eq 0 ]] && [[ "$PAR_UPDATE_SCRIPT" -eq 0 ]] && [[ "$PAR_DEINSTALL_CRONJOB" -eq 0 ]] && [[ "$PAR_TEST_INFORM_ONLINE_CLIENTS" -eq 0 ]] && [[ "$PAR_DISPLAY_SETTINGS" -eq 0 ]]; then
+		echo "It is not allowed to use this parameter only!";
+		exit 1;
+	fi
+elif [[ "$PAR_COUNTER" -eq 2 ]]; then
+	if [[ "$PAR_UPDATE_SCRIPT" -eq 1 ]] && [[ "$PAR_CRONJOB_TASK" -eq 0 ]] || [[ "$PAR_TEST_INFORM_ONLINE_CLIENTS" -eq 1 ]] && [[ "$PAR_CHECK" -eq 1 ]] || [[ "$PAR_DEINSTALL_CRONJOB" -eq 1 ]] || [[ "$PAR_DISPLAY_SETTINGS" -eq 1 ]]; then
+		echo "It is not allowed to use those both parameters at the same time!";
+		exit 1;
+	fi
+elif [[ "$PAR_COUNTER" -gt 2 ]]; then
+	if [[ "$PAR_HELP" -eq 1 ]] || [[ "$PAR_VERSION" -eq 1 ]] || [[ "$PAR_DEINSTALL_CRONJOB" -eq 1 ]] || [[ "$PAR_TEST_INFORM_ONLINE_CLIENTS" -eq 1 ]] || [[ "$PAR_DISPLAY_SETTINGS" -eq 1 ]]; then
+		echo "This type of combination is not permitted!";
+		exit 1;
+	elif [[ "$PAR_LATEST_RELEASE" -eq 1 ]] && [[ "$PAR_BETA_RELEASE" -eq 1 ]]; then
+		echo "You can not use the parameter '--latest-release' and '--beta-release' at the same time!";
+		exit 1;
+	elif [[ "$PAR_CHECK" -eq 0 ]]; then
+		echo "If you want to check/update your TeamSpeak 3 server instances, you should use '--check'.";
+		exit 1;
+	fi
+fi
+
+# Make sure that the script runs with root permissions
+if [[ "$EUID" != 0 ]]; then
+	echo "This action needs root permissions. Please enter your root password...";
+	cd "$ABSOLUTE_PATH"
+	su -s $(which bash) -c "./$SCRIPT_NAME $PAR_LIST"
+	cd - > /dev/null
+
+	exit 0;
+fi
+
+# Execute main program
+if [ $PAR_DEBUG -eq 0 ]; then
+	main
+else
+	main 2>&1 | tee $PAR_DEBUG_FILENAME | grep -E -v '^\+ '
+fi
+
+exit 0;
