@@ -693,7 +693,7 @@ function INIFileExists() {
 # Par 1: TeamSpeakRootDirectory:string
 # Return: DatabaseINIFile:string or 1:boolean
 function getDatabaseINIFile() {
-	if INIFileExists; then
+	if INIFileExists ${1}; then
 		DATABASE_INI_FILE="$(grep -E '^dbpluginparameter=[\w\.?]+$' < ${1}/ts3server.ini | cut -d '=' -f 2)"
 
 		if [[ -n "$DATABASE_INI_FILE" ]]; then
@@ -751,8 +751,8 @@ function getTS3ServerInstanceLogPath() {
 # Par 1: TeamSpeakRootDirectory:string
 # Return: ServerQueryIP:string
 function getServerQueryIP() {
-	if ! INIFileExists; then
-		SERVER_QUERY_IP="$(grep -E '^query_ip=(?:[0-9]{1,3}\.){3}[0-9]{1,3}$' < ${1}/ts3server.ini | cut -d '=' -f 2)"
+	if INIFileExists ${1}; then
+		SERVER_QUERY_IP="$(grep -E 'query_ip=' < ${1}/ts3server.ini | cut -d '=' -f 2)"
 
 		if [[ -n "$SERVER_QUERY_IP" ]]; then
 			echo -n "$SERVER_QUERY_IP";
@@ -768,7 +768,7 @@ function getServerQueryIP() {
 # Par 1: TeamSpeakRootDirectory:string
 # Return: ServerQueryPort:string
 function getServerQueryPort() {
-	if INIFileExists; then
+	if INIFileExists ${1}; then
 		SERVER_QUERY_PORT="$(grep -E '^query_port=[0-9]{4,5}$' < ${1}/ts3server.ini | cut -d '=' -f 2)"
 
 		if [[ -n "$SERVER_QUERY_PORT" ]]; then
@@ -1999,7 +1999,7 @@ function main() {
 					# Check serveradmin password
 					if ts3server ${INSTANCE_PATH} status; then
 						if ! checkServeradminPassword ${SERVERQUERY_IP} ${SERVERQUERY_PORT} ${INSTANCE_PATH}; then
-							echo "${TXT_VALIDATION_WRONG_PASSWORD}" >> VALIDATION_STATUS.txt;
+							echo "${TXT_VALIDATION_WRONG_PASSWORD}: ${INSTANCE_PATH}/.password-file" >> VALIDATION_STATUS.txt;
 							VALIDATION_STATUS=1;
 						fi
 					else
