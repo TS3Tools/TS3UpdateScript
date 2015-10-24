@@ -80,6 +80,7 @@ Hoster | ATHP | None | Yes | 79,99 EUR
 Send me your license information to get a invoice, which you need to pay:
 
   user@tux:~$ ./TS3UpdateScript --send-license-information [Your invoice E-Mail address]
+
   user@tux:~$ ./TS3UpdateScript --send-license-information you@example.com
 
 Hint: You should receive a copy of this email within a few minutes. If not, your server is may not able to send emails. Please follow the alternative instructions instead.
