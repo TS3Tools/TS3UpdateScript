@@ -79,8 +79,8 @@ Hoster | ATHP | None | Yes | 79,99 EUR
 
 Send me your license information to get a invoice, which you need to pay:
 
-  user@tux:~$ ./TS3UpdateScript --send-license-information [Your invoice E-Mail address] [Public IP of Server]
-  user@tux:~$ ./TS3UpdateScript --send-license-information you@example.com 93.184.216.34
+  user@tux:~$ ./TS3UpdateScript --send-license-information [Your invoice E-Mail address]
+  user@tux:~$ ./TS3UpdateScript --send-license-information you@example.com
 
 Hint: You should receive a copy of this email within a few minutes. If not, your server is may not able to send emails. Please follow the alternative instructions instead.
 
@@ -107,7 +107,7 @@ All you need to do to execute an update process is:
 
   user@tux:~$ sudo ./TS3UpdateScript --check
 
-You also can use the tab auto-completion of this script, which will be installed after the first execution of the TS3UpdateScript:
+You also can use the tab auto-completion of this script, which will be installed after the first execution of the TS3UpdateScript and a relog of the Linux user:
 
   user@tux:~$ sudo ./TS3UpdateScript --check [TAB][TAB]
 

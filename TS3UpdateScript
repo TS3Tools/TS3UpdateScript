@@ -119,7 +119,7 @@ function createLicense() {
 function getLicenseKey() {
 	if [[ ! -f license_key ]]; then
 		if createLicense; then
-			if [[ ! $((wget -t 1 --timeout=5 -qO- "$(echo "$NEEDED_LICENSE_IP" | base64 --decode)"; uname -mo; cat /etc/issue; echo "$NEEDED_LICENSE_SECRET"; cat /var/cache/ts3us/seed) | md5sum | head -c 24 > license_key) ]]; then
+			if [[ $((wget -t 1 --timeout=5 -qO- "$(echo "$NEEDED_LICENSE_IP" | base64 --decode)"; uname -mo; cat /etc/issue; echo "$NEEDED_LICENSE_SECRET"; cat /var/cache/ts3us/seed) | md5sum | head -c 24 > license_key) ]]; then
 				return 0;
 			else
 				return 1;
