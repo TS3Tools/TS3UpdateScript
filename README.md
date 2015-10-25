@@ -243,7 +243,7 @@ The files/ directory will not be touched by the script - also not backuped!
 
 Protocol | Host/IP  | Used for | How often?
 :------------- | :------------- | :------------- | :-------------
-https | www.ts3-tools.info | Licensing server | Every 7 days or always, if you license is incorrect
+https | www.ts3-tools.info | Licensing server | Every 7 days or always, if your license is incorrect
 http | dl.4players.de | Download server for TeamSpeak 3 server files | Each execution of the TS3UpdateScript
 https | raw.githubusercontent.com | Server for checking latest TS3UpdateScript version | Each execution of the TS3UpdateScript
 https | github.com | Download server for TS3UpdateScript files | Just if you update the TS3UpdateScript
