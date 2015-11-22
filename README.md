@@ -31,6 +31,8 @@ It checks, if a newer version for your TeamSpeak 3 server instance is available 
 	- [Directory Structure - Where can I find which file?](#)
 	- [Why got this script a high version number?](#)
 
+![Example Output](https://raw.githubusercontent.com/TS3Tools/TS3UpdateScript/master/img/TS3UpdateScript_Example_Summary.png)
+
 [Open CHANGELOG](https://github.com/TS3Tools/TS3UpdateScript/blob/master/docs/CHANGELOG.md)
 
 [Open install and usage guide](https://github.com/TS3Tools/TS3UpdateScript/blob/master/docs/INSTALL_USAGE_GUIDE.md)
@@ -38,8 +40,6 @@ It checks, if a newer version for your TeamSpeak 3 server instance is available 
 [Open upgrade guide](https://github.com/TS3Tools/TS3UpdateScript/blob/master/docs/UPDATE_GUIDE.md)
 
 [Open GNU GPLv3 license](https://github.com/TS3Tools/TS3UpdateScript/blob/master/LICENSE_GNU_GPL.md)
-
-![Example Output](https://raw.githubusercontent.com/TS3Tools/TS3UpdateScript/master/img/TS3UpdateScript_Example_Summary.png)
 
 ## Developers
 
