@@ -21,6 +21,7 @@ The BPA checks each of installed TeamSpeak server instances against the latest l
 	- [Could not identify the user ID of the owner.](https://github.com/TS3Tools/TS3UpdateScript/blob/master/docs/BEST_PRACTICES_ANALYZER.md#could-not-identify-the-user-id-of-the-owner)
 	- [Could not identify the group of the TeamSpeak 3 server files.](https://github.com/TS3Tools/TS3UpdateScript/blob/master/docs/BEST_PRACTICES_ANALYZER.md#could-not-identify-the-group-of-the-teamspeak-3-server-files)
  	- [Could not identify the group ID.](https://github.com/TS3Tools/TS3UpdateScript/blob/master/docs/BEST_PRACTICES_ANALYZER.md#could-not-identify-the-group-id)
+	- [WARNING: You rather should use an external storage for your files/ directory regarding big file uploads.](https://github.com/TS3Tools/TS3UpdateScript/blob/master/docs/BEST_PRACTICES_ANALYZER.md#warning-you-rather-should-use-an-external-storage-for-your-files-directory-regarding-big-file-uploads)
 
 ## Hint / Note
 
@@ -245,3 +246,19 @@ This means, that the script could not detect the group or it's ID of the TeamSpe
 8. Start your TeamSpeak server as the new user instead of root
 
   teamspeak@tux:~$ ./ts3server_startscript.sh start
+
+### WARNING: You rather should use an external storage for your files/ directory regarding big file uploads.
+
+Type: Warning
+
+This means, that you rather should save your user uploaded files, which are uploaded by file transfers into the files/ directory on an external storage to handle possible storage migration and resizing easier.
+
+Solutions:
+
+1. Setup an external storage like NAS, SAN, iSCSI
+
+2. Map the external storage via SMB/CIFS/NFS/iSCSI or whatever on the /path/to/teamspeak/instance/files/ directory
+
+3. Make sure, that the file transfers are able to save files on this new storage (check the permissions)
+
+Please note, that you should migrate existing data from your current/old storage to the new one. rsync is an useful software to migrate/copy your data.
