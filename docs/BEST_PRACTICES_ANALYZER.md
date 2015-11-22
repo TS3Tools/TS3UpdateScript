@@ -17,7 +17,7 @@ The BPA is just available with the 'Hoster' license. Read [here](https://github.
 The script includes following types of best practices:
 
 Type | Needs to be fixed | Examples
-:------------- | :-------------
+:------------- | :------------- | :-------------
 Warning | No | You should disable the login for the user
 Suggestion / Recommendation | Yes | Do not run the software as root
 
@@ -121,15 +121,25 @@ This means, that the script could not detect the owner or it's ID of the TeamSpe
 2. View the permissions and ownerships of the TeamSpeak server files
 
   root@tux:~# ls -lh /path/to/teamspeak/instance/
+
   -rw-r--r-- 1 teamspeak teamspeak  45K Okt 24 17:42 CHANGELOG
+
   drwxr-xr-x 2 teamspeak teamspeak 4,0K Okt 20  2014 doc
+
   drwx------ 8 teamspeak teamspeak 4,0K Dez 17  2014 files
+
      .
+
      .
+
      .
+
   -rwxr-xr-x 1 teamspeak teamspeak 3,9K Okt 24 17:42 ts3server_startscript.sh
+
   drwxr-xr-x 2 teamspeak teamspeak 4,0K Jul 16  2014 tsdns
+
                    ^         ^
+
                  User      Group
 
 2. View the file /etc/passwd
@@ -171,15 +181,25 @@ This means, that the script could not detect the group or it's ID of the TeamSpe
 2. View the permissions and ownerships of the TeamSpeak server files
 
   root@tux:~# ls -lh /path/to/teamspeak/instance/
+
   -rw-r--r-- 1 teamspeak teamspeak  45K Okt 24 17:42 CHANGELOG
+
   drwxr-xr-x 2 teamspeak teamspeak 4,0K Okt 20  2014 doc
+
   drwx------ 8 teamspeak teamspeak 4,0K Dez 17  2014 files
+
      .
+
      .
+
      .
+
   -rwxr-xr-x 1 teamspeak teamspeak 3,9K Okt 24 17:42 ts3server_startscript.sh
+
   drwxr-xr-x 2 teamspeak teamspeak 4,0K Jul 16  2014 tsdns
+
                    ^         ^
+
                  User      Group
 
 2. View the file /etc/group
