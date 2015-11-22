@@ -8,6 +8,21 @@ The BPA checks each of installed TeamSpeak server instances against the latest l
 - Suggestions and recommendations of experienced scripting and shell developers
 - Suggestions and recommendations of experienced TeamSpeak lover
 
+## Table of content
+
+- [BEST PRACTICES ANALYZER (BPA)](#)
+	- [Hint / Note](#)
+	- [Types](#)
+	- [Why should you have this feature?](#)
+	- [How-to fix best practice...](#)
+	- [Your server is running under owner root permissions. This is not recommend.](#)
+		- [Your server is running under group root permissions. This is not recommend.](#)
+		- [WARNING: Use an invalid shell like /bin/false or /usr/sbin/nologin to host your TeamSpeak 3 server a bit safer.](#)
+		- [Could not identify the owner of the TeamSpeak 3 server files.](#)
+		- [Could not identify the user ID of the owner.](#)
+		- [Could not identify the group of the TeamSpeak 3 server files.](#)
+		- [Could not identify the group ID.](#)
+
 ## Hint / Note
 
 The BPA is just available with the 'Hoster' license. Read [here](https://github.com/TS3Tools/TS3UpdateScript#script-licenses) for further license information.

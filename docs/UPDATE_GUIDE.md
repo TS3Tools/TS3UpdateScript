@@ -4,9 +4,10 @@ This file shows you, how you can update the TS3UpdateScript.
 
 ## Table of content
 
-1. How-To Update manually
-2. How-To Update automate
-3. How-To Update automate using cronjob
+- [UPDATE GUIDE](#)
+	- [How-To Update manually](#)
+	- [How-To Update automate](#)
+	- [How-To Update automate using cronjob](#)
 
 ## How-To Update manually
 

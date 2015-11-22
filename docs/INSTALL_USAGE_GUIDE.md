@@ -4,14 +4,16 @@ This file shows you, how you can install and use the TS3UpdateScript. This file 
 
 ## Table of content
 
-1. Requirements
-2. Installation
-3. Usage
-4. Update Text Examples
-5. Usage Examples
-6. How-To get "client_database_id"
-7. How-To get "sgid"
-8. Debugging
+- [INSTALL AND USAGE GUIDE](#)
+	- [Requirements](#)
+	- [Installation](#)
+	- [Usage](#)
+	- [Update text examples](#)
+		- [Available variables for update text](#)
+	- [Usage examples](#)
+	- [How-To get "client_database_id"](#)
+	- [How-To get "sgid"](#)
+	- [Debugging](#)
 
 ## Requirements
 

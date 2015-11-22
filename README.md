@@ -6,6 +6,31 @@
 
 It checks, if a newer version for your TeamSpeak 3 server instance is available or not. If yes, you can choose, if the script should update the server or not. You also have some parameters like "delete old logs files" and so on. Well... If you don't want to update your TeamSpeak 3 server manually, you can use this script. This script is doing ALL steps for a correct update process of your TeamSpeak 3 server.
 
+## Table of content
+
+- [TS3UpdateScript](#)
+	- [Developers](#)
+	- [Main features](#)
+	- [Special features](#)
+	- [Stay tuned!](#)
+	- [Available Languages](#)
+		- [Help us](#)
+	- [Script licenses](#)
+		- [Get Hoster license](#)
+	- [Donations](#)
+	- [Usage](#)
+	- [Parameters / Options](#)
+		- [Multi usable](#)
+			- [Examples](#)
+		- [Single usable](#)
+			- [Examples](#)
+	- [Requirements](#)
+	- [Supports](#)
+	- [Work flow of the script](#)
+	- [Used Ressources by the script](#)
+	- [Directory Structure - Where can I find which file?](#)
+	- [Why got this script a high version number?](#)
+
 [Open CHANGELOG](https://github.com/TS3Tools/TS3UpdateScript/blob/master/docs/CHANGELOG.md)
 
 [Open install and usage guide](https://github.com/TS3Tools/TS3UpdateScript/blob/master/docs/INSTALL_USAGE_GUIDE.md)
