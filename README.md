@@ -2,6 +2,8 @@
 
 **TS3UpdateScript** is the most used bash-script by companies to automate and optimaze the TeamSpeak 3 server update process. It is the fastest script you have ever seen for this task.
 
+[Show script licenses](https://github.com/TS3Tools/TS3UpdateScript#script-licenses)
+
 It checks, if a newer version for your TeamSpeak 3 server instance is available or not. If yes, you can choose, if the script should update the server or not. You also have some parameters like "delete old logs files" and so on. Well... If you don't want to update your TeamSpeak 3 server manually, you can use this script. This script is doing ALL steps for a correct update process of your TeamSpeak 3 server.
 
 [Open CHANGELOG](https://github.com/TS3Tools/TS3UpdateScript/blob/master/docs/CHANGELOG.md)
@@ -12,8 +14,6 @@ It checks, if a newer version for your TeamSpeak 3 server instance is available 
 
 [Open GNU GPLv3 license](https://github.com/TS3Tools/TS3UpdateScript/blob/master/LICENSE_GNU_GPL.md)
 
-![Help menu](https://raw.githubusercontent.com/TS3Tools/TS3UpdateScript/master/img/TS3UpdateScript_Help_Page.png)
-![Settings summary](https://raw.githubusercontent.com/TS3Tools/TS3UpdateScript/master/img/TS3UpdateScript_Settings_Summary.png)
 ![Example Output](https://raw.githubusercontent.com/TS3Tools/TS3UpdateScript/master/img/TS3UpdateScript_Example_Summary.png)
 
 ## Developers
@@ -58,9 +58,12 @@ It checks, if a newer version for your TeamSpeak 3 server instance is available 
 
 Verified:
 - en_US
+- de_DE
 
 Need Review:
 - None
+
+![Settings summary](https://raw.githubusercontent.com/TS3Tools/TS3UpdateScript/master/img/TS3UpdateScript_Settings_Summary.png)
 
 ### Help us
 
@@ -70,9 +73,9 @@ Just grab a copy of your language file, which you understand and translate the c
 
 ## Script licenses
 
-Name | Ideal for | Restrictions | Free Support | Costs
+Name | Ideal for | Restrictions | 5-years Support | Costs
 :------------- | :------------- | :------------- | :------------- | :-------------
-Non-Profit | Unlicensed, NPL, AAL | Single Instance, lesser parameters | No | Free of charge / 'Pay what you want'-Donation
+Non-Profit | Unlicensed, NPL, AAL | Single Instance, no [BPA](https://github.com/TS3Tools/TS3UpdateScript/blob/master/docs/BEST_PRACTICES_ANALYZER.md), no Cronjob | No | Free of charge / 'Pay what you want'-Donation
 Hoster | ATHP | None | Yes | 79,99 EUR
 
 ### Get Hoster license
@@ -104,15 +107,17 @@ All you need to do to get the list of available options/parameters is:
 
   user@tux:~$ sudo ./TS3UpdateScript --help
 
+![Help menu](https://raw.githubusercontent.com/TS3Tools/TS3UpdateScript/master/img/TS3UpdateScript_Help_Page.png)
+
 All you need to do to execute an update process is:
 
   user@tux:~$ sudo ./TS3UpdateScript --check
 
 You also can use the tab auto-completion of this script, which will be installed after the first execution of the TS3UpdateScript and a relog of the Linux user:
 
-  user@tux:~$ sudo ./TS3UpdateScript --check [TAB][TAB]
+  user@tux:~$ sudo ./TS3UpdateScript --check --[TAB][TAB]
 
-  user@tux:~$ sudo ./TS3UpdateScript --check --del[TAB]
+  user@tux:~$ sudo ./TS3UpdateScript --check --dele[TAB]
 
 ## Parameters / Options
 

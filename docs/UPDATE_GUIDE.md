@@ -1,6 +1,6 @@
 # UPDATE GUIDE
 
-This file shows you, how you can update the TS3 UpdateScript.
+This file shows you, how you can update the TS3UpdateScript.
 
 ## Table of content
 
@@ -10,28 +10,35 @@ This file shows you, how you can update the TS3 UpdateScript.
 
 ## How-To Update manually
 
-1. Download the latest version from https://github.com/TS3Tools/TS3UpdateScript
-2. Check the requirements for this script (can be found in INSTALL_USAGE_GUIDE.txt as well as README.md)
-3. Read the CHANGELOG.txt (important information are marked with a exclamation mark ("!"))
-4. Unzip and replace the old TS3UpdateScript.sh with the latest version
-5. Check, if your used parameters have been changed or not and adjust them, if needed (read CHANGELOG.txt therefore)
+1. Check the requirements for this script (can be found in [README.md](https://github.com/TS3Tools/TS3UpdateScript#requirements))
+2. Read the [docs/CHANGELOG.md](https://github.com/TS3Tools/TS3UpdateScript/blob/master/docs/CHANGELOG.md) (important information are marked with a exclamation mark ("!"))
+3. Download the latest version from https://github.com/TS3Tools/TS3UpdateScript
+
+  root@tux:~# wget https://github.com/TS3Tools/TS3UpdateScript/archive/master.zip
+
+4. Unzip and replace all old TS3UpdateScript files excluding the configs/ directory with the latest version
+
+  root@tux:~# unzip master.zip TS3UpdateScript-master/* -x TS3UpdateScript-master/configs/*
+
+5. Check, if your used parameters have been changed or not and adjust them, if needed (read [docs/CHANGELOG.md](https://github.com/TS3Tools/TS3UpdateScript/blob/master/docs/CHANGELOG.md) therefore)
 
 ## How-To Update automate
 
-1. Run the script with your needed/used parameters or just with '--check'
+1. Run the script with the parameter '--update-script'
+
+  root@tux:~# ./TS3UpdateScript --update-script
+
 2. The script will check for newer version and will ask you, if you want to update the script. Enter 'y' or 'yes', if you want to start the update process for the script
-3. Check, if your used parameters have been changed or not and adjust them, if needed (read CHANGELOG.txt therefore)
+3. Check, if your used parameters have been changed or not and adjust them, if needed (read [docs/CHANGELOG.md](https://github.com/TS3Tools/TS3UpdateScript/blob/master/docs/CHANGELOG.md) therefore)
 
 ## How-To Update automate using cronjob
 
-1. Deinstall old cronjob:
+The cronjob feature is just available with the 'Hoster' license. Read [here](https://github.com/TS3Tools/TS3UpdateScript#script-licenses) for further license information.
 
-  user@tux:~$ ./TS3UpdateScript --autoupdate no
+1. Install a new cronjob and/or make sure, that you've installed following cronjob line
 
-2. Install new cronjob with your needed parameters as well as with the needed parameter '--autoupdate-script' - for example:
+  root@tux:~# ./TS3UpdateScript --install-cronjob --check --inform-online-clients --delete-old-logs
 
-  user@tux:~$ ./TS3UpdateScript --check --inform-online-clients --autoupdate-script --delete-old-logs --autoupdate yes
+  45 2 * * 1  root /path/to/TS3UpdateScript --cronjob-task --update-script
 
-   HINT: The TS3UpdateScript will sort the parameters in cronjob to best practise. ;)
-
-3. Finish - The next cronjob will check for a newer version and will update the TS3UpdateScript if needed
+The next cronjob will check for a newer version and will update the TS3UpdateScript if needed. Please always take a look at the [docs/CHANGELOG.md](https://github.com/TS3Tools/TS3UpdateScript/blob/master/docs/CHANGELOG.md) and [requirements](https://github.com/TS3Tools/TS3UpdateScript#requirements).

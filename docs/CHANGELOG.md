@@ -2,6 +2,18 @@
 
 This file shows all the adjustments which were done in this TS3UpdateScript. For example there were some corrections on the code, some new features and bugfixes. This file is always referred to the attached TS3UpdateScript.
 
+## Meaning of releases
+
+Major Release | Minor Release | Hotfix Release
+:------------- | :------------- | :-------------
+4 | 1 | 0
+
+Release | Meaning
+:------------- | :-------------
+Major | New features, Re-development of code (structure) and fundamental changes to the TS3UpdateScript
+Minor | Small improvements, new best practice checks and something like this
+Hotfix | Important fix for one more issues, which causes a not working TS3UpdateScript
+
 ## Legend / History
 
 	+ Added something
@@ -9,7 +21,30 @@ This file shows all the adjustments which were done in this TS3UpdateScript. For
 	* Changed/Fixed something
 	! Hint/Warning
 
-## Version 4.0.0
+## Releases
+
+### Version 4.1.0
+
+! Cronjobs are now only available for TS3UpdateScript users with a valid Hoster script license
+* Improved detection of strings (thanks to Psychokiller for a hint)
+- Removed deprecated TS3UpdateScript
+* Updated [docs/CHANGELOG.md](https://github.com/TS3Tools/TS3UpdateScript/blob/master/docs/CHANGELOG.md)
+* Updated [docs/INSTALL_USAGE_GUIDE.md](https://github.com/TS3Tools/TS3UpdateScript/blob/master/docs/INSTALL_USAGE_GUIDE.md)
+* Updated [docs/UPDATE_GUIDE.md](https://github.com/TS3Tools/TS3UpdateScript/blob/master/docs/UPDATE_GUIDE.md)
++ Added [docs/BEST_PRACTICES_ANALYZER.md](https://github.com/TS3Tools/TS3UpdateScript/blob/master/docs/BEST_PRACTICES_ANALYZER.md) for further information to the Best Practices Analyzer (BPA) with instructions how-to fix the issues
+* Fixed installation of cronjob, because the job for the script update task was missing
+* Increased number of tries to fetch files and licensing information from 1 to 3
+* BPA warning 'Use an invalid shell' was not shown, if TeamSpeak server was not touched by the TS3UpdateScript
+* Updated COMMANDLINE_PARAMETER from 'inifile=ts3server.ini' to '${2} inifile=ts3server.ini' to support parameter 'serveradmin_password=newPassword' in ts3server_startscript.sh
++ Missing update question for script update
+* Fixed issue with '/root/TS3tools/TS3UpdateScript: Line 1606: TS3InstanceInfos.txt: No such file or directory'
+* Fixed faulty chars in cronjob emails (eg. [u [70C[  [0;32mShould be updated  [0m])
+* Improved layout of cronjob output in emails
+- Removed parameter '--cronjob-task' from cronjobs
+* Fixed issue with 'cat: license_key: No such file or directory' by using the parameter '--show-license-key'
++ Language de_DE
+
+### Version 4.0.0
 
 * Fully re-developed the script for a higher performance and better structure (functions are now available)
 ! IMPORTANT: Update the name of the script in your cronjob file '/etc/cron.d/TS3UpdateScript' or '/etc/fcron.cyclic/TS3UpdateScript', if you are using the cronjob feature
@@ -27,31 +62,31 @@ This file shows all the adjustments which were done in this TS3UpdateScript. For
 + Added support for temporary server passwords (use parameter --disable-temporary-password-backup to disable it)
 ! Temporary server passwords will be restored after a server reboot/update to the same ending date as before
 
-## Version 3.11.7.3
+### Version 3.11.7.3
 
 * Improved detection of latest TeamSpeak 3 server release
 ! ATTENTION: Without this fix, your server will may be downgraded!
 
-## Version 3.11.7.2
+### Version 3.11.7.2
 
 * Fixed wrong text for word 'Successful'
 
-## Version 3.11.7.1
+### Version 3.11.7.1
 
 * Fixed issue with missing `]' in line 1100 and 1102
 + Added script execution time measurement (e.g. Script execution time: 8s)
 
-## Version 3.11.7
+### Version 3.11.7
 
 * Fixed error with missing square brackets
 * Fixed wrong text for 'Waiting Time'
 
-## Version 3.11.6.1
+### Version 3.11.6.1
 
 * Fixed issue with update of script self (it also updated ALL instances)
 ! Important update! Please update as fast as possible or the script may will update all instances, also if do not wanted
 
-## Version 3.11.6
+### Version 3.11.6
 
 * Fixed cronjob installer (not all parameters were saved)
 * Fixed cronjob times (from the sixth instance the minutes are invalid: 60, 70, 80, 90,...) (Thanks to Psychokiller)
@@ -64,12 +99,12 @@ This file shows all the adjustments which were done in this TS3UpdateScript. For
 ! > tar: Child returned status 1
 ! > tar: Error is not recoverable: exiting now
 
-## Version 3.11.5.1
+### Version 3.11.5.1
 
 * Set default waiting time for cronjob (5 minutes)
 * Parameter '--waiting-time' is now also working in cronjobs
 
-## Version 3.11.5
+### Version 3.11.5
 
 * Added a hyphen to each 'su -c' command to prevent unknown issues
 ! For further information view issue on GitHub: https://github.com/TS3Tools/TS3UpdateScript/issues/4
@@ -79,17 +114,17 @@ This file shows all the adjustments which were done in this TS3UpdateScript. For
 + Added better detection of log paths (Thanks to https://github.com/Gertjanpfsense for this hint)
 + Added log path to output
 
-## Version 3.11.4
+### Version 3.11.4
 
 * Fixed issue with parameter conversion from upper to lower case (--keep-backups -> --kep-backups for example) (Thanks to https://github.com/kam1kaze for this hint)
 
-## Version 3.11.3
+### Version 3.11.3
 
 * Replaced $(whoami) with $EUID for reliable user identification (Thanks to https://github.com/psypanda)
 * Parameters are now case insensitive (Thanks to https://github.com/psypanda)
 * Fix error `cat: ./configs/administrator_eMail.txt: No such file or directory` if administrator_eMail.txt does not exist (Thanks to https://github.com/psypanda)
 
-## Version 3.11
+### Version 3.11
 
 * Fixed issue with non-working detection of latest TS3UpdateScript (added --no-check-certificate)
 + Added support for IPfire
@@ -99,25 +134,25 @@ This file shows all the adjustments which were done in this TS3UpdateScript. For
 * Fixed error message 'basename: missing operand'
 + Added mechanism to prevent TS3UpdateScript updates to version '' (unknown)
 
-## Version 3.10.4
+### Version 3.10.4
 
 * Set default values for ignore_servergroups.txt and ignore_clients.txt
 ! Do NOT remove those numbers from the config-files, because ServerQuerys can not be poked!
 * Set example text for update_text.txt and auto_update_text.txt
 * Fixed non-working pokes
 
-## Version 3.10.1
+### Version 3.10.1
 
 * Set absolute path for TEMP_* files of the script
 ! That should help against non-working client pokes (parameter --inform-online-clients)
 
-## Version 3.9.3
+### Version 3.9.3
 
 * Fixed issue with detecting installed release and binary, cause of not installed 'telnet' package
 * Renamed sentence 'Latest version is already installed. Nothing to do!' to 'Latest release is already installed. Nothing to do!'
 ! If the installed release is not known, the script will expect it as older version yet
 
-## Version 3.8.9
+### Version 3.8.9
 
 + Added changelog to output of script update
 * Renamed all 'LATEST_VERSION' variables to 'LATEST_STABLE_RELEASE'
@@ -129,12 +164,12 @@ This file shows all the adjustments which were done in this TS3UpdateScript. For
 - Removed needed software 'mktemp', because no temp files are needed anymore
 * Fixed issue with 'rm: missing operand'
 
-## Version 3.8.1
+### Version 3.8.1
 
 * Adjusted TS3UpdateScript cronjob eMail text for selfupdate of script
 + Added check: If the script is currently just updating itself and no instance, it should stop now after the self-check process
 
-## Version 3.8
+### Version 3.8
 
 * Adjusted detection for installed TeamSpeak server version, build and platform
 + Added "Build" string to summary output
@@ -147,7 +182,7 @@ This file shows all the adjustments which were done in this TS3UpdateScript. For
 ! Add your IP address, which is used for connecting as ServerQuery to query_ip_whitelist.txt or the script is may not able to detect your installed version, because it is banned by the server
 ! Do not check to often the same instance or you will get banned by the instance!
 
-## Version 3.7
+### Version 3.7
 
 + Added parameter(s) '-v' / '--version' to display the version of the script
 + Added parameter '--autoupdate-script' for full automate update process of your TS3UpdateScript - excluding configs/
@@ -159,7 +194,7 @@ This file shows all the adjustments which were done in this TS3UpdateScript. For
 ! Updated docs/UPDATE_GUIDE.txt
 ! Updated docs/INSTALL_USAGE_GUIDE.txt
 
-## Version 3.6.3
+### Version 3.6.3
 
 * Deleted first/standard password-file; it will now created with a stream redirection instead of coping the file
 * Changed donation link
@@ -174,11 +209,11 @@ This file shows all the adjustments which were done in this TS3UpdateScript. For
 * Outsourced TS3UpdateScript update mechnism to own script: .updateScript.sh
 ! ATTENTION: Do *NOT* execute the script manually - it's your own risk! Use instead ./TS3UpdateScript.sh --update-script
 
-## Version 3.5.1
+### Version 3.5.1
 
 ! No code was changed! Be sure, that you've installed the package 'ca-certificates' for fetching the latest script version - for further details execute 'apt-cache show ca-certificates'
 
-## Version 3.5
+### Version 3.5
 
 * Replaced Shebang '/bin/bash' with '/usr/bin/env bash' to make it more portable
 * Fixed issue with DDoS-Protection of TeamSpeak - the script is now able to identify the latest version (replaced teamspeak.com with teamspeak.de)
@@ -196,13 +231,13 @@ This file shows all the adjustments which were done in this TS3UpdateScript. For
 * Adjusted '--help' output, because some output was overwritten
 * Fixed check for latest version of TS3 UpdateScript self, because the old link is not longer available
 
-## Version 3.4
+### Version 3.4
 
 * Fixed non-working update feature for the script self
 ! Tried to fetch the version via the ServerQuery command 'version' but this will take 4 seconds more than analyzing the log file of the instance
 ! Do you have any further suggestions or bugs? Write me an eMail to mail@ts3-tools.info or open a new topic in the forum: http://www.forum.ts3-tools.info/
 
-## Version 3.3
+### Version 3.3
 
 * Fixed issue with variable "TERM" from Cronjob
 + Added status "In Progress" to the actual todo of the script: [ .. ] -> [ OK ] or [ FAILED ]
@@ -219,7 +254,7 @@ This file shows all the adjustments which were done in this TS3UpdateScript. For
 - Removed "tempfile" for Debian based systems (each system will use 'mktemp' now)
 * Moved 'Searching for latest TeamSpeak 3 server version' higher to adjust the progress of the script especially for the length checks
 
-## Version 3.2
+### Version 3.2
 
 * Adjusted update feature for the script (it will show you, if a newer version is available; you need to execute './TS3UpdateScript.sh --check-for-update' to update the script)
 * Adjusted checks for given parameters (you are now able to set the parameters in an order like you want)
@@ -234,7 +269,7 @@ This file shows all the adjustments which were done in this TS3UpdateScript. For
 ! Please provide the 'client_database_id' of each client, which should be ignored for pokes in following file: ignore_clients.txt (each line should contain one id)
 * Adjusted output of starting the "TSDNS server"
 
-## Version 3.1
+### Version 3.1
 
 * Fixed issue with deleting old logs, if '--autoupdate=yes' is used
 - Removed old software check code
@@ -260,7 +295,7 @@ This file shows all the adjustments which were done in this TS3UpdateScript. For
 ! The script will copy the 'password-file' file from the current directory to each TeamSpeak 3 server root directory and will use that file instead of the file from the same directory, where the TS3UpdateScript is located
 ! You need to run the script once, that the 'password-file' file is copied to each directory: ./TS3UpdateScript.sh --check
 
-## Version 3.0 RC5
+### Version 3.0 RC5
 
 * Fixed issue with older egrep versions (egrep: invalid option -- E)
 * Adjusted old text for '--inform-online-clients' - password-file and not password is needed as parameter
@@ -290,7 +325,7 @@ This file shows all the adjustments which were done in this TS3UpdateScript. For
 * Adjusted software package checks
 + Added feature to set your own poke message sender name: displayed_user_name.txt
 
-## Version 2.0
+### Version 2.0
 
 * Changed cronjob parameters from 'day of week', because 0 means to be sunday and not monday (I've also change the description. I ment AM, not PM.)
 * Changed sequence of starting TS3 and TSDNS server (1. TSDNS Server, 2. TS3 Server)
@@ -302,27 +337,27 @@ This file shows all the adjustments which were done in this TS3UpdateScript. For
 * Adjusted user and group detection of old files (it should be a bit faster than before)
 * Removed rsync parameter "-v" and "> /dev/null", because without "verbose output" is no output shown ;)
 
-## Version 1.6
+### Version 1.6
 
 * Adjusted detecting of TSDNS, because it had some problems with the 'netstat' command
 
-## Version 1.5
+### Version 1.5
 
 + Added TSDNS support
 + Added FreeBSD support
 * Adjusted detection of architecture, because of lesser code for TSDNS support
 
-## Version 1.4
+### Version 1.4
 
 * Fixed little bug with "could not find INI-file", if SQLite database is/was used (the script just aborted and done nothing)
 
-## Version 1.3
+### Version 1.3
 
 + Added MySQL support
 * Adjusted performance of script (it should work faster than version 1.2)
 - Deleted an unneeded line, which was called some lines before (nothing was done with this line)
 
-## Version 1.2
+### Version 1.2
 
 + Added feature to inform online clients
 	Cronjob message:
@@ -332,7 +367,7 @@ This file shows all the adjustments which were done in this TS3UpdateScript. For
 	Reason: The script is written for the bash
 + Added current installation details
 
-## Version 1.1
+### Version 1.1
 
 + Added optional feature to delete old logs (second parameter '--delete-old-logs')
 * Fixed issue with server start after successfull update

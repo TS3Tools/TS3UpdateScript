@@ -1,6 +1,6 @@
 # INSTALL AND USAGE GUIDE
 
-This file shows you, how you can install and use the TS3 UpdateScript. This file is always referred to the attached TS3 UpdateScript.
+This file shows you, how you can install and use the TS3UpdateScript. This file is always referred to the attached TS3UpdateScript.
 
 ## Table of content
 
@@ -19,40 +19,36 @@ This file shows you, how you can install and use the TS3 UpdateScript. This file
 
 ## Installation
 
-a) Download the TS3 UpdateScript from addons.teamspeak.com: http://addons.teamspeak.com/directory/tools/miscellaneous/Script-Automated-TeamSpeak-3-update-with-version-checker.html
+a) Download the TS3UpdateScript from addons.teamspeak.com: http://addons.teamspeak.com/directory/tools/miscellaneous/Script-Automated-TeamSpeak-3-update-with-version-checker.html
 					or from GitHub.com: https://github.com/TS3Tools/TS3UpdateScript/
 
 b) Unzip the downloaded archive on your Linux server:
-	For example: unzip TS3UpdateScript.zip
+   For example: unzip TS3UpdateScript.zip
 
    HINT: You can unzip and use the script from each directory of your server which you want to.
 
 c) Make the script executable:
-	chmod +x TS3UpdateScript
+
+  user@tux:~$ chmod +x TS3UpdateScript
 
 d) Set your configuration values:
-	- auto_update_text.txt
-		This file/text will be used, if the cronjob executes the script. The server informs your online clients and will wait 5 minutes before it starts the update process.
+- auto_update_text.txt
+  This file/text will be used, if the cronjob executes the script. The server informs your online clients and will wait 5 minutes before it starts the update process.
+- update_text.txt
+  This file/text will be used, if you are executing the script manually. The update process starts, if you hit "yes".
+- displayed_user_name.txt
+  This file contains the username, which will be displayed for poke messages
+- ignore_clients.txt
+  This file contains client_database_id's of users, which should not get any poke messages about updates
+  HINT: Do NOT remove the number 1 from this file!
+- ignore_servergroups.txt
+  This file containts sgid's of servergroups, which should not get any poke messages about updates
+  HINT: Do NOT remove the number 1 and 2 from this file!
+- password-file
+  This file contains the 'serveradmin' password to connect to your server
+  HINT: The password-file is located in each TeamSpeak 3 server root directory
 
-	- update_text.txt
-		This file/text will be used, if you are executing the script manually. The update process starts, if you hit "yes".
-
-	- displayed_user_name.txt
-		This file contains the username, which will be displayed for poke messages
-
-	- ignore_clients.txt
-		This file contains client_database_id's of users, which should not get any poke messages about updates
-		HINT: Do NOT remove the number 1 from this file!
-
-	- ignore_servergroups.txt
-		This file containts sgid's of servergroups, which should not get any poke messages about updates
-		HINT: Do NOT remove the number 1 and 2 from this file!
-
-	- password-file
-		This file contains the 'serveradmin' password to connect to your server
-		HINT: The password-file is located in each TeamSpeak 3 server root directory
-
-	HINT: Both texts has a limitation of 100 characters. The script checks at the start, if you are using a valid length. After editing the file(s), you should run the script once manually to check and see, if the length is ok.
+HINT: Both texts has a limitation of 100 characters. The script checks at the start, if you are using a valid length. After editing the file(s), you should run the script once manually to check and see, if the length is ok.
 
 f) Finish! Read the USAGE below to see, how you can use it
 
@@ -112,30 +108,39 @@ Installs weekly check cronjob for monday at 3 AM
 Same as './TS3UpdateScript.sh --check', but it's automated - you don't have to enter yes or no. Default is 'yes'
 Don't forget to provide your E-Mail address in the following file: administrator_eMail.txt
 
-  user@tux:~$ ./TS3UpdateScript --autoupdate yes --check
+  user@tux:~$ ./TS3UpdateScript --install-cronjob --check
 
 Same as above, but it will also delete old logs
 
-  user@tux:~$ ./TS3UpdateScript --autoupdate yes --check --delete-old-logs
+  user@tux:~$ ./TS3UpdateScript --install-cronjob --check --delete-old-logs
 
 Installs weekly check cronjob for monday at 3 AM; it also informs online clients and will wait 5 minutes for updating (password-file must include your 'serveradmin' password)
 
-  user@tux:~$ ./TS3UpdateScript --autoupdate yes --check --inform-online-clients
+  user@tux:~$ ./TS3UpdateScript --install-cronjob --check --inform-online-clients
 
 Installs weekly check cronjob for monday at 3 AM; it also deletes old logs, informs online clients and will wait 5 minutes for updating (password-file must include your 'serveradmin' password)
 This is my (Sebastian Kraetzig) personal favourite :)
 
-  user@tux:~$ ./TS3UpdateScript --autoupdate yes --check --delete-old-logs --inform-online-clients
+  user@tux:~$ ./TS3UpdateScript --install-cronjob --check --delete-old-logs --inform-online-clients
 
 Deinstalls weekly cronjob of monday at 3 AM
 
-  user@tux:~$ ./TS3UpdateScript --autoupdate no
+  user@tux:~$ ./TS3UpdateScript --deinstall-cronjob
 
 HINT: If you are installing a cronjob, it will look like following:
 
-  0 3 * * 0  root /path/to/TS3UpdateScript --path /home/to/teamspeak/install_dir --cronjob-auto-update --check --delete-old-logs --inform-online-clients
+  user@tux:~$ ./TS3UpdateScript --install-cronjob --check --delete-old-logs --inform-online-clients
 
-The "TS3 UpdateScript" cronjob can be found here: /etc/cron.d/TS3UpdateScript
+   0 3 * * 1  root /path/to/TS3UpdateScript --cronjob-task --path /path/to/teamspeak/instance1 --check --delete-old-logs --inform-online-clients
+  15 3 * * 1  root /path/to/TS3UpdateScript --cronjob-task --path /path/to/teamspeak/instance2 --check --delete-old-logs --inform-online-clients
+  30 3 * * 1  root /path/to/TS3UpdateScript --cronjob-task --path /path/to/teamspeak/instance3 --check --delete-old-logs --inform-online-clients
+  45 3 * * 1  root /path/to/TS3UpdateScript --cronjob-task --path /path/to/teamspeak/instance4 --check --delete-old-logs --inform-online-clients
+   0 4 * * 1  root /path/to/TS3UpdateScript --cronjob-task --path /path/to/teamspeak/instance5 --check --delete-old-logs --inform-online-clients
+  15 4 * * 1  root /path/to/TS3UpdateScript --cronjob-task --path /path/to/teamspeak/instance6 --check --delete-old-logs --inform-online-clients
+
+The "TS3UpdateScript" cronjob can be found here: /etc/cron.d/TS3UpdateScript
+
+You also can change the parameter list per instance. Just edit your cronjob file. If you just want to inform online clients on the instance 3, you can set the parameter --inform-online-clients on just this instance.
 
 ## How-To get "client_database_id"
 

@@ -16,8 +16,8 @@ exec 5<&0
 # Donations: https://www.paypal.com/cgi-bin/webscr?cmd=_s-xclick&hosted_button_id=7ZRXLSC2UBVWE
 #
 
-SCRIPT_VERSION="4.0.0"
-LAST_EDIT_DATE="2015-10-24"
+SCRIPT_VERSION="4.1.0"
+LAST_EDIT_DATE="2015-11-22"
 
 # DO NOT REMOVE OR CHANGE
 SOFTWARE_ABOUT="This is the most widely used and fastest shell script to update all your TeamSpeak 3 server instances."
@@ -82,7 +82,7 @@ function clearTerminalScreen() {
 # Return: 0:boolean or 1:boolean
 function checkConsistency() {
 	CHKSUM=$(cat $0 | grep -v "ORIGIN=" | head -202 | sha256sum | cut -d " " -f 1)
-	ORIGIN="2078b1f72e0403bb8207a1378376b8877e7d46c85f195db58c9a73e23abc5a83"
+	ORIGIN="cd2b849f2611811c797679eb51128cbeb87dc82ef10a445f78ec8a6cc54e6971"
 
 	if [[ "$CHKSUM" == "$ORIGIN" ]]; then
 		return 0;
@@ -119,7 +119,7 @@ function createLicense() {
 function getLicenseKey() {
 	if [[ ! -f license_key ]]; then
 		if createLicense; then
-			if [[ $((wget -t 1 --timeout=5 -qO- "$(echo "$NEEDED_LICENSE_IP" | base64 --decode)"; uname -mo; cat /etc/issue; echo "$NEEDED_LICENSE_SECRET"; cat /var/cache/ts3us/seed) | md5sum | head -c 24 > license_key) ]]; then
+			if [[ $((wget -t 3 --timeout=5 -qO- "$(echo "$NEEDED_LICENSE_IP" | base64 --decode)"; uname -mo; cat /etc/issue; echo "$NEEDED_LICENSE_SECRET"; cat /var/cache/ts3us/seed) | md5sum | head -c 24 > license_key) ]]; then
 				return 0;
 			else
 				return 1;
@@ -166,7 +166,7 @@ function checkLicense() {
 			elif [[ ${VERIFY_KEY} == $(getVerifyKey "5 days ago") ]]; then
 				LICENSE="ACCEPTED";
 			else
-				VERIFY=$(wget -t 1 --timeout=5 -qO- "$(echo "${NEEDED_LICENSE_KEY}" | base64 --decode)${LICENSE_KEY}")
+				VERIFY=$(wget -t 3 --timeout=5 -qO- "$(echo "${NEEDED_LICENSE_KEY}" | base64 --decode)${LICENSE_KEY}")
 
 				if [[ "$VERIFY" == "ACCEPTED" ]]; then
 					getVerifyKey > ${LICENSE_VERIFY_KEY}
@@ -176,13 +176,13 @@ function checkLicense() {
 				fi
 			fi
 		else
-			VERIFY=$(wget -t 1 --timeout=5 -qO- "$(echo "${NEEDED_LICENSE_KEY}" | base64 --decode)${LICENSE_KEY}")
+			VERIFY=$(wget -t 3 --timeout=5 -qO- "$(echo "${NEEDED_LICENSE_KEY}" | base64 --decode)${LICENSE_KEY}")
 
 			if [[ "$VERIFY" == "ACCEPTED" ]]; then
 				getVerifyKey > ${LICENSE_VERIFY_KEY}
 				LICENSE="ACCEPTED";
 			else
-				rm -rf license_key
+				rm -rf ${LICENSE_VERIFY_KEY}
 			fi
 		fi
 
@@ -630,7 +630,7 @@ function getOwnerOfTS3ServerFiles() {
 # Par 1: TS3ServerRootDirectory:string
 # Return: OwnerID:string or 1:boolean
 function getOwnerID() {
-	OWNER_ID=$(grep $(getOwnerOfTS3ServerFiles ${1}) /etc/passwd | cut -d ":" -f 3)
+	OWNER_ID=$(grep -E "^$(getOwnerOfTS3ServerFiles ${1})\:" /etc/passwd | cut -d ":" -f 3)
 
 	if [[ -n "$OWNER_ID" ]]; then
 		echo -n "$OWNER_ID";
@@ -656,7 +656,7 @@ function getGroupOfTS3ServerFiles() {
 # Par 1: TS3ServerRootDirectory:string
 # Return: GroupID:string or 1:boolean
 function getGroupID() {
-	GROUP_ID=$(grep $(getGroupOfTS3ServerFiles ${1}) /etc/passwd | cut -d ":" -f 4)
+	GROUP_ID=$(grep -E "^$(getGroupOfTS3ServerFiles ${1})\:" /etc/passwd | cut -d ":" -f 4)
 
 	if [[ -n "$GROUP_ID" ]]; then
 		echo -n "$GROUP_ID";
@@ -669,9 +669,22 @@ function getGroupID() {
 # Par 1: Owner
 # Return: 0:boolean or 1:boolean
 function isShellOfOwnerValid() {
-	SHELL="$(grep $1 /etc/passwd | cut -d ':' -f 7)"
+	SHELL="$(grep -E "^$1\:" /etc/passwd | cut -d ':' -f 7)"
 
 	if [[ "$SHELL" == "/bin/false" ]] || [[ "$SHELL" == "/usr/sbin/nologin" ]]; then
+		return 1;
+	else
+		return 0;
+	fi
+}
+
+# Check, if files/ directory is on a external storage (NAS/SAN/iSCSI)
+# Par 1: TeamSpeakRootDirectory:string
+# Return: 0:boolean or 1:boolean
+function isFilesStorageExternal() {
+	STORAGE="$(df ${1}/files/ | tail -1 | cut -d ' ' -f 1)"
+
+	if [[ "$STORAGE" != /* ]]; then
 		return 1;
 	else
 		return 0;
@@ -1570,7 +1583,7 @@ function updateTeamSpeakInstance() {
 		if [[ "$TEAMSPEAK_DATABASE_TYPE" == "MySQL" ]] || [[ "$TEAMSPEAK_DATABASE_TYPE" == "MariaDB" ]] || [ -f ${INSTANCE_PATH}/ts3server.ini ]; then
 			while read line; do
 				if [[ "$line" == 'COMMANDLINE_PARAMETERS="${2}" #add any command line parameters you want to pass here' ]]; then
-					echo 'COMMANDLINE_PARAMETERS="inifile=ts3server.ini" #add any command line parameters you want to pass here' >> ${INSTANCE_PATH}/TEMP_ts3server_startscript.sh;
+					echo 'COMMANDLINE_PARAMETERS="${2} inifile=ts3server.ini" #add any command line parameters you want to pass here' >> ${INSTANCE_PATH}/TEMP_ts3server_startscript.sh;
 				else
 					echo $line >> ${INSTANCE_PATH}/TEMP_ts3server_startscript.sh;
 				fi
@@ -1622,7 +1635,7 @@ function main() {
 	TIME_MEASUREMENT_SELFTESTS_START=$(date +%s)
 
 	if [ "$PAR_CRONJOB_TASK" -eq 1 ]; then
-		echo -en "${TXT_SELF_TEST_INFO}";
+		echo -n "${TXT_SELF_TEST_INFO}";
 	else
 		echo -en "${SCurs}${TXT_SELF_TEST_INFO}";
 		echo -e "${RCurs}${MCurs}[ ${Whi}.. ${RCol}]\n";
@@ -1739,7 +1752,7 @@ function main() {
 			COLLECTING_INFORMATION_STATUS=0;
 
 			if [ "$PAR_CRONJOB_TASK" -eq 1 ]; then
-				echo -en "${TXT_COLLECTING_INFORMATION_INFO}";
+				echo -n "${TXT_COLLECTING_INFORMATION_INFO}";
 			else
 				echo -en "${SCurs}${TXT_COLLECTING_INFORMATION_INFO}";
 				echo -e "${RCurs}${MCurs}[ ${Whi}.. ${RCol}]\n";
@@ -1854,9 +1867,11 @@ function main() {
 
 						if [[ "$OWNER" != "1" ]]; then
 							if [[ "$PAR_DEACTIVATE_PERMISSIONS_CHECK" -eq 0 ]]; then
-								if [[ "$OWNER" == "root" ]]; then
-									echo "${TXT_COLLECTING_INFORMATION_OWNER_ROOT_PERMISSIONS_INFO}" >> COLLECTING_INFORMATION_STATUS.txt;
-									COLLECTING_INFORMATION_STATUS=1;
+								if [[ "$SCRIPT_LICENSE" == "1" ]]; then
+									if [[ "$OWNER" == "root" ]]; then
+										echo "${TXT_COLLECTING_INFORMATION_OWNER_ROOT_PERMISSIONS_INFO}" >> COLLECTING_INFORMATION_STATUS.txt;
+										COLLECTING_INFORMATION_STATUS=1;
+									fi
 								fi
 							fi
 						else
@@ -1872,14 +1887,23 @@ function main() {
 							COLLECTING_INFORMATION_STATUS=1;
 						fi
 
+						# Check shell and display warning, if a valid shell is in use
+						if [[ "$SCRIPT_LICENSE" == "1" ]]; then
+							if isShellOfOwnerValid ${OWNER}; then
+								echo "${TXT_COLLECTING_INFORMATION_IS_SHELL_VALID_FAILED}" >> COLLECTING_INFORMATION_STATUS.txt;
+							fi
+						fi
+
 						# Detect group
 						GROUP="$(getGroupOfTS3ServerFiles ${INSTANCE_PATH})";
 
 						if [[ "$GROUP" != "1" ]]; then
 							if [[ "$PAR_DEACTIVATE_PERMISSIONS_CHECK" -eq 0 ]]; then
-								if [[ "$GROUP" == "root" ]]; then
-									echo "${TXT_COLLECTING_INFORMATION_GROUP_ROOT_PERMISSIONS_INFO}" >> COLLECTING_INFORMATION_STATUS.txt;
-									COLLECTING_INFORMATION_STATUS=1;
+								if [[ "$SCRIPT_LICENSE" == "1" ]]; then
+									if [[ "$GROUP" == "root" ]]; then
+										echo "${TXT_COLLECTING_INFORMATION_GROUP_ROOT_PERMISSIONS_INFO}" >> COLLECTING_INFORMATION_STATUS.txt;
+										COLLECTING_INFORMATION_STATUS=1;
+									fi
 								fi
 							fi
 						else
@@ -1901,6 +1925,13 @@ function main() {
 						if [[ "$DATABASE_TYPE" == "1" ]]; then
 							echo "${TXT_COLLECTING_INFORMATION_DATABASE_DETECTION_FAILED}" >> COLLECTING_INFORMATION_STATUS.txt;
 							COLLECTING_INFORMATION_STATUS=1;
+						fi
+
+						# Check files/ storage and display warning, if a non-external storage is in use
+						if [[ "$SCRIPT_LICENSE" == "1" ]]; then
+							if isFilesStorageExternal ${INSTANCE_PATH}; then
+								echo "${TXT_COLLECTING_INFORMATION_IS_FILES_STORAGE_EXTERNAL_FAILED}" >> COLLECTING_INFORMATION_STATUS.txt;
+							fi
 						fi
 
 						# Set textbased status flag based on collecting information status flag
@@ -1974,7 +2005,7 @@ function main() {
 
 		echo "${TXT_VALIDATION_INFO}" > VALIDATION_STATUS.txt;
 
-		if [[ "$PAR_DEINSTALL_CRONJOB" -eq 0 ]]; then
+		if [[ "$PAR_DEINSTALL_CRONJOB" -eq 0 ]] && [[ "$PAR_UPDATE_SCRIPT" -eq 0 ]]; then
 			while read instanceInfo; do
 				STATUS_FLAG=$(echo "$instanceInfo" | grep -Ev "^#" | cut -d "|" -f 1)
 				INSTANCE_PATH=$(echo "$instanceInfo" | grep -Ev "^#" | cut -d "|" -f 2)
@@ -2029,12 +2060,17 @@ function main() {
 			if [ "$PAR_CRONJOB_TASK" -eq 1 ]; then
 				echo "[ OK ]";
 
-				echo -en "${TXT_VALIDATION_INFO_SUCCESS} [ INFO ]";
+				echo "${TXT_VALIDATION_INFO_SUCCESS} [ INFO ]";
 			else
 				echo -e "${RCurs}${MCurs}[ ${Gre}OK ${RCol}]\n";
 
 				echo -en "${SCurs}${TXT_VALIDATION_INFO_SUCCESS}";
 				echo -e "${RCurs}${MCurs}[ ${Cya}INFO ${RCol}]\n";
+			fi
+
+			# Show validation warnings
+			if [[ -f COLLECTING_INFORMATION_STATUS.txt ]]; then
+				cat COLLECTING_INFORMATION_STATUS.txt
 			fi
 
 			##
@@ -2048,24 +2084,55 @@ function main() {
 
 			# Update script
 			if [[ "$PAR_UPDATE_SCRIPT" -eq 1 ]]; then
-				if [ "$PAR_CRONJOB_TASK" -eq 1 ]; then
-					echo -en "${TXT_EXECUTION_MECHANISM_UPDATING_INFO}";
-				else
-					echo -en "${SCurs}${TXT_EXECUTION_MECHANISM_UPDATING_INFO}";
-					echo -e "${RCurs}${MCurs}[ ${Whi}.. ${RCol}]\n";
-				fi
-
-				if updateTS3UpdateScript; then
-					if [ "$PAR_CRONJOB_TASK" -eq 1 ]; then
-						echo "[ Should be updated ]";
+				if [[ "$SCRIPT_VERSION" != "$LATEST_SCRIPT_VERSION" ]]; then
+					if [[ "$PAR_CRONJOB_TASK" -eq 1 ]]; then
+						UPDATE_SCRIPT_ANSWER=1;
 					else
-						echo -e "${RCurs}${MCurs}[ ${Gre}Should be updated ${RCol}]\n";
+						UPDATE_SCRIPT_ANSWER=2;
+						while [[ "$UPDATE_SCRIPT_ANSWER" -eq 2 ]]; do
+							read -p "${TXT_EXECUTION_MECHANISM_SCRIPT_UPDATE_ANSWER} ([y]es/[n]o) " UPDATE_SCRIPT_ANSWER <&5
+
+							if [[ -n "$UPDATE_SCRIPT_ANSWER" ]] && [[ "$UPDATE_SCRIPT_ANSWER" != "y" ]] && [[ "$UPDATE_SCRIPT_ANSWER" != "yes" ]] && [[ "$UPDATE_SCRIPT_ANSWER" != "n" ]] && [[ "$UPDATE_SCRIPT_ANSWER" != "no" ]]; then
+								echo -en "${SCurs}${TXT_EXECUTION_MECHANISM_SCRIPT_UPDATE_ANSWER_ERROR}";
+								echo -e "${RCurs}${MCurs}[ ${Red}ERROR ${RCol}]";
+								UPDATE_SCRIPT_ANSWER=2;
+							elif [[ "$UPDATE_SCRIPT_ANSWER" == "y" ]] || [[ "$UPDATE_SCRIPT_ANSWER" == "yes" ]]; then
+								UPDATE_SCRIPT_ANSWER=1;
+							elif [[ "$UPDATE_SCRIPT_ANSWER" == "n" ]] || [[ "$UPDATE_SCRIPT_ANSWER" == "no" ]]; then
+								UPDATE_SCRIPT_ANSWER=0;
+							fi
+						done
 					fi
 				else
-					if [ "$PAR_CRONJOB_TASK" -eq 1 ]; then
-						echo "[ FAILED ]";
+					UPDATE_SCRIPT_ANSWER=0;
+				fi
+
+				if [[ "$PAR_CRONJOB_TASK" -eq 1 ]]; then
+					echo -n "${TXT_EXECUTION_MECHANISM_SCRIPT_UPDATE_INFO}";
+				else
+					echo -en "${SCurs}${TXT_EXECUTION_MECHANISM_SCRIPT_UPDATE_INFO}";
+					echo -e "${RCurs}${MCurs}[ ${Whi}.. ${RCol}]";
+				fi
+
+				if [[ "$UPDATE_SCRIPT_ANSWER" -eq 1 ]]; then
+					if updateTS3UpdateScript; then
+						if [ "$PAR_CRONJOB_TASK" -eq 1 ]; then
+							echo "[ Should be updated ]";
+						else
+							echo -e "${RCurs}${MCursBB}[ ${Gre}Should be updated ${RCol}]\n";
+						fi
 					else
-						echo -e "${RCurs}${MCurs}[ ${Red}FAILED ${RCol}]\n";
+						if [ "$PAR_CRONJOB_TASK" -eq 1 ]; then
+							echo "[ FAILED ]";
+						else
+							echo -e "${RCurs}${MCurs}[ ${Red}FAILED ${RCol}]\n";
+						fi
+					fi
+				elif [[ "$UPDATE_SCRIPT_ANSWER" -eq 0 ]]; then
+					if [ "$PAR_CRONJOB_TASK" -eq 1 ]; then
+						echo "[ Was not updated ]";
+					else
+						echo -e "${RCurs}${MCursBB}[ ${Cya}Was not updated ${RCol}]";
 					fi
 				fi
 			# Display settings
@@ -2087,7 +2154,7 @@ function main() {
 			# Install cronjob
 			elif [[ "$PAR_INSTALL_CRONJOB" -eq 1 ]]; then
 				if [ "$PAR_CRONJOB_TASK" -eq 1 ]; then
-					echo -en "${TXT_EXECUTION_MECHANISM_CRONJOB_INSTALLATION_INFO}";
+					echo -n "${TXT_EXECUTION_MECHANISM_CRONJOB_INSTALLATION_INFO}";
 				else
 					echo -en "${SCurs}${TXT_EXECUTION_MECHANISM_CRONJOB_INSTALLATION_INFO}";
 					echo -e "${RCurs}${MCurs}[ ${Whi}.. ${RCol}]\n";
@@ -2105,9 +2172,7 @@ function main() {
 				echo -en "MAILTO=\"$(getAdministratorEmail)\"\n\n" >> ${CROND_PATH_FILE};
 				echo -en "# TS3UpdateScript: Cronjob(s) for auto updates\n\n" >> ${CROND_PATH_FILE};
 
-				if [ "$PAR_UPDATE_SCRIPT" -eq 1 ]; then
-					echo -e "  45 2 * * 1  root $(pwd)/$(basename $0) --cronjob-task --autoupdate-script\n" >> ${CROND_PATH_FILE};
-				fi
+				echo -e "  45 2 * * 1  root $(pwd)/$(basename $0) --update-script\n" >> ${CROND_PATH_FILE};
 
 				CRONJOB_MINUTE="0";
 				CRONJOB_HOUR="3";
@@ -2117,7 +2182,6 @@ function main() {
 
 					if [[ -n "$INSTANCE_PATH" ]]; then
 						echo -n "  ${CRONJOB_MINUTE} ${CRONJOB_HOUR} * * 1  root ${ABSOLUTE_PATH}/${SCRIPT_NAME} " >> ${CROND_PATH_FILE};
-						echo -n "--cronjob-task " >> ${CROND_PATH_FILE};
 						echo -n "--path ${INSTANCE_PATH} " >> ${CROND_PATH_FILE};
 
 						if [ "$PAR_CHECK" -eq 1 ]; then
@@ -2185,7 +2249,7 @@ function main() {
 			# Deinstall cronjob
 			elif [[ "$PAR_DEINSTALL_CRONJOB" -eq 1 ]]; then
 				if [ "$PAR_CRONJOB_TASK" -eq 1 ]; then
-					echo -en "${TXT_EXECUTION_MECHANISM_CRONJOB_DEINSTALLATION_INFO}";
+					echo -n "${TXT_EXECUTION_MECHANISM_CRONJOB_DEINSTALLATION_INFO}";
 				else
 					echo -en "${SCurs}${TXT_EXECUTION_MECHANISM_CRONJOB_DEINSTALLATION_INFO}";
 					echo -e "${RCurs}${MCurs}[ ${Whi}.. ${RCol}]\n";
@@ -2197,7 +2261,7 @@ function main() {
 
 				if [[ $? -eq 0 ]]; then
 					if [ "$PAR_CRONJOB_TASK" -eq 1 ]; then
-						echo -en "[ OK ]";
+						echo "[ OK ]";
 					else
 						echo -e "${RCurs}${MCurs}[ ${Gre}OK ${RCol}]\n";
 					fi
@@ -2205,7 +2269,7 @@ function main() {
 					echo "${TXT_EXECUTION_MECHANISM_CRONJOB_DEINSTALLATION_SUCCESSFUL}: ${CROND_PATH}TS3UpdateScript";
 				else
 					if [ "$PAR_CRONJOB_TASK" -eq 1 ]; then
-						echo -en "[ FAILED ]";
+						echo "[ FAILED ]";
 					else
 						echo -e "${RCurs}${MCurs}[ ${Red}FAILED ${RCol}]\n";
 					fi
@@ -2223,7 +2287,7 @@ function main() {
 					if [[ -n "$SERVERQUERY_IP" ]] && [[ -n "$SERVERQUERY_PORT" ]]; then
 						if ts3server ${INSTANCE_PATH} status; then
 							if [ "$PAR_CRONJOB_TASK" -eq 1 ]; then
-								echo -en "${TXT_EXECUTION_MECHANISM_POKING_INFO}: ${INSTANCE_PATH}";
+								echo -n "${TXT_EXECUTION_MECHANISM_POKING_INFO}: ${INSTANCE_PATH}";
 							else
 								echo -en "${SCurs}${TXT_EXECUTION_MECHANISM_POKING_INFO}: ${INSTANCE_PATH}";
 								echo -e "${RCurs}${MCurs}[ ${Whi}.. ${RCol}]\n";
@@ -2231,13 +2295,13 @@ function main() {
 
 							if pokeAllowedClients "${SERVERQUERY_IP}" "${SERVERQUERY_PORT}" $POKE_MESSAGE_ESCAPED; then
 								if [ "$PAR_CRONJOB_TASK" -eq 1 ]; then
-									echo -en "[ OK ]";
+									echo "[ OK ]";
 								else
 									echo -e "${RCurs}${MCurs}[ ${Gre}OK ${RCol}]\n";
 								fi
 							else
 								if [ "$PAR_CRONJOB_TASK" -eq 1 ]; then
-									echo -en "[ FAILED ]";
+									echo "[ FAILED ]";
 								else
 									echo -e "${RCurs}${MCurs}[ ${Red}FAILED ${RCol}]\n";
 								fi
@@ -2281,11 +2345,6 @@ function main() {
 								echo	"############################################################################";
 								echo -e "	${TXT_EXECUTION_MECHANISM_UPDATE_QUESTION} ${LATEST_TS3_SERVER_VERSION}\n";
 
-								# Check shell and display warning, if a valid shell is in use
-								if isShellOfOwnerValid ${OWNER}; then
-									echo -e "	${TXT_COLLECTING_INFORMATION_IS_SHELL_VALID_FAILED}\n"
-								fi
-
 								echo	"	${TXT_EXECUTION_MECHANISM_INSTALLATION_DIRECTORY}: ${INSTANCE_PATH}";
 								echo	"	${TXT_EXECUTION_MECHANISM_INSTALLED_VERSION}: ${INSTALLED_TS3_SERVER_VERSION} (${TXT_EXECUTION_MECHANISM_INSTALLED_BUILD}: ${INSTALLED_TS3_SERVER_BUILD})";
 								echo	"	${TXT_EXECUTION_MECHANISM_INSTALLED_PLATFORM}: ${INSTALLED_TS3_SERVER_PLATFORM}";
@@ -2321,7 +2380,7 @@ function main() {
 										TIME_MEASUREMENT_POKE_CLIENTS_START=$(date +%s)
 
 										if [ "$PAR_CRONJOB_TASK" -eq 1 ]; then
-											echo -en "${TXT_EXECUTION_MECHANISM_POKING_INFO}: ${INSTANCE_PATH}";
+											echo -n "${TXT_EXECUTION_MECHANISM_POKING_INFO}: ${INSTANCE_PATH}";
 										else
 											echo -en "${SCurs}${TXT_EXECUTION_MECHANISM_POKING_INFO}: ${INSTANCE_PATH}";
 											echo -e "${RCurs}${MCurs}[ ${Whi}.. ${RCol}]\n";
@@ -2329,13 +2388,13 @@ function main() {
 
 										if pokeAllowedClients "${SERVERQUERY_IP}" "${SERVERQUERY_PORT}" $POKE_MESSAGE_ESCAPED; then
 											if [ "$PAR_CRONJOB_TASK" -eq 1 ]; then
-												echo -en "[ OK ]";
+												echo "[ OK ]";
 											else
 												echo -e "${RCurs}${MCurs}[ ${Gre}OK ${RCol}]\n";
 											fi
 										else
 											if [ "$PAR_CRONJOB_TASK" -eq 1 ]; then
-												echo -en "[ FAILED ]";
+												echo "[ FAILED ]";
 											else
 												echo -e "${RCurs}${MCurs}[ ${Red}FAILED ${RCol}]\n";
 											fi
@@ -2749,7 +2808,10 @@ function main() {
 # Time measurement whole script START
 TIME_MEASUREMENT_SCRIPT_START=$(date +%s)
 
-clearTerminalScreen
+# Clear terminal screen, if this session is interactive
+if [ -t 0 ]; then
+	clearTerminalScreen
+fi
 
 echo -e "\nAbout: ${SOFTWARE_ABOUT}";
 echo    "Author: ${SOFTWARE_AUTHOR}";
@@ -2813,6 +2875,14 @@ PAR_DEACTIVATE_PERMISSIONS_CHECK=0;
 PAR_INSTALL_CRONJOB=0;
 PAR_DEINSTALL_CRONJOB=0;
 PAR_CRONJOB_TASK=0;
+if [ ! -t 0 ]; then
+	if [[ "$SCRIPT_LICENSE" == "1" ]]; then
+		PAR_CRONJOB_TASK=1;
+	else
+		echo "Cronjobs are not possible under the Non-Profit license! You need to upgrade your license therefore. View README.md for more.";
+		exit 1;
+	fi
+fi
 PAR_LOCALE="languages/verified/en_US.conf";
 PAR_DEBUG=0;
 
@@ -2850,7 +2920,7 @@ while [ -n "$1" ]; do
 			echo	"--test-inform-online-clients		Execute test poke with current settings";
 			echo -e "--update-script\t			Updates the TS3UpdateScript to the latest version";
 			echo	"--show-license-key			Displays TS3UpdateScript license key";
-			echo	"--send-license-information <EMAIL>	Sends license information to info@ts3-tools.com to get hoster license (view README.txt section 'Script Licenses'!)";
+			echo	"--send-license-information <EMAIL>	Sends license information to info@ts3-tools.com to get hoster license (view README.md section 'Script Licenses'!)";
 			echo	"--deinstall-cronjob			Deinstalls weekly cronjob";
 
 			exit 0;
@@ -2872,7 +2942,7 @@ while [ -n "$1" ]; do
 				echo    "--path PATH				Just check the server in this directory and do not search for directories on the whole server";
 			fi
 			echo -e "(--deactivate-host-alive-check)\t	Deactivates the part of self-test, which checks if all needed hosts are reachable. It is highly NOT recommended to use this parameter!";
-			echo -e "(--deactivate-permissions-check)\t	Deactivates the part of detection, which checks if the server is running as another user as root";
+			echo -e "(--deactivate-permissions-check)	Deactivates the part of detection, which checks if the server is running as another user as root";
 			echo    "--locale <LANGUAGE-CODE>		Change language of this script to some of the available under languages/verified/ directory. Default is en_US.";
 			echo    "--debug <DEBUG_FILENAME>		Enables debugging and writes output to file";
 			echo -e "--install-cronjob			Installs weekly cronjob for monday at 3 AM (= 03:00 O'clock) with your given options\n";
@@ -2885,7 +2955,7 @@ while [ -n "$1" ]; do
 			echo    "--test-inform-online-clients		Execute test poke with current settings";
 			echo -e "--update-script\t			Updates the TS3UpdateScript to the latest version";
 			echo -e "--show-license-key			Displays TS3UpdateScript license key";
-			echo	"--send-license-information <EMAIL>	Sends license information to info@ts3-tools.com to get hoster license (view README.txt section 'Script Licenses'!)";
+			echo	"--send-license-information <EMAIL>	Sends license information to info@ts3-tools.com to get hoster license (view README.md section 'Script Licenses'!)";
 			echo    "--deinstall-cronjob			Deinstalls weekly cronjob";
 			
 			exit 0;
@@ -2965,7 +3035,7 @@ while [ -n "$1" ]; do
 						if [[ "$SCRIPT_LICENSE" == "1" ]]; then
 							PAR_PATH_DIRECTORY="$2";
 						else
-							echo "The parameter '--path' is not available under the Non-Profit license! You need to upgrade your license therefore. View README.txt for more.";
+							echo "The parameter '--path' is not available under the Non-Profit license! You need to upgrade your license therefore. View README.md for more.";
 							exit 1;
 						fi
 					else
@@ -2996,12 +3066,22 @@ while [ -n "$1" ]; do
 		;;
 
 		--install-cronjob)
-			PAR_INSTALL_CRONJOB=1;
+			if [[ "$SCRIPT_LICENSE" == "1" ]]; then
+				PAR_INSTALL_CRONJOB=1;
+			else
+				echo "The parameter '--install-cronjob' is not available under the Non-Profit license! You need to upgrade your license therefore. View README.md for more.";
+				exit 1;
+			fi
+
 			shift;
 		;;
 
 		--show-license-key)
-			echo "Your license key is as follows: $(cat license_key | sed 's/\(.\{4\}\)/\1 /g')";
+			if [ -f license_key ]; then
+				echo "Your license key is as follows: $(cat license_key | sed 's/\(.\{4\}\)/\1 /g')";
+			else
+				echo "You need to execute the script once with root permissions to obtain a valid license.";
+			fi
 
 			exit 0;
 		;;
@@ -3010,7 +3090,7 @@ while [ -n "$1" ]; do
 			if [[ "$EUID" == 0 ]]; then
 				if [[ -n "$2" ]]; then
 					PAYMENT_EMAIL="$2";
-					IP_ADDRESS=$(wget -t 1 --timeout=5 -qO- "$(echo "${NEEDED_LICENSE_IP}" | base64 --decode)");
+					IP_ADDRESS=$(wget -t 3 --timeout=5 -qO- "$(echo "${NEEDED_LICENSE_IP}" | base64 --decode)");
 					LICENSE_KEY="$(cat license_key)";
 
 					if [[ -n "$IP_ADDRESS" ]] && [[ -n "$LICENSE_KEY" ]]; then
@@ -3055,6 +3135,9 @@ while [ -n "$1" ]; do
 			if [[ -n "$2" ]]; then
 				if [[ -f "${ABSOLUTE_PATH}/languages/verified/${2}.conf" ]]; then
 					PAR_LOCALE="languages/verified/${2}.conf";
+				elif [[ -f "${ABSOLUTE_PATH}/languages/need_review/${2}.conf" ]]; then
+					echo "This language file has not been verified yet. Fallback to language en_US.";
+					PAR_LOCALE="languages/verified/en_US.conf";
 				else
 					echo "This language file does not exist! Please take a look in the languages/verified/ directory for available languages.";
 					exit 1;
@@ -3084,11 +3167,6 @@ while [ -n "$1" ]; do
 			fi
 
 			shift;
-			shift;
-		;;
-
-		--cronjob-task)
-			PAR_CRONJOB_TASK=1;
 			shift;
 		;;
 
