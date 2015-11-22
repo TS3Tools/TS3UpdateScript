@@ -4,15 +4,15 @@ This file shows you, how you can install and use the TS3UpdateScript. This file 
 
 ## Table of content
 
-- [Requirements](#)
-- [Installation](#)
-- [Usage](#)
-- [Update text examples](#)
-	- [Available variables for update text](#)
-- [Usage examples](#)
-- [How-To get "client_database_id"](#)
-- [How-To get "sgid"](#)
-- [Debugging](#)
+- [Requirements](https://github.com/TS3Tools/TS3UpdateScript/blob/master/docs/INSTALL_USAGE_GUIDE.md#requirements)
+- [Installation](https://github.com/TS3Tools/TS3UpdateScript/blob/master/docs/INSTALL_USAGE_GUIDE.md#installation)
+- [Usage](https://github.com/TS3Tools/TS3UpdateScript/blob/master/docs/INSTALL_USAGE_GUIDE.md#usage)
+- [Update text examples](https://github.com/TS3Tools/TS3UpdateScript/blob/master/docs/INSTALL_USAGE_GUIDE.md#update-text-examples)
+	- [Available variables for update text](https://github.com/TS3Tools/TS3UpdateScript/blob/master/docs/INSTALL_USAGE_GUIDE.md#available-variables-for-update-text)
+- [Usage examples](https://github.com/TS3Tools/TS3UpdateScript/blob/master/docs/INSTALL_USAGE_GUIDE.md#usage-examples)
+- [How-To get "client_database_id"](https://github.com/TS3Tools/TS3UpdateScript/blob/master/docs/INSTALL_USAGE_GUIDE.md#how-to-get-client_database_id)
+- [How-To get "sgid"](https://github.com/TS3Tools/TS3UpdateScript/blob/master/docs/INSTALL_USAGE_GUIDE.md#how-to-get-sgid)
+- [Debugging](https://github.com/TS3Tools/TS3UpdateScript/blob/master/docs/INSTALL_USAGE_GUIDE.md#debugging)
 
 ## Requirements
 

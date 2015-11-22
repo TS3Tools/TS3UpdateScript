@@ -10,17 +10,17 @@ The BPA checks each of installed TeamSpeak server instances against the latest l
 
 ## Table of content
 
-- [Hint / Note](#)
-- [Types](#)
-- [Why should you have this feature?](#)
-- [How-to fix best practice...](#)
-- [Your server is running under owner root permissions. This is not recommend.](#)
-	- [Your server is running under group root permissions. This is not recommend.](#)
-	- [WARNING: Use an invalid shell like /bin/false or /usr/sbin/nologin to host your TeamSpeak 3 server a bit safer.](#)
-	- [Could not identify the owner of the TeamSpeak 3 server files.](#)
-	- [Could not identify the user ID of the owner.](#)
-	- [Could not identify the group of the TeamSpeak 3 server files.](#)
- 	- [Could not identify the group ID.](#)
+- [Hint / Note](https://github.com/TS3Tools/TS3UpdateScript/blob/master/docs/BEST_PRACTICES_ANALYZER.md#hint--note)
+- [Types](https://github.com/TS3Tools/TS3UpdateScript/blob/master/docs/BEST_PRACTICES_ANALYZER.md#types)
+- [Why should you have this feature?](https://github.com/TS3Tools/TS3UpdateScript/blob/master/docs/BEST_PRACTICES_ANALYZER.md#why-should-you-have-this-feature)
+- [How-to fix best practice...](https://github.com/TS3Tools/TS3UpdateScript/blob/master/docs/BEST_PRACTICES_ANALYZER.md#how-to-fix-best-practice)
+	- [Your server is running under owner root permissions. This is not recommend.](https://github.com/TS3Tools/TS3UpdateScript/blob/master/docs/BEST_PRACTICES_ANALYZER.md#your-server-is-running-under-owner-root-permissions-this-is-not-recommend)
+	- [Your server is running under group root permissions. This is not recommend.](https://github.com/TS3Tools/TS3UpdateScript/blob/master/docs/BEST_PRACTICES_ANALYZER.md#your-server-is-running-under-group-root-permissions-this-is-not-recommend)
+	- [WARNING: Use an invalid shell like /bin/false or /usr/sbin/nologin to host your TeamSpeak 3 server a bit safer.](https://github.com/TS3Tools/TS3UpdateScript/blob/master/docs/BEST_PRACTICES_ANALYZER.md#warning-use-an-invalid-shell-like-binfalse-or-usrsbinnologin-to-host-your-teamspeak-3-server-a-bit-safer)
+	- [Could not identify the owner of the TeamSpeak 3 server files.](https://github.com/TS3Tools/TS3UpdateScript/blob/master/docs/BEST_PRACTICES_ANALYZER.md#could-not-identify-the-owner-of-the-teamspeak-3-server-files)
+	- [Could not identify the user ID of the owner.](https://github.com/TS3Tools/TS3UpdateScript/blob/master/docs/BEST_PRACTICES_ANALYZER.md#could-not-identify-the-user-id-of-the-owner)
+	- [Could not identify the group of the TeamSpeak 3 server files.](https://github.com/TS3Tools/TS3UpdateScript/blob/master/docs/BEST_PRACTICES_ANALYZER.md#could-not-identify-the-group-of-the-teamspeak-3-server-files)
+ 	- [Could not identify the group ID.](https://github.com/TS3Tools/TS3UpdateScript/blob/master/docs/BEST_PRACTICES_ANALYZER.md#could-not-identify-the-group-id)
 
 ## Hint / Note
 
@@ -116,7 +116,7 @@ This means, that you rather should disable the login for the owner of the TeamSp
 
 3. Find the user (owner) of the TeamSpeak server files
 
-  # In vi / vim just enter a slash followed by your username and hit enter
+  In vi / vim just enter a slash followed by your username and hit enter
 
 4. Change the shell of this user to /bin/false or /usr/sbin/nologin
 
