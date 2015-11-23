@@ -221,7 +221,7 @@ Parameter | Description
     - sed
     - unzip
   - Optional
-    - mail (for receiving cronjob mails)
+    - any MTA like postfix or exim (for receiving cronjob mails)
     - expect (if you want to inform online clients about updates and get a higher detection rate of properties/settings)
     - telnet (if you want to inform online clients about updates)
 - root user access on your Linux system (below a list of some reasons, why the script needs root permissions)

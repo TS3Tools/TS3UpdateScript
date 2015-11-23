@@ -23,6 +23,11 @@ Hotfix | Important fix for one more issues, which causes a not working TS3Update
 
 ## Releases
 
+### Version 4.1.1
+
+* Fixed issue with 'invalid serveradmin password', also if the correct one was set (just occured, if either telnet nor expect was installed)
+* Replaced 'mail' with 'any MTA like postfix or exim' in [README.md](https://github.com/TS3Tools/TS3UpdateScript#requirements)
+
 ### Version 4.1.0
 
 ! Cronjobs are now only available for TS3UpdateScript users with a valid Hoster script license
