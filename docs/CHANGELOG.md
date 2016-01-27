@@ -23,6 +23,21 @@ Hotfix | Important fix for one more issues, which causes a not working TS3Update
 
 ## Releases
 
+### Version 4.2.0
+
+* Replaced 'regarding' with 'due' in warning message regarding external storage for files/ directory
++ Added support for releases 3.0.12 and newer (GitHub issue #13; Regex ^[3-9]+\.[0-9]+\.1[2-9]+\.?[0-9]*$ is used to check this)
+! By updating to the version 3.0.12 or newer, the script will delete the following files: ts3server_[linux|freebsd]_[amd64|x86], tsdns/tsdnsserver_[linux|freebsd]_[amd64|x86]
+* Fixed empty value for Build string in function getBuildOfInstalledTS3Server(), if wether expect nor telnet is installed
+* Changed some parameter information from "Host:string" to "ServerQueryIP:string"
+* Empty ServerQuery IP and Port was displayed in the summary, if wether expect nor telnet is installed and the parameter '--inform-online-clients' was not used
++ Added TSDNS Binary path to summary
+* Added variable "TSDNS_BINARY" to prevent changing it multiple times in the script
++ Added prevention for failing 'su: user UNKNOWN does not exist', when the owner of the files is 'UNKNOWN' (GitHub issue #14)
++ Added some text variables: TXT_COLLECTING_INFORMATION_OWNER_UNKNOWN_PERMISSIONS_INFO, TXT_COLLECTING_INFORMATION_GROUP_UNKNOWN_PERMISSIONS_INFO
+* Beta updates couldn't be downloaded due unknown download link
+* Added a hint to variable 'TXT_EXECUTION_MECHANISM_GET_TEMPORARY_SERVER_PASSWORDS_FAILED', why the backup of temporary server passwords may have failed
+
 ### Version 4.1.1
 
 * Fixed issue with 'invalid serveradmin password', also if the correct one was set (just occured, if either telnet nor expect was installed)

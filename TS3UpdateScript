@@ -351,7 +351,12 @@ function getLatestBetaTS3ServerVersion() {
 	while read release; do
 		RELEASE_NUMBER="$(echo $release | grep -Eo '^[0-9\.?]+')"
 
-		wget --spider -q http://dl.4players.de/ts/releases/pre_releases/server/${release}/teamspeak3-server_linux-amd64-${RELEASE_NUMBER}.tar.gz
+		if [[ "${RELEASE_NUMBER}" =~ ^[3-9]+\.[0-9]+\.1[2-9]+\.?[0-9]*$ ]]; then
+			wget --spider -q http://dl.4players.de/ts/releases/pre_releases/server/${release}/teamspeak3-server_linux_amd64-${RELEASE_NUMBER}.tar.bz2
+		else
+			wget --spider -q http://dl.4players.de/ts/releases/pre_releases/server/${release}/teamspeak3-server_linux-amd64-${RELEASE_NUMBER}.tar.gz
+		fi
+
 		if [[ $? == 0 ]]; then
 			TS3_SERVER_VERSION="$release"
 			# Break while-loop, if the latest release could be found
@@ -374,7 +379,11 @@ function getLatestStableTS3ServerVersion() {
 	wget 'http://dl.4players.de/ts/releases/?C=M;O=D' -q -O - | grep -i dir | grep -Eo '<a href=\".*\/\">.*\/<\/a>' | grep -Eo '[0-9\.?]+' | uniq | sort -V -r > STABLE_RELEASES.txt
 
 	while read release; do
-		wget --spider -q http://dl.4players.de/ts/releases/${release}/teamspeak3-server_linux-amd64-${release}.tar.gz
+		if [[ "${release}" =~ ^[3-9]+\.[0-9]+\.1[2-9]+\.?[0-9]*$ ]]; then
+			wget --spider -q http://dl.4players.de/ts/releases/${release}/teamspeak3-server_linux_amd64-${release}.tar.bz2
+		else
+			wget --spider -q http://dl.4players.de/ts/releases/${release}/teamspeak3-server_linux-amd64-${release}.tar.gz
+		fi
 		if [[ $? == 0 ]]; then
 			TS3_SERVER_VERSION="$release"
 			# Break while-loop, if the latest release could be found
@@ -447,7 +456,7 @@ function findTS3ServerInstances() {
 }
 
 # Check serveradmin password
-# Par 1: Host:string
+# Par 1: ServerQueryIP:string
 # Par 2: ServerQueryPort:string
 # Par 3: TeamSpeakRootDirectory:String
 # Return: 0:boolean or 1:boolean
@@ -491,7 +500,7 @@ function checkServeradminPassword() {
 }
 
 # Get version of installed TS3 server
-# Par 1: Host:string or TS3ServerRootDirectory:string
+# Par 1: ServerQueryIP:string or TS3ServerRootDirectory:string
 # Par 2: ServerQueryPort:string
 # Return: Version:string or 1:boolean
 function getVersionOfInstalledTS3Server() {
@@ -530,7 +539,7 @@ function getVersionOfInstalledTS3Server() {
 }
 
 # Get build of installed TS3 server
-# Par 1: Host:string
+# Par 1: ServerQueryIP:string
 # Par 2: ServerQueryPort:string
 # Return: Build:string or 1:boolean
 function getBuildOfInstalledTS3Server() {
@@ -556,13 +565,13 @@ function getBuildOfInstalledTS3Server() {
 		else
 			return 1;
 		fi
-	elif [[ "$PAR_COUNTER" -eq 1 ]]; then
+	elif [[ "$PAR_COUNTER" -eq 0 ]]; then
 		echo -n "Unknown";
 	fi
 }
 
 # Get platform of installed TS3 server
-# Par 1: Host:string or TS3ServerRootDirectory:string
+# Par 1: ServerQueryIP:string or TS3ServerRootDirectory:string
 # Par 2: ServerQueryPort:string
 # Return: Platform:string or 1:boolean
 function getPlatformOfInstalledTS3Server() {
@@ -604,7 +613,18 @@ function getPlatformOfInstalledTS3Server() {
 # Par 1: TS3ServerRootDirectory:string
 # Return: Architecture:string or 1:boolean
 function getArchitectureOfInstalledTS3Server() {
-	ARCHITECTURE="$(ls $(find ${1} -name 'ts3server_*_*' 2> /dev/null | grep -v 'ts3server_minimal_runscript.sh' | sort | tail -1) | grep -Eo  '(amd64|x86)' | tail -1)"
+	if [[ $(getVersionOfInstalledTS3Server ${1})  =~ ^[3-9]+\.[0-9]+\.1[2-9]+\.?[0-9]*$ ]]; then
+		INSTANCE_LOG_FILE="$(find $(getTS3ServerInstanceLogPath ${1}) -name *_0.log | sort -nr | head -1)"
+		SYSTEM_TYPE="$(grep -Eo 'Binary: (64bit|32bit)' $INSTANCE_LOG_FILE | cut -d " " -f 2)"
+
+		if [[ "${SYSTEM_TYPE}" == "64bit" ]]; then
+			ARCHITECTURE="amd64"
+		else
+			ARCHITECTURE="x86"
+		fi
+	else
+		ARCHITECTURE="$(ls $(find ${1} -name 'ts3server_*_*' 2> /dev/null | grep -v 'ts3server_minimal_runscript.sh' | sort | tail -1) | grep -Eo  '(amd64|x86)' | tail -1)"
+	fi
 
 	if [[ -n "$ARCHITECTURE" ]]; then
 		echo -n "$ARCHITECTURE";
@@ -1366,8 +1386,14 @@ function tsdns() {
 		fi
 	done < TS3InstanceInfos.txt
 
-	if [ $(ps opid= -C "tsdnsserver_"${INSTALLED_TS3_SERVER_PLATFORM}"_"${TS3SERVER_ARCHITECTURE}) ]; then
-		TSDNS_PID=$(ps opid= -C "tsdnsserver_"${INSTALLED_TS3_SERVER_PLATFORM}"_"${TS3SERVER_ARCHITECTURE})
+	if [[ $(getVersionOfInstalledTS3Server ${DIRECTORY})  =~ ^[3-9]+\.[0-9]+\.1[2-9]+\.?[0-9]*$ ]]; then
+		TSDNS_BINARY="tsdnsserver"
+	else
+		TSDNS_BINARY="$(echo tsdnsserver_${INSTALLED_TS3_SERVER_PLATFORM}_${TS3SERVER_ARCHITECTURE} | tr '[:upper:]' '[:lower:]')"
+	fi
+
+	if [ $(ps opid= -C ${TSDNS_BINARY}) ]; then
+		TSDNS_PID=$(ps opid= -C ${TSDNS_BINARY})
 
 		if [[ -n "$TSDNS_PID" ]]; then
 			TSDNS_PATH="$(pwdx ${TSDNS_PID} | cut -d " " -f 2)"
@@ -1377,7 +1403,7 @@ function tsdns() {
 	case $2 in
 		start)
 			if [ -f "${DIRECTORY}/tsdns/tsdns_settings.ini" ]; then
-				RESULT=$(cd ${DIRECTORY}/tsdns/ && su -s $(which bash) -c "tsdnsserver_${INSTALLED_TS3_SERVER_PLATFORM}_${TS3SERVER_ARCHITECTURE} &" - $(getOwnerOfTS3ServerFiles $1) && cd - > /dev/null)
+				RESULT=$(cd ${DIRECTORY}/tsdns/ && su -s $(which bash) -c "${TSDNS_BINARY} &" - $(getOwnerOfTS3ServerFiles $1) && cd - > /dev/null)
 
 				if [[ "$RESULT" =~ 'Scanned tsdns_settings.ini' ]]; then
 					return 0;
@@ -1419,7 +1445,7 @@ function tsdns() {
 
 		update)
 			if [ -f "${DIRECTORY}/tsdns/tsdns_settings.ini" ]; then
-				RESULT=$(cd ${DIRECTORY}/tsdns/ && su -s $(which bash) -c "tsdnsserver_${INSTALLED_TS3_SERVER_PLATFORM}_${TS3SERVER_ARCHITECTURE} --update" - $(getOwnerOfTS3ServerFiles $1) && cd - > /dev/null)
+				RESULT=$(cd ${DIRECTORY}/tsdns/ && su -s $(which bash) -c "${TSDNS_BINARY} --update" - $(getOwnerOfTS3ServerFiles $1) && cd - > /dev/null)
 
 				if [[ "$RESULT" =~ 'Scanned tsdns_settings.ini' ]]; then
 					return 0;
@@ -1489,6 +1515,7 @@ function backup() {
 
 # Updates TeamSpeak 3 server instance
 # Par 1: TeamSpeakRootDirectory:string
+# Par 2: LatestTS3ServerVersion:string
 # Return: 0:boolean or 1:boolean
 function updateTeamSpeakInstance() {
 	UPDATE_STATUS_FLAG=0;
@@ -1497,6 +1524,7 @@ function updateTeamSpeakInstance() {
 	if [ -n "$DIRECTORY" ] && [ -d "$DIRECTORY" ]; then
 		DIRECTORY_MD5SUM=$(echo "${1}" | md5sum | cut -d " " -f 1)
 		LATEST_RELEASE="$(getLatestTSServerVersion)"
+		RELEASE_NUMBER="$(echo $LATEST_RELEASE | grep -Eo '^[0-9\.?]+')"
 
 		while read instanceInfo; do
 			STATUS_FLAG=$(echo "$instanceInfo" | grep -Ev "^#" | cut -d "|" -f 1)
@@ -1523,17 +1551,39 @@ function updateTeamSpeakInstance() {
 
 		cd ${INSTANCE_PATH}
 
-		# Build download link for the TeamSpeak 3 server download
-		TS3_SERVER_DOWNLOAD_LINK="http://dl.4players.de/ts/releases/${LATEST_RELEASE}/teamspeak3-server_${INSTALLED_TS3_SERVER_PLATFORM}-${TS3SERVER_ARCHITECTURE}-${LATEST_RELEASE}.tar.gz"
+		if [[ ${RELEASE_NUMBER}  =~ ^[3-9]+\.[0-9]+\.1[2-9]+\.?[0-9]*$ ]]; then
+			if [[ "$PAR_BETA_RELEASE" -eq 1 ]]; then
+				TS3_SERVER_DOWNLOAD_LINK="http://dl.4players.de/ts/releases/pre_releases/server/${LATEST_RELEASE}/teamspeak3-server_${INSTALLED_TS3_SERVER_PLATFORM}_${TS3SERVER_ARCHITECTURE}-${RELEASE_NUMBER}.tar.bz2"
+			else
+				TS3_SERVER_DOWNLOAD_LINK="http://dl.4players.de/ts/releases/${LATEST_RELEASE}/teamspeak3-server_${INSTALLED_TS3_SERVER_PLATFORM}_${TS3SERVER_ARCHITECTURE}-${RELEASE_NUMBER}.tar.bz2"
+			fi
 
-		# Download latest TS3 Server files
-		wget ${TS3_SERVER_DOWNLOAD_LINK} -q -O teamspeak3-server_${INSTALLED_TS3_SERVER_PLATFORM}-${TS3SERVER_ARCHITECTURE}-${LATEST_RELEASE}.tar.gz
+			wget ${TS3_SERVER_DOWNLOAD_LINK} -q -O teamspeak3-server.tar.bz2
 
-		# Extract downloaded archive
-		tar xf teamspeak3-server_${INSTALLED_TS3_SERVER_PLATFORM}-${TS3SERVER_ARCHITECTURE}-${LATEST_RELEASE}.tar.gz && cp -R teamspeak3-server_${INSTALLED_TS3_SERVER_PLATFORM}-${TS3SERVER_ARCHITECTURE}/* . && rm -rf teamspeak3-server_${INSTALLED_TS3_SERVER_PLATFORM}-${TS3SERVER_ARCHITECTURE}/
+			tar jxf teamspeak3-server.tar.bz2 && cp -R teamspeak3-server_${INSTALLED_TS3_SERVER_PLATFORM}_${TS3SERVER_ARCHITECTURE}/* . && rm -rf teamspeak3-server_${INSTALLED_TS3_SERVER_PLATFORM}_${TS3SERVER_ARCHITECTURE}/
 
-		# Delete downloaded TeamSpeak 3 server archive
-		rm teamspeak3-server_${INSTALLED_TS3_SERVER_PLATFORM}-${TS3SERVER_ARCHITECTURE}-${LATEST_RELEASE}.tar.gz 2> /dev/null
+			if [[ -f tsdns/tsdnsserver_${INSTALLED_TS3_SERVER_PLATFORM}_${TS3SERVER_ARCHITECTURE} ]]; then
+				rm tsdns/tsdnsserver_${INSTALLED_TS3_SERVER_PLATFORM}_${TS3SERVER_ARCHITECTURE}
+			fi
+
+			if [[ -f ts3server_${INSTALLED_TS3_SERVER_PLATFORM}_${TS3SERVER_ARCHITECTURE} ]]; then
+				rm ts3server_${INSTALLED_TS3_SERVER_PLATFORM}_${TS3SERVER_ARCHITECTURE}
+			fi
+
+			rm teamspeak3-server.tar.bz2 2> /dev/null
+		else
+			if [[ "$PAR_BETA_RELEASE" -eq 1 ]]; then
+				TS3_SERVER_DOWNLOAD_LINK="http://dl.4players.de/ts/releases/pre_releases/server/${LATEST_RELEASE}/teamspeak3-server_${INSTALLED_TS3_SERVER_PLATFORM}-${TS3SERVER_ARCHITECTURE}-${RELEASE_NUMBER}.tar.bz2"
+			else
+				TS3_SERVER_DOWNLOAD_LINK="http://dl.4players.de/ts/releases/${LATEST_RELEASE}/teamspeak3-server_${INSTALLED_TS3_SERVER_PLATFORM}-${TS3SERVER_ARCHITECTURE}-${RELEASE_NUMBER}.tar.gz"
+			fi
+
+			wget ${TS3_SERVER_DOWNLOAD_LINK} -q -O teamspeak3-server.tar.gz
+
+			tar xf teamspeak3-server.tar.gz && cp -R teamspeak3-server_${INSTALLED_TS3_SERVER_PLATFORM}-${TS3SERVER_ARCHITECTURE}/* . && rm -rf teamspeak3-server_${INSTALLED_TS3_SERVER_PLATFORM}-${TS3SERVER_ARCHITECTURE}/
+
+			rm teamspeak3-server.tar.gz 2> /dev/null
+		fi
 
 		# Importing SQLite database
 		if [ "$DATABASE_TYPE" == "SQLite" ]; then
@@ -1867,6 +1917,11 @@ function main() {
 
 						if [[ "$OWNER" != "1" ]]; then
 							if [[ "$PAR_DEACTIVATE_PERMISSIONS_CHECK" -eq 0 ]]; then
+								if [[ "$OWNER" == "UNKNOWN" ]]; then
+									echo "${TXT_COLLECTING_INFORMATION_OWNER_UNKNOWN_PERMISSIONS_INFO}" >> COLLECTING_INFORMATION_STATUS.txt;
+									COLLECTING_INFORMATION_STATUS=1;
+								fi
+
 								if [[ "$SCRIPT_LICENSE" == "1" ]]; then
 									if [[ "$OWNER" == "root" ]]; then
 										echo "${TXT_COLLECTING_INFORMATION_OWNER_ROOT_PERMISSIONS_INFO}" >> COLLECTING_INFORMATION_STATUS.txt;
@@ -1899,6 +1954,11 @@ function main() {
 
 						if [[ "$GROUP" != "1" ]]; then
 							if [[ "$PAR_DEACTIVATE_PERMISSIONS_CHECK" -eq 0 ]]; then
+								if [[ "$GROUP" == "UNKNOWN" ]]; then
+									echo "${TXT_COLLECTING_INFORMATION_GROUP_UNKNOWN_PERMISSIONS_INFO}" >> COLLECTING_INFORMATION_STATUS.txt;
+									COLLECTING_INFORMATION_STATUS=1;
+								fi
+
 								if [[ "$SCRIPT_LICENSE" == "1" ]]; then
 									if [[ "$GROUP" == "root" ]]; then
 										echo "${TXT_COLLECTING_INFORMATION_GROUP_ROOT_PERMISSIONS_INFO}" >> COLLECTING_INFORMATION_STATUS.txt;
@@ -2341,6 +2401,12 @@ function main() {
 					SERVERQUERY_PORT=$(echo "$instanceInfo" | grep -Ev "^#" | cut -d "|" -f 13)
 					DATABASE_TYPE=$(echo "$instanceInfo" | grep -Ev "^#" | cut -d "|" -f 14)
 
+					if [[ $(getVersionOfInstalledTS3Server ${INSTANCE_PATH})  =~ ^[3-9]+\.[0-9]+\.1[2-9]+\.?[0-9]*$ ]]; then
+						TSDNS_BINARY="tsdnsserver"
+					else
+						TSDNS_BINARY="$(echo tsdnsserver_${INSTALLED_TS3_SERVER_PLATFORM}_${TS3SERVER_ARCHITECTURE} | tr '[:upper:]' '[:lower:]')"
+					fi
+
 					if [[ -n "$INSTANCE_PATH" ]]; then
 						if [[ "$INSTALLED_TS3_SERVER_VERSION" != "$LATEST_TS3_SERVER_VERSION" ]]; then
 							if ts3server ${INSTANCE_PATH} status; then
@@ -2351,11 +2417,18 @@ function main() {
 								echo	"	${TXT_EXECUTION_MECHANISM_INSTALLED_VERSION}: ${INSTALLED_TS3_SERVER_VERSION} (${TXT_EXECUTION_MECHANISM_INSTALLED_BUILD}: ${INSTALLED_TS3_SERVER_BUILD})";
 								echo	"	${TXT_EXECUTION_MECHANISM_INSTALLED_PLATFORM}: ${INSTALLED_TS3_SERVER_PLATFORM}";
 								echo -e "	${TXT_EXECUTION_MECHANISM_INSTALLED_ARCHITECTURE}: ${TS3SERVER_ARCHITECTURE}\n";
-								echo -e "	${TXT_EXECUTION_MECHANISM_INSTANCE_LOG_FILES}: ${TS3SERVER_INSTANCE_LOG_PATH}\n";
+
+								echo	"	${TXT_EXECUTION_MECHANISM_INSTANCE_LOG_FILES}: ${TS3SERVER_INSTANCE_LOG_PATH}";
+								echo -e "	${TXT_EXECUTION_MECHANISM_INSTANCE_TSDNS_BINARY}: ${INSTANCE_PATH}/tsdns/${TSDNS_BINARY}\n";
+
 								echo	"	${TXT_EXECUTION_MECHANISM_OWNER_DETAILS}: ${OWNER} (${TXT_EXECUTION_MECHANISM_UID_DETAILS}: ${OWNER_ID})";
 								echo -e "	${TXT_EXECUTION_MECHANISM_GROUP_DETAILS}: ${GROUP} (${TXT_EXECUTION_MECHANISM_GID_DETAILS}: ${GROUP_ID})\n";
-								echo	"	${TXT_EXECUTION_MECHANISM_SERVERQUERY_IP}: ${SERVERQUERY_IP}";
-								echo -e "	${TXT_EXECUTION_MECHANISM_SERVERQUERY_PORT}: ${SERVERQUERY_PORT}\n";
+
+								if [[ "$PAR_INFORM_ONLINE_CLIENTS" -eq 1 ]] || checkdeps telnet expect; then
+									echo	"	${TXT_EXECUTION_MECHANISM_SERVERQUERY_IP}: ${SERVERQUERY_IP}";
+									echo -e "	${TXT_EXECUTION_MECHANISM_SERVERQUERY_PORT}: ${SERVERQUERY_PORT}\n";
+								fi
+
 								echo	"	${TXT_EXECUTION_MECHANISM_DATABASE_TYPE}: ${DATABASE_TYPE}";
 								echo	"############################################################################";
 
