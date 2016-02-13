@@ -45,11 +45,11 @@ d) Set your configuration values:
 - ignore_servergroups.txt
   This file containts sgid's of servergroups, which should not get any poke messages about updates
   HINT: Do NOT remove the number 1 and 2 from this file!
-- password-file
+- .password-file
   This file contains the 'serveradmin' password to connect to your server
-  HINT: The password-file is located in each TeamSpeak 3 server root directory
+  HINT: The .password-file is located in each TeamSpeak 3 server root directory
 
-HINT: Both texts has a limitation of 100 characters. The script checks at the start, if you are using a valid length. After editing the file(s), you should run the script once manually to check and see, if the length is ok.
+HINT: Both texts has a limitation of 100 characters. The displayed_user_name.txt has a limitation of 30 characters. The script checks at the start, if you are using a valid length. After editing the file(s), you should run the script once manually to check and see, if the length is ok.
 
 f) Finish! Read the USAGE below to see, how you can use it
 
@@ -93,11 +93,11 @@ Check with deleting logs; Same as above, but if it updates your server, it also 
 
   user@tux:~$ ./TS3UpdateScript --check --delete-old-logs
 
-Easy check with informing online clients; Checks if a newer version is available and informs online clients about a update process, if you are updating the server (password-file must include your 'serveradmin' password); informing will just work, if the serveradmin password is correct
+Easy check with informing online clients; Checks if a newer version is available and informs online clients about a update process, if you are updating the server (.password-file must include your 'serveradmin' password); informing will just work, if the serveradmin password is correct
 
   user@tux:~$ ./TS3UpdateScript --check --inform-online-clients
 
- Check with deleting logs and informing online clients; Same as above, but also deletes old logs (password-file must include your 'serveradmin' password)
+ Check with deleting logs and informing online clients; Same as above, but also deletes old logs (.password-file must include your 'serveradmin' password)
 
   user@tux:~$ ./TS3UpdateScript --check --delete-old-logs --inform-online-clients
 
@@ -115,11 +115,11 @@ Same as above, but it will also delete old logs
 
   user@tux:~$ ./TS3UpdateScript --install-cronjob --check --delete-old-logs
 
-Installs weekly check cronjob for monday at 3 AM; it also informs online clients and will wait 5 minutes for updating (password-file must include your 'serveradmin' password)
+Installs weekly check cronjob for monday at 3 AM; it also informs online clients and will wait 5 minutes for updating (.password-file must include your 'serveradmin' password)
 
   user@tux:~$ ./TS3UpdateScript --install-cronjob --check --inform-online-clients
 
-Installs weekly check cronjob for monday at 3 AM; it also deletes old logs, informs online clients and will wait 5 minutes for updating (password-file must include your 'serveradmin' password)
+Installs weekly check cronjob for monday at 3 AM; it also deletes old logs, informs online clients and will wait 5 minutes for updating (.password-file must include your 'serveradmin' password)
 This is my (Sebastian Kraetzig) personal favourite :)
 
   user@tux:~$ ./TS3UpdateScript --install-cronjob --check --delete-old-logs --inform-online-clients

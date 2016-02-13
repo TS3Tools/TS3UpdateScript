@@ -236,6 +236,7 @@ Parameter | Description
 - SQLite and MySQL as well as MariaDB database setups
 - TSDNS
 - Temporary virtual server passwords
+- Exagear environments
 
 ## Work flow of the script
 

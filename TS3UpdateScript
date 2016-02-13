@@ -16,8 +16,8 @@ exec 5<&0
 # Donations: https://www.paypal.com/cgi-bin/webscr?cmd=_s-xclick&hosted_button_id=7ZRXLSC2UBVWE
 #
 
-SCRIPT_VERSION="4.2.0"
-LAST_EDIT_DATE="2016-01-11"
+SCRIPT_VERSION="4.3.1"
+LAST_EDIT_DATE="2016-02-13"
 
 # DO NOT REMOVE OR CHANGE
 SOFTWARE_ABOUT="This is the most widely used and fastest shell script to update all your TeamSpeak 3 server instances."
@@ -82,7 +82,7 @@ function clearTerminalScreen() {
 # Return: 0:boolean or 1:boolean
 function checkConsistency() {
 	CHKSUM=$(cat $0 | grep -v "ORIGIN=" | head -202 | sha256sum | cut -d " " -f 1)
-	ORIGIN="5c97f55f4104b220aa516225d612a2d73315b827fb1ae89c13ea6548223046af"
+	ORIGIN="44f7c76c87dc7a4371caae2e0d53c531d4981542f5e5c3b5bd97899ba1d0a247"
 
 	if [[ "$CHKSUM" == "$ORIGIN" ]]; then
 		return 0;
@@ -727,7 +727,7 @@ function INIFileExists() {
 # Return: DatabaseINIFile:string or 1:boolean
 function getDatabaseINIFile() {
 	if INIFileExists ${1}; then
-		DATABASE_INI_FILE="$(grep -E '^dbpluginparameter=[\w\.?]+$' < ${1}/ts3server.ini | cut -d '=' -f 2)"
+		DATABASE_INI_FILE="$(grep -E '^dbpluginparameter=.+$' < ${1}/ts3server.ini | cut -d '=' -f 2)"
 
 		if [[ -n "$DATABASE_INI_FILE" ]]; then
 			echo -n "$DATABASE_INI_FILE";
@@ -761,7 +761,11 @@ function getTS3ServerInstanceLogPath() {
 	if INIFileExists ${1}; then
 		INSTANCE_LOG_PATH_TEMP="$(grep logpath < ${1}/ts3server.ini | cut -d '=' -f 2)"
 	else
-		INSTANCE_LOG_PATH_TEMP="${1}/logs/"
+		if [[ -d "/opt/exagear/" ]]; then
+			INSTANCE_LOG_PATH_TEMP="/opt/exagear/images/debian-8-wine2g${1}/logs/"
+		else
+			INSTANCE_LOG_PATH_TEMP="${1}/logs/"
+		fi
 	fi
 
 	# Absolute or relative path?
@@ -775,6 +779,20 @@ function getTS3ServerInstanceLogPath() {
 
 	if [[ -n "$INSTANCE_LOG_PATH" ]]; then
 		echo -n "$INSTANCE_LOG_PATH";
+	else
+		return 1;
+	fi
+}
+
+# Get database type
+# Par 1: TeamSpeakRootDirectory:string
+# Return: DatabaseType:string or 1:boolean
+function getDatabaseType() {
+	INSTANCE_LOG_PATH="$(getTS3ServerInstanceLogPath ${1})"
+	DATABASE_TYPE="$(grep -Eo 'dbPlugin name:.*plugin' $(find ${INSTANCE_LOG_PATH} -name 'ts3server*_0.log' 2> /dev/null | sort | tail -1) | tr -d " " | cut -d ":" -f 2 | grep -Eo 'SQLite|MySQL|MariaDB')"
+
+	if [[ -n "$DATABASE_TYPE" ]]; then
+		echo -n "$DATABASE_TYPE";
 	else
 		return 1;
 	fi
@@ -1192,40 +1210,40 @@ function pokeAllowedClients() {
 function getTemporaryServerPasswords() {
 	SERVERADMIN_PASSWORD="$(cat ${INSTANCE_PATH}/.password-file)"
 
-	(
-		cat <<- LOGIN
-			spawn telnet "$1" "$2"
-			expect "Welcome to the TeamSpeak 3 ServerQuery"
-			send "login serveradmin ${SERVERADMIN_PASSWORD}\r"
-		LOGIN
+	if getListOfVirtualServer ${1} ${2}; then
+		(
+			cat <<- LOGIN
+				spawn telnet "$1" "$2"
+				expect "Welcome to the TeamSpeak 3 ServerQuery"
+				send "login serveradmin ${SERVERADMIN_PASSWORD}\r"
+			LOGIN
 
-		while read sid; do
-			cat <<- USE
+			while read sid; do
+				cat <<- USE
+					expect "error id=0 msg=ok"
+					send "use sid=${sid}\r"
+					expect "error id=0 msg=ok"
+					send "clientupdate client_nickname=${SERVER_QUERY_DISPLAYED_NAME}\r"
+				USE
+
+				cat <<- SERVERTEMPPASSWORDLIST
+					expect "error id=0 msg=ok"
+					send "servertemppasswordlist\r"
+				SERVERTEMPPASSWORDLIST
+			done < SERVERLIST.txt
+
+			cat <<- LOGOUT
 				expect "error id=0 msg=ok"
-				send "use sid=${sid}\r"
+				send "logout\r"
 				expect "error id=0 msg=ok"
-				send "clientupdate client_nickname=${SERVER_QUERY_DISPLAYED_NAME}\r"
-			USE
+				send "quit\r"
+			LOGOUT
+		) | expect | grep -E "use sid|nickname=" | grep -v "clientupdate" | tr "|" "\n" > TEMP_SERVERTEMPPASSWORDLIST.txt
+	else
+		return 1;
+	fi
 
-			grep -E "SID=${sid}" POKELIST.txt | tr "|" "\n" | grep -v "SID=${sid}" | while read clid; do
-				if [[ -n "$clid" ]]; then
-					cat <<- SERVERTEMPPASSWORDLIST
-						expect "error id=0 msg=ok"
-						send "servertemppasswordlist\r"
-					SERVERTEMPPASSWORDLIST
-				fi
-			done
-		done < SERVERLIST.txt
-
-		cat <<- LOGOUT
-			expect "error id=0 msg=ok"
-			send "logout\r"
-			expect "error id=0 msg=ok"
-			send "quit\r"
-		LOGOUT
-	) | expect | grep -E "use sid|nickname=" | grep -v "clientupdate" | tr "|" "\n" > TEMP_SERVERTEMPPASSWORDLIST.txt
-
-	cat TEMP_SERVERTEMPPASSWORDLIST.txt | tr -d '^M' | while read temppass_line; do
+	cat TEMP_SERVERTEMPPASSWORDLIST.txt | tr -d '^M' | while read -r temppass_line; do
 		SID=$(echo ${temppass_line} | grep -Eo 'sid=[0-9]+' | cut -d '=' -f 2)
 		TCID=$(echo ${temppass_line} | grep -Eo 'tcid=[0-9]+' | cut -d '=' -f 2)
 		TSPW="$(echo ${temppass_line} | grep -Eo 'pw_clear=[^ ]*' | cut -d '=' -f 2)"
@@ -1265,6 +1283,7 @@ function getTemporaryServerPasswords() {
 # Return: 0:boolean or 1:boolean
 function setTemporaryServerPasswords() {
 	SERVERADMIN_PASSWORD="$(cat ${INSTANCE_PATH}/.password-file)"
+	SERVER_QUERY_DISPLAYED_NAME="$(getServerQueryDisplayedNameEscaped)"
 
 	(
 		cat <<- LOGIN
@@ -1281,7 +1300,7 @@ function setTemporaryServerPasswords() {
 				send "clientupdate client_nickname=${SERVER_QUERY_DISPLAYED_NAME}\r"
 			USE
 
-			grep -E "SID=${sid}" SERVERTEMPPASSWORDLIST.txt | while read temppass_entry; do
+			grep -E "SID=${sid}" SERVERTEMPPASSWORDLIST.txt | while read -r temppass_entry; do
 				TCID=$(echo ${temppass_entry} | cut -d '|' -f 2)
 				TSPW="$(echo ${temppass_entry} | cut -d '|' -f 3)"
 				TCPW="$(echo ${temppass_entry} | cut -d '|' -f 4)"
@@ -1332,7 +1351,7 @@ function setTemporaryServerPasswords() {
 function ts3server() {
 	case $2 in
 		start)
-			RESULT=$(su -s $(which bash) -c "cd $1 && ./ts3server_startscript.sh start && cd - > /dev/null" - $(getOwnerOfTS3ServerFiles $1))
+			RESULT=$(su -s $(which bash) -c "cd $1 && ./ts3server_startscript.sh start 2> /dev/null && cd - > /dev/null" - $(getOwnerOfTS3ServerFiles $1))
 
 			if [[ "$RESULT" =~ 'TeamSpeak 3 server started, for details please view the log file' ]]; then
 				return 0;
@@ -1386,10 +1405,16 @@ function tsdns() {
 		fi
 	done < TS3InstanceInfos.txt
 
-	if [[ $(getVersionOfInstalledTS3Server ${DIRECTORY})  =~ ^[3-9]+\.[0-9]+\.1[2-9]+\.?[0-9]*$ ]]; then
+	if [[ $(getVersionOfInstalledTS3Server ${DIRECTORY}) =~ ^[3-9]+\.[0-9]+\.1[2-9]+\.?[0-9]*$ ]]; then
 		TSDNS_BINARY="tsdnsserver"
 	else
 		TSDNS_BINARY="$(echo tsdnsserver_${INSTALLED_TS3_SERVER_PLATFORM}_${TS3SERVER_ARCHITECTURE} | tr '[:upper:]' '[:lower:]')"
+	fi
+
+	if [[ $(getLatestTSServerVersion) =~ ^[3-9]+\.[0-9]+\.1[2-9]+\.?[0-9]*$ ]]; then
+		LATEST_TSDNS_BINARY="tsdnsserver"
+	else
+		LATEST_TSDNS_BINARY="$(echo tsdnsserver_${INSTALLED_TS3_SERVER_PLATFORM}_${TS3SERVER_ARCHITECTURE} | tr '[:upper:]' '[:lower:]')"
 	fi
 
 	if [ $(ps opid= -C ${TSDNS_BINARY}) ]; then
@@ -1403,13 +1428,11 @@ function tsdns() {
 	case $2 in
 		start)
 			if [ -f "${DIRECTORY}/tsdns/tsdns_settings.ini" ]; then
-				RESULT=$(cd ${DIRECTORY}/tsdns/ && su -s $(which bash) -c "${TSDNS_BINARY} &" - $(getOwnerOfTS3ServerFiles $1) && cd - > /dev/null)
+				cd ${DIRECTORY}/tsdns/
+				su -s $(which bash) -c "./${LATEST_TSDNS_BINARY} &" $(getOwnerOfTS3ServerFiles $1)
+				cd - > /dev/null
 
-				if [[ "$RESULT" =~ 'Scanned tsdns_settings.ini' ]]; then
-					return 0;
-				else
-					return 1;
-				fi
+				return 0;
 			else
 				return 1;
 			fi
@@ -1417,7 +1440,7 @@ function tsdns() {
 
 		status)
 			if [[ -n "$TSDNS_PID" ]]; then
-				if [[ "$TSDNS_PATH" == "$1" ]]; then
+				if [[ "$TSDNS_PATH" == "$1/tsdns" ]]; then
 					return 0;
 				else
 					return 1;
@@ -1429,8 +1452,8 @@ function tsdns() {
 
 		stop)
 			if [[ -n "$TSDNS_PID" ]]; then
-				if [[ "$TSDNS_PATH" == "$1" ]]; then
-					if [ $(kill -9 ${TSDNS_PID}) ]; then
+				if [[ "$TSDNS_PATH" == "$1/tsdns" ]]; then
+					if [ ! $(kill -9 ${TSDNS_PID}) ]; then
 						return 0;
 					else
 						return 1;
@@ -1445,13 +1468,11 @@ function tsdns() {
 
 		update)
 			if [ -f "${DIRECTORY}/tsdns/tsdns_settings.ini" ]; then
-				RESULT=$(cd ${DIRECTORY}/tsdns/ && su -s $(which bash) -c "${TSDNS_BINARY} --update" - $(getOwnerOfTS3ServerFiles $1) && cd - > /dev/null)
+				cd ${DIRECTORY}/tsdns/
+				su -s $(which bash) -c "./${LATEST_TSDNS_BINARY} --update" $(getOwnerOfTS3ServerFiles $1)
+				cd - > /dev/null
 
-				if [[ "$RESULT" =~ 'Scanned tsdns_settings.ini' ]]; then
-					return 0;
-				else
-					return 1;
-				fi
+				return 0;
 			else
 				return 1;
 			fi
@@ -1459,12 +1480,51 @@ function tsdns() {
 	esac
 }
 
+# Export, Import MySQL/MariaDB database
+# Par 1: Action:string (possible values: export, import)
+# Par 2: TeamSpeakRootDirectory:string
+# Return: 0:boolean or 1:boolean
+function databaseBackup() {
+	TEAMSPEAK_ROOT_DIRECTORY="${2}"
+	DIRECTORY_MD5SUM=$(echo -n "${TEAMSPEAK_ROOT_DIRECTORY}" | md5sum | cut -d " " -f 1)
+	DATABASE_INI_FILE="$(getDatabaseINIFile ${2})"
+
+	DB_USERNAME="$(grep -E '^username=.+$' ${TEAMSPEAK_ROOT_DIRECTORY}${DATABASE_INI_FILE} | cut -d '=' -f 2)"
+	DB_PASSWORD="$(grep -E '^password=.+$' ${TEAMSPEAK_ROOT_DIRECTORY}${DATABASE_INI_FILE} | cut -d '=' -f 2)"
+	DB_NAME="$(grep -E '^database=.+$' ${TEAMSPEAK_ROOT_DIRECTORY}${DATABASE_INI_FILE} | cut -d '=' -f 2)"
+	DB_HOST="$(grep -E '^host=.+$' ${TEAMSPEAK_ROOT_DIRECTORY}${DATABASE_INI_FILE} | cut -d '=' -f 2)"
+
+	if [[ "${1}" == "export" ]]; then
+		if [ ! $(mysqldump --add-drop-table --user=${DB_USERNAME} --password=${DB_PASSWORD} ${DB_NAME} --host=${DB_HOST} > /tmp/TS3Tools/TS3UpdateScript/${DIRECTORY_MD5SUM}/ts3DatabaseBackup.sql) ]; then
+			return 0;
+		else
+			return 1;
+		fi
+	elif [[ "${1}" == "import" ]]; then
+		if [ ! $(mysql --user=${DB_USERNAME} --password=${DB_PASSWORD} ${DB_NAME} --host=${DB_HOST} < /tmp/TS3Tools/TS3UpdateScript/${DIRECTORY_MD5SUM}/ts3DatabaseBackup.sql) ]; then
+			return 0;
+		else
+			return 1;
+		fi
+	else
+		return 1;
+	fi
+}
+
 # Create, Delete, Deploy, Exists Backup
 # Par 1: TeamSpeakRootDirectory:string
 # Par 2: Action:string
+# Par 3: sqlType:string (required for create|deploy)
 # Return: 0:boolean or 1:boolean
 function backup() {
-	DIRECTORY_MD5SUM=$(echo "${1}" | md5sum | cut -d " " -f 1)
+	if [[ -d "/opt/exagear/" ]]; then
+		TEAMSPEAK_ROOT_DIRECTORY="/opt/exagear/images/debian-8-wine2g${1}/"
+	else
+		TEAMSPEAK_ROOT_DIRECTORY="${1}/"
+	fi
+	DIRECTORY_MD5SUM=$(echo -n "${TEAMSPEAK_ROOT_DIRECTORY}" | md5sum | cut -d " " -f 1)
+
+	DATABASE_TYPE=${3}
 
 	case $2 in
 		create)
@@ -1472,8 +1532,16 @@ function backup() {
 				mkdir -p /tmp/TS3Tools/TS3UpdateScript/${DIRECTORY_MD5SUM}
 			fi
 
-			if [ ! $(rsync -a --no-inc-recursive --exclude 'files' ${1}/ /tmp/TS3Tools/TS3UpdateScript/${DIRECTORY_MD5SUM} 2> /dev/null) ]; then
-				return 0;
+			if [ ! $(rsync -a --no-inc-recursive --exclude 'files' ${TEAMSPEAK_ROOT_DIRECTORY} /tmp/TS3Tools/TS3UpdateScript/${DIRECTORY_MD5SUM} 2> /dev/null) ]; then
+				if [[ "${DATABASE_TYPE}" == "MySQL" ]] || [[ "${DATABASE_TYPE}" == "MariaDB" ]]; then
+					if databaseBackup export ${TEAMSPEAK_ROOT_DIRECTORY}; then
+						return 0;
+					else
+						return 1;
+					fi
+				else
+					return 0;
+				fi
 			else
 				return 1;
 			fi
@@ -1488,11 +1556,15 @@ function backup() {
 		;;
 
 		deploy)
-			if [ ! $(rsync -a /tmp/TS3Tools/TS3UpdateScript/${DIRECTORY_MD5SUM}/ ${1} 2> /dev/null) ]; then
-				if [ $(rm -rf /tmp/TS3Tools/TS3UpdateScript/${DIRECTORY_MD5SUM}) ]; then
-					return 0;
+			if [ ! $(rsync -a --exclude 'ts3DatabaseBackup.sql' /tmp/TS3Tools/TS3UpdateScript/${DIRECTORY_MD5SUM}/ ${TEAMSPEAK_ROOT_DIRECTORY} 2> /dev/null) ]; then
+				if [[ "${DATABASE_TYPE}" == "MySQL" ]] || [[ "${DATABASE_TYPE}" == "MariaDB" ]]; then
+					if databaseBackup import ${TEAMSPEAK_ROOT_DIRECTORY}; then
+						return 0;
+					else
+						return 1;
+					fi
 				else
-					return 1;
+					return 0;
 				fi
 			else
 				return 1;
@@ -1519,10 +1591,14 @@ function backup() {
 # Return: 0:boolean or 1:boolean
 function updateTeamSpeakInstance() {
 	UPDATE_STATUS_FLAG=0;
-	DIRECTORY="${1}"
+	if [[ -d "/opt/exagear/" ]]; then
+		DIRECTORY="/opt/exagear/images/debian-8-wine2g${1}/"
+        else
+		DIRECTORY="${1}/"
+	fi
 
 	if [ -n "$DIRECTORY" ] && [ -d "$DIRECTORY" ]; then
-		DIRECTORY_MD5SUM=$(echo "${1}" | md5sum | cut -d " " -f 1)
+		DIRECTORY_MD5SUM=$(echo -n "${DIRECTORY}" | md5sum | cut -d " " -f 1)
 		LATEST_RELEASE="$(getLatestTSServerVersion)"
 		RELEASE_NUMBER="$(echo $LATEST_RELEASE | grep -Eo '^[0-9\.?]+')"
 
@@ -1560,17 +1636,13 @@ function updateTeamSpeakInstance() {
 
 			wget ${TS3_SERVER_DOWNLOAD_LINK} -q -O teamspeak3-server.tar.bz2
 
-			tar jxf teamspeak3-server.tar.bz2 && cp -R teamspeak3-server_${INSTALLED_TS3_SERVER_PLATFORM}_${TS3SERVER_ARCHITECTURE}/* . && rm -rf teamspeak3-server_${INSTALLED_TS3_SERVER_PLATFORM}_${TS3SERVER_ARCHITECTURE}/
-
-			if [[ -f tsdns/tsdnsserver_${INSTALLED_TS3_SERVER_PLATFORM}_${TS3SERVER_ARCHITECTURE} ]]; then
-				rm tsdns/tsdnsserver_${INSTALLED_TS3_SERVER_PLATFORM}_${TS3SERVER_ARCHITECTURE}
+			if [[ -f ${INSTANCE_PATH}/tsdns/tsdnsserver_${INSTALLED_TS3_SERVER_PLATFORM}_${TS3SERVER_ARCHITECTURE} ]]; then
+				rm -rf ${INSTANCE_PATH}/tsdns/tsdnsserver_${INSTALLED_TS3_SERVER_PLATFORM}_${TS3SERVER_ARCHITECTURE}
 			fi
 
-			if [[ -f ts3server_${INSTALLED_TS3_SERVER_PLATFORM}_${TS3SERVER_ARCHITECTURE} ]]; then
-				rm ts3server_${INSTALLED_TS3_SERVER_PLATFORM}_${TS3SERVER_ARCHITECTURE}
+			if [[ -f ${INSTANCE_PATH}/ts3server_${INSTALLED_TS3_SERVER_PLATFORM}_${TS3SERVER_ARCHITECTURE} ]]; then
+				rm -rf ${INSTANCE_PATH}/ts3server_${INSTALLED_TS3_SERVER_PLATFORM}_${TS3SERVER_ARCHITECTURE}
 			fi
-
-			rm teamspeak3-server.tar.bz2 2> /dev/null
 		else
 			if [[ "$PAR_BETA_RELEASE" -eq 1 ]]; then
 				TS3_SERVER_DOWNLOAD_LINK="http://dl.4players.de/ts/releases/pre_releases/server/${LATEST_RELEASE}/teamspeak3-server_${INSTALLED_TS3_SERVER_PLATFORM}-${TS3SERVER_ARCHITECTURE}-${RELEASE_NUMBER}.tar.bz2"
@@ -1579,10 +1651,18 @@ function updateTeamSpeakInstance() {
 			fi
 
 			wget ${TS3_SERVER_DOWNLOAD_LINK} -q -O teamspeak3-server.tar.gz
+		fi
 
-			tar xf teamspeak3-server.tar.gz && cp -R teamspeak3-server_${INSTALLED_TS3_SERVER_PLATFORM}-${TS3SERVER_ARCHITECTURE}/* . && rm -rf teamspeak3-server_${INSTALLED_TS3_SERVER_PLATFORM}-${TS3SERVER_ARCHITECTURE}/
-
-			rm teamspeak3-server.tar.gz 2> /dev/null
+		if [ -f teamspeak3-server.tar.bz2 ]; then
+			bzip2 -d teamspeak3-server.tar.bz2 && tar xopf teamspeak3-server.tar
+			cp -R teamspeak3-server_${INSTALLED_TS3_SERVER_PLATFORM}_${TS3SERVER_ARCHITECTURE}/* .
+			rm -rf teamspeak3-server_${INSTALLED_TS3_SERVER_PLATFORM}_${TS3SERVER_ARCHITECTURE}/
+			rm teamspeak3-server.tar
+		elif [ -f teamspeak3-server.tar.gz ]; then
+			tar xf teamspeak3-server.tar.gz
+			cp -R teamspeak3-server_${INSTALLED_TS3_SERVER_PLATFORM}-${TS3SERVER_ARCHITECTURE}/* .
+			rm -rf teamspeak3-server_${INSTALLED_TS3_SERVER_PLATFORM}-${TS3SERVER_ARCHITECTURE}/
+			rm teamspeak3-server.tar.gz
 		fi
 
 		# Importing SQLite database
@@ -1644,13 +1724,30 @@ function updateTeamSpeakInstance() {
 			fi
 		fi
 
+		# Copy some files in the guest OS of Exagear
+		if [[ -d "/opt/exagear/" ]]; then
+			cp ${INSTANCE_PATH}/ts3server ${DIRECTORY}/
+			cp -R ${INSTANCE_PATH}/sql ${DIRECTORY}/sql/
+		fi
+
+		# Make sure, that ts3server binary is executable
+		if [ -f ts3server ]; then
+			chmod 0755 ts3server
+		else
+			chmod 0755 ts3server_*
+		fi
+
+		if [ -f ${DIRECTORY}/ts3server_startscript.sh ]; then
+			chmod 0755 ${DIRECTORY}/ts3server_startscript.sh
+		fi
+
 		# Change owner and group of files
 		if [[ -z "$GROUP" ]]; then
-			chown ${OWNER} -R .
+			chown ${OWNER} -R ${INSTANCE_PATH}/
 		elif [[ -z "$OWNER" ]]; then
-			chgrp ${GROUP} -R .
+			chgrp ${GROUP} -R ${INSTANCE_PATH}/
 		else
-			chown ${OWNER}:${GROUP} -R .
+			chown ${OWNER}:${GROUP} -R ${INSTANCE_PATH}/
 		fi
 
 		cd - > /dev/null
@@ -1674,7 +1771,7 @@ function main() {
 
 	# Enable debugging by commenting out the following line
 	if [[ -n "$PAR_DEBUG" ]] && [[ "$PAR_DEBUG" == 1 ]]; then
-		echo "$TXT_DEBUG_INFO: ${PAR_LIST}";
+		echo "$TXT_DEBUG_INFO: ${PAR_LIST} [v${SCRIPT_VERSION}]";
 		set -x
 	fi
 
@@ -1732,19 +1829,19 @@ function main() {
 
 	# Execute software checks
 	if [ "$PAR_INFORM_ONLINE_CLIENTS" -eq 1 ]; then
-		if ! checkdeps bash rsync wget grep sed unzip telnet expect; then
+		if ! checkdeps bash rsync wget grep sed unzip bzip2 telnet expect; then
 			SELF_TEST_STATUS=1;
 		fi
 	elif [ "$PAR_CRONJOB_TASK" -eq 1 ] && [ "$PAR_INFORM_ONLINE_CLIENTS" -eq 1 ]; then
-		if ! checkdeps bash rsync wget grep sed unzip mail telnet expect; then
+		if ! checkdeps bash rsync wget grep sed unzip bzip2 mail telnet expect; then
 			SELF_TEST_STATUS=1;
 		fi
 	elif [ "$PAR_CRONJOB_TASK" -eq 1 ]; then
-		if ! checkdeps bash rsync wget grep sed unzip mail; then
+		if ! checkdeps bash rsync wget grep sed unzip bzip2 mail; then
 			SELF_TEST_STATUS=1;
 		fi
 	else
-		if ! checkdeps bash rsync wget grep sed unzip; then
+		if ! checkdeps bash rsync wget grep sed unzip bzip2; then
 			SELF_TEST_STATUS=1;
 		fi
 	fi
@@ -1828,7 +1925,7 @@ function main() {
 					while read instancePath; do
 						INSTANCE_PATH=$(dirname $instancePath)
 
-						echo -e "\nCollecting as much as possible information for TeamSpeak 3 server instance '${INSTANCE_PATH}'" >> COLLECTING_INFORMATION_STATUS.txt;
+						echo -e "\n${TXT_COLLECTING_INFORMATION_COLLECTING_INFO}: ${INSTANCE_PATH}" >> COLLECTING_INFORMATION_STATUS.txt;
 
 						if [[ "$PAR_INFORM_ONLINE_CLIENTS" -eq 1 ]] || checkdeps telnet expect; then
 							# Detect ServerQuery IP
@@ -2419,7 +2516,15 @@ function main() {
 								echo -e "	${TXT_EXECUTION_MECHANISM_INSTALLED_ARCHITECTURE}: ${TS3SERVER_ARCHITECTURE}\n";
 
 								echo	"	${TXT_EXECUTION_MECHANISM_INSTANCE_LOG_FILES}: ${TS3SERVER_INSTANCE_LOG_PATH}";
-								echo -e "	${TXT_EXECUTION_MECHANISM_INSTANCE_TSDNS_BINARY}: ${INSTANCE_PATH}/tsdns/${TSDNS_BINARY}\n";
+								echo	"	${TXT_EXECUTION_MECHANISM_INSTANCE_TSDNS_BINARY}: ${INSTANCE_PATH}/tsdns/${TSDNS_BINARY}";
+								echo -n "	${TXT_EXECUTION_MECHANISM_INSTANCE_TSDNS_STATUS}: ";
+
+								if tsdns ${INSTANCE_PATH} status; then
+									echo -e "${TXT_EXECUTION_MECHANISM_INSTANCE_TSDNS_STATUS_ACTIVE}\n";
+								else
+									echo -e "${TXT_EXECUTION_MECHANISM_INSTANCE_TSDNS_STATUS_INACTIVE}\n";
+								fi
+								
 
 								echo	"	${TXT_EXECUTION_MECHANISM_OWNER_DETAILS}: ${OWNER} (${TXT_EXECUTION_MECHANISM_UID_DETAILS}: ${OWNER_ID})";
 								echo -e "	${TXT_EXECUTION_MECHANISM_GROUP_DETAILS}: ${GROUP} (${TXT_EXECUTION_MECHANISM_GID_DETAILS}: ${GROUP_ID})\n";
@@ -2499,12 +2604,14 @@ function main() {
 
 											# Stop TeamSpeak 3 server, if running
 											if ts3server ${INSTANCE_PATH} status; then
-												if [[ "$PAR_DISABLE_TEMPORARY_PASSWORD_BACKUP" -eq 0 ]]; then
+												if [[ "$PAR_DISABLE_TEMPORARY_PASSWORD_BACKUP" -eq 0 ]] && checkdeps telnet expect; then
 													if getTemporaryServerPasswords "${SERVERQUERY_IP}" "${SERVERQUERY_PORT}"; then
 														echo "${TXT_EXECUTION_MECHANISM_GET_TEMPORARY_SERVER_PASSWORDS_SUCCESSFUL}";
 													else
 														echo "${TXT_EXECUTION_MECHANISM_GET_TEMPORARY_SERVER_PASSWORDS_FAILED}";
 													fi
+												else
+													echo "${TXT_EXECUTION_MECHANISM_TEMPORARY_SERVER_PASSWORDS_WERE_NOT_BACKUPED_INFO}";
 												fi
 
 												if ! ts3server ${INSTANCE_PATH} stop; then
@@ -2519,11 +2626,11 @@ function main() {
 													# Delete old logs if parameter is set
 													if [[ "$PAR_DELETE_OLD_LOGS" -eq 1 ]]; then
 														echo "${TXT_EXECUTION_MECHANISM_DELETING_OLD_LOG_FILES}";
-														rm -f ${TS3SERVER_INSTANCE_LOG_PATH}*
+														rm -f ${TS3SERVER_INSTANCE_LOG_PATH}/*
 													fi
 
 													# Create backup of instance
-													if backup ${INSTANCE_PATH} create; then
+													if backup ${INSTANCE_PATH} create ${DATABASE_TYPE}; then
 														echo "${TXT_EXECUTION_MECHANISM_BACKUP_CREATED}";
 
 														# Update instance
@@ -2617,12 +2724,14 @@ function main() {
 									else
 										# Stop TeamSpeak 3 server, if running
 										if ts3server ${INSTANCE_PATH} status; then
-											if [[ "$PAR_DISABLE_TEMPORARY_PASSWORD_BACKUP" -eq 0 ]]; then
+											if [[ "$PAR_DISABLE_TEMPORARY_PASSWORD_BACKUP" -eq 0 ]] && checkdeps telnet expect; then
 												if getTemporaryServerPasswords "${SERVERQUERY_IP}" "${SERVERQUERY_PORT}"; then
 													echo "${TXT_EXECUTION_MECHANISM_GET_TEMPORARY_SERVER_PASSWORDS_SUCCESSFUL}";
 												else
 													echo "${TXT_EXECUTION_MECHANISM_GET_TEMPORARY_SERVER_PASSWORDS_FAILED}";
 												fi
+											else
+												echo "${TXT_EXECUTION_MECHANISM_TEMPORARY_SERVER_PASSWORDS_WERE_NOT_BACKUPED_INFO}";
 											fi
 
 											if ! ts3server ${INSTANCE_PATH} stop; then
@@ -2637,11 +2746,11 @@ function main() {
 												# Delete old logs if parameter is set
 												if [[ "$PAR_DELETE_OLD_LOGS" -eq 1 ]]; then
 													echo "${TXT_EXECUTION_MECHANISM_DELETING_OLD_LOG_FILES}";
-													rm -f ${TS3SERVER_INSTANCE_LOG_PATH}*
+													rm -f ${TS3SERVER_INSTANCE_LOG_PATH}/*
 												fi
 
 												# Create backup of instance
-												if backup ${INSTANCE_PATH} create; then
+												if backup ${INSTANCE_PATH} create ${DATABASE_TYPE}; then
 													echo "${TXT_EXECUTION_MECHANISM_BACKUP_CREATED}";
 
 													# Update instance
@@ -2721,11 +2830,32 @@ function main() {
 									# Rollback to version before
 									if [[ "$EXECUTION_MECHANISM_STATUS" -eq 1 ]]; then
 										if backup ${INSTANCE_PATH} exists; then
-											if backup ${INSTANCE_PATH} deploy; then
+											BACKUP_PATH="/tmp/TS3Tools/TS3UpdateScript/$(echo -n "${INSTANCE_PATH}/" | md5sum | cut -d " " -f 1)/"
+
+											if backup ${INSTANCE_PATH} deploy ${DATABASE_TYPE}; then
 												echo "${TXT_EXECUTION_MECHANISM_ROLLBACK_INFO} '${INSTALLED_TS3_SERVER_VERSION}'.";
 												EXECUTION_MECHANISM_STATUS=0;
+
+												# Start TeamSpeak 3 server
+												if ts3server ${INSTANCE_PATH} start; then
+													echo "${TXT_EXECUTION_MECHANISM_TS3SERVER_STARTED}";
+
+													if [[ -s SERVERTEMPPASSWORDLIST.txt ]]; then
+														# Wait a few seconds to be able to connect via telnet
+														sleep 5s
+
+														if setTemporaryServerPasswords "${SERVERQUERY_IP}" "${SERVERQUERY_PORT}"; then
+															echo "${TXT_EXECUTION_MECHANISM_SET_TEMPORARY_SERVER_PASSWORDS_SUCCESSFUL}";
+														else
+															echo "${TXT_EXECUTION_MECHANISM_SET_TEMPORARY_SERVER_PASSWORDS_FAILED}";
+														fi
+													fi
+												else
+													echo "${TXT_EXECUTION_MECHANISM_TS3SERVER_START_FAILED}";
+													EXECUTION_MECHANISM_STATUS=1;
+												fi
 											else
-												echo "${TXT_EXECUTION_MECHANISM_UPDATE_AND_ROLLBACK_FAILED_INFO}";
+												echo "${TXT_EXECUTION_MECHANISM_UPDATE_AND_ROLLBACK_FAILED_INFO}: ${BACKUP_PATH}";
 												EXECUTION_MECHANISM_STATUS=1;
 											fi
 										else
@@ -2735,13 +2865,16 @@ function main() {
 									fi
 
 									# Delete backup if parameter is not set
-									if [[ "$PAR_KEEP_BACKUPS" -eq 0 ]]; then
-										if backup ${INSTANCE_PATH} exists; then
+									if backup ${INSTANCE_PATH} exists; then
+										if [[ "$PAR_KEEP_BACKUPS" -eq 0 ]] && [[ "$EXECUTION_MECHANISM_STATUS" -eq 0 ]]; then
 											if backup ${INSTANCE_PATH} delete; then
 												echo "${TXT_EXECUTION_MECHANISM_BACKUP_DELETED_INFO}";
 											else
 												echo "${TXT_EXECUTION_MECHANISM_DELETING_BACKUP_FAILED}";
 											fi
+										else
+											BACKUP_PATH="/tmp/TS3Tools/TS3UpdateScript/$(echo -n "${INSTANCE_PATH}/" | md5sum | cut -d " " -f 1)/"
+											echo "${TXT_EXECUTION_MECHANISM_BACKUP_DOES_STILL_EXISTS_INFO}: ${BACKUP_PATH}";
 										fi
 									fi
 								## ROLLBACK PROCESS END ##
