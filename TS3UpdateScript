@@ -16,7 +16,7 @@ exec 5<&0
 # Donations: https://www.paypal.com/cgi-bin/webscr?cmd=_s-xclick&hosted_button_id=7ZRXLSC2UBVWE
 #
 
-SCRIPT_VERSION="4.3.1"
+SCRIPT_VERSION="4.4.0"
 LAST_EDIT_DATE="2016-02-13"
 
 # DO NOT REMOVE OR CHANGE
@@ -82,7 +82,7 @@ function clearTerminalScreen() {
 # Return: 0:boolean or 1:boolean
 function checkConsistency() {
 	CHKSUM=$(cat $0 | grep -v "ORIGIN=" | head -202 | sha256sum | cut -d " " -f 1)
-	ORIGIN="44f7c76c87dc7a4371caae2e0d53c531d4981542f5e5c3b5bd97899ba1d0a247"
+	ORIGIN="cdb9647ed550e8224dde5c14dbdbe0d328f6524b44d099d1227871eb38e7bbf8"
 
 	if [[ "$CHKSUM" == "$ORIGIN" ]]; then
 		return 0;
