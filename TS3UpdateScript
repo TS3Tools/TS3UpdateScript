@@ -440,12 +440,12 @@ function getLatestTSServerVersion() {
 function findTS3ServerInstances() {
 	if [[ "$SCRIPT_LICENSE" == "1" ]]; then
 		if [[ "$PAR_PATH_DIRECTORY" == "/" ]]; then
-			find / -name 'ts3server_startscript.sh' 2> /dev/null | grep -iv "/tmp/TS3Tools/TS3UpdateScript" | sort > TS3InstancePaths.txt
+			find / -name 'ts3server_startscript.sh' 2> /dev/null | grep -Eiv "/tmp/TS3Tools/TS3UpdateScript|/var/backups/TS3Tools/TS3UpdateScript" | sort > TS3InstancePaths.txt
 		else
 			echo "$PAR_PATH_DIRECTORY/ts3server_startscript.sh" > TS3InstancePaths.txt
 		fi
 	else
-		find / -name 'ts3server_startscript.sh' 2> /dev/null | grep -iv "/tmp/TS3Tools/TS3UpdateScript" | sort | head -1 > TS3InstancePaths.txt
+		find / -name 'ts3server_startscript.sh' 2> /dev/null | grep -Eiv "/tmp/TS3Tools/TS3UpdateScript|/var/backups/TS3Tools/TS3UpdateScript" | sort | head -1 > TS3InstancePaths.txt
 	fi
 
 	if [[ -s TS3InstancePaths.txt ]]; then
@@ -453,6 +453,22 @@ function findTS3ServerInstances() {
 	else
 		return 1;
 	fi
+}
+
+# Returns the real root directory of the TS3 server (required for ExaGear support)
+# Par 1: TeamSpeakRootDirectory:String
+# Return: realTeamSpeakRootDirectory:String
+function findRealTS3RootDirectory() {
+	if [[ -d "/opt/exagear/" ]]; then
+		EXAGEAR_ENVIRONMENT="$(find /opt/exagear/images/ -maxdepth 1 -type d ! -path /opt/exagear/images/)"
+		EXAGEAR_ENVIRONMENT_ESCAPED=$(echo -n "${EXAGEAR_ENVIRONMENT}" | sed -r 's/\//\\\//g')
+		FOUND_TEAMSPEAK_DIRECTORY=$(grep -E ${1} TS3InstancePaths.txt | sed 's/'${EXAGEAR_ENVIRONMENT_ESCAPED}'//' | sed 's/ts3server_startscript.sh//g')
+		TEAMSPEAK_ROOT_DIRECTORY="${EXAGEAR_ENVIRONMENT}${FOUND_TEAMSPEAK_DIRECTORY}"
+	else
+		TEAMSPEAK_ROOT_DIRECTORY="${1}/"
+	fi
+
+	echo -n "${TEAMSPEAK_ROOT_DIRECTORY}";
 }
 
 # Check serveradmin password
@@ -761,11 +777,7 @@ function getTS3ServerInstanceLogPath() {
 	if INIFileExists ${1}; then
 		INSTANCE_LOG_PATH_TEMP="$(grep logpath < ${1}/ts3server.ini | cut -d '=' -f 2)"
 	else
-		if [[ -d "/opt/exagear/" ]]; then
-			INSTANCE_LOG_PATH_TEMP="/opt/exagear/images/debian-8-wine2g${1}/logs/"
-		else
-			INSTANCE_LOG_PATH_TEMP="${1}/logs/"
-		fi
+		INSTANCE_LOG_PATH_TEMP="$(findRealTS3RootDirectory ${1})logs/"
 	fi
 
 	# Absolute or relative path?
@@ -1496,7 +1508,9 @@ function databaseBackup() {
 
 	if [[ "${1}" == "export" ]]; then
 		if [ ! $(mysqldump --add-drop-table --user=${DB_USERNAME} --password=${DB_PASSWORD} ${DB_NAME} --host=${DB_HOST} > /tmp/TS3Tools/TS3UpdateScript/${DIRECTORY_MD5SUM}/ts3DatabaseBackup.sql) ]; then
-			return 0;
+			if [ ! $(mysqldump --add-drop-table --user=${DB_USERNAME} --password=${DB_PASSWORD} ${DB_NAME} --host=${DB_HOST} > /var/backups/TS3Tools/TS3UpdateScript/${DIRECTORY_MD5SUM}/ts3DatabaseBackup.sql) ]; then
+				return 0;
+			fi
 		else
 			return 1;
 		fi
@@ -1517,11 +1531,7 @@ function databaseBackup() {
 # Par 3: sqlType:string (required for create|deploy)
 # Return: 0:boolean or 1:boolean
 function backup() {
-	if [[ -d "/opt/exagear/" ]]; then
-		TEAMSPEAK_ROOT_DIRECTORY="/opt/exagear/images/debian-8-wine2g${1}/"
-	else
-		TEAMSPEAK_ROOT_DIRECTORY="${1}/"
-	fi
+	TEAMSPEAK_ROOT_DIRECTORY=$(findRealTS3RootDirectory ${1})
 	DIRECTORY_MD5SUM=$(echo -n "${TEAMSPEAK_ROOT_DIRECTORY}" | md5sum | cut -d " " -f 1)
 
 	DATABASE_TYPE=${3}
@@ -1532,15 +1542,21 @@ function backup() {
 				mkdir -p /tmp/TS3Tools/TS3UpdateScript/${DIRECTORY_MD5SUM}
 			fi
 
+			if [ ! -d /var/backups/TS3Tools/TS3UpdateScript/${DIRECTORY_MD5SUM} ]; then
+				mkdir -p /var/backups/TS3Tools/TS3UpdateScript/${DIRECTORY_MD5SUM}
+			fi
+
 			if [ ! $(rsync -a --no-inc-recursive --exclude 'files' ${TEAMSPEAK_ROOT_DIRECTORY} /tmp/TS3Tools/TS3UpdateScript/${DIRECTORY_MD5SUM} 2> /dev/null) ]; then
-				if [[ "${DATABASE_TYPE}" == "MySQL" ]] || [[ "${DATABASE_TYPE}" == "MariaDB" ]]; then
-					if databaseBackup export ${TEAMSPEAK_ROOT_DIRECTORY}; then
-						return 0;
+				if [ ! $(rsync -a --no-inc-recursive --exclude 'files' ${TEAMSPEAK_ROOT_DIRECTORY} /var/backups/TS3Tools/TS3UpdateScript/${DIRECTORY_MD5SUM} 2> /dev/null) ]; then
+					if [[ "${DATABASE_TYPE}" == "MySQL" ]] || [[ "${DATABASE_TYPE}" == "MariaDB" ]]; then
+						if databaseBackup export ${TEAMSPEAK_ROOT_DIRECTORY}; then
+							return 0;
+						else
+							return 1;
+						fi
 					else
-						return 1;
+						return 0;
 					fi
-				else
-					return 0;
 				fi
 			else
 				return 1;
@@ -1591,11 +1607,7 @@ function backup() {
 # Return: 0:boolean or 1:boolean
 function updateTeamSpeakInstance() {
 	UPDATE_STATUS_FLAG=0;
-	if [[ -d "/opt/exagear/" ]]; then
-		DIRECTORY="/opt/exagear/images/debian-8-wine2g${1}/"
-        else
-		DIRECTORY="${1}/"
-	fi
+	DIRECTORY=$(findRealTS3RootDirectory ${1})
 
 	if [ -n "$DIRECTORY" ] && [ -d "$DIRECTORY" ]; then
 		DIRECTORY_MD5SUM=$(echo -n "${DIRECTORY}" | md5sum | cut -d " " -f 1)
@@ -1722,12 +1734,6 @@ function updateTeamSpeakInstance() {
 			if [ ! $(rm -rf ${INSTANCE_PATH}/ts3server_startscript.sh) ] && [ $(mv ${INSTANCE_PATH}/TEMP_ts3server_startscript.sh ${INSTANCE_PATH}/ts3server_startscript.sh) ]; then
 				UPDATE_STATUS_FLAG=1;
 			fi
-		fi
-
-		# Copy some files in the guest OS of Exagear
-		if [[ -d "/opt/exagear/" ]]; then
-			cp ${INSTANCE_PATH}/ts3server ${DIRECTORY}/
-			cp -R ${INSTANCE_PATH}/sql ${DIRECTORY}/sql/
 		fi
 
 		# Make sure, that ts3server binary is executable
@@ -2596,6 +2602,19 @@ function main() {
 										sleep 5m
 									fi
 
+									## Backup temporary passwords
+									if [[ "$PAR_DISABLE_TEMPORARY_PASSWORD_BACKUP" -eq 0 ]] && checkdeps telnet expect; then
+										echo "${TXT_EXECUTION_MECHANISM_GET_TEMPORARY_SERVER_PASSWORDS_INFO}";
+
+										if getTemporaryServerPasswords "${SERVERQUERY_IP}" "${SERVERQUERY_PORT}"; then
+											echo "${TXT_EXECUTION_MECHANISM_GET_TEMPORARY_SERVER_PASSWORDS_SUCCESSFUL}";
+										else
+											echo "${TXT_EXECUTION_MECHANISM_GET_TEMPORARY_SERVER_PASSWORDS_FAILED}";
+										fi
+									else
+										echo "${TXT_EXECUTION_MECHANISM_TEMPORARY_SERVER_PASSWORDS_WERE_NOT_BACKUPED_INFO}";
+									fi
+
 									## UPDATE PROCESS START ##
 									# Stop TSDNS, if running
 									if tsdns ${INSTANCE_PATH} status; then
@@ -2604,16 +2623,6 @@ function main() {
 
 											# Stop TeamSpeak 3 server, if running
 											if ts3server ${INSTANCE_PATH} status; then
-												if [[ "$PAR_DISABLE_TEMPORARY_PASSWORD_BACKUP" -eq 0 ]] && checkdeps telnet expect; then
-													if getTemporaryServerPasswords "${SERVERQUERY_IP}" "${SERVERQUERY_PORT}"; then
-														echo "${TXT_EXECUTION_MECHANISM_GET_TEMPORARY_SERVER_PASSWORDS_SUCCESSFUL}";
-													else
-														echo "${TXT_EXECUTION_MECHANISM_GET_TEMPORARY_SERVER_PASSWORDS_FAILED}";
-													fi
-												else
-													echo "${TXT_EXECUTION_MECHANISM_TEMPORARY_SERVER_PASSWORDS_WERE_NOT_BACKUPED_INFO}";
-												fi
-
 												if ! ts3server ${INSTANCE_PATH} stop; then
 													echo "${TXT_EXECUTION_MECHANISM_TS3SERVER_STOPPED}";
 
@@ -2724,16 +2733,6 @@ function main() {
 									else
 										# Stop TeamSpeak 3 server, if running
 										if ts3server ${INSTANCE_PATH} status; then
-											if [[ "$PAR_DISABLE_TEMPORARY_PASSWORD_BACKUP" -eq 0 ]] && checkdeps telnet expect; then
-												if getTemporaryServerPasswords "${SERVERQUERY_IP}" "${SERVERQUERY_PORT}"; then
-													echo "${TXT_EXECUTION_MECHANISM_GET_TEMPORARY_SERVER_PASSWORDS_SUCCESSFUL}";
-												else
-													echo "${TXT_EXECUTION_MECHANISM_GET_TEMPORARY_SERVER_PASSWORDS_FAILED}";
-												fi
-											else
-												echo "${TXT_EXECUTION_MECHANISM_TEMPORARY_SERVER_PASSWORDS_WERE_NOT_BACKUPED_INFO}";
-											fi
-
 											if ! ts3server ${INSTANCE_PATH} stop; then
 												echo "${TXT_EXECUTION_MECHANISM_TS3SERVER_STOPPED}";
 
@@ -2966,6 +2965,10 @@ function main() {
 		if [ ! "$(ls -A /tmp/TS3Tools/)" ]; then
 			rmdir /tmp/TS3Tools/
 		fi
+	fi
+
+	if [ ${PAR_DEBUG} -eq 1 ]; then
+		sed -i 's/\+ SERVERADMIN_PASSWORD=.*/\+ SERVERADMIN_PASSWORD=CENSORED_PASS/g' ${PAR_DEBUG_FILENAME}
 	fi
 
 	# Time measurement cleanup END

@@ -98,7 +98,7 @@ Just grab a copy of your language file, which you understand and translate the c
 Name | Ideal for | Restrictions | 5-years Support | Costs
 :------------- | :------------- | :------------- | :------------- | :-------------
 Non-Profit | Unlicensed, NPL, AAL | Single Instance, no [BPA](https://github.com/TS3Tools/TS3UpdateScript/blob/master/docs/BEST_PRACTICES_ANALYZER.md), no Cronjob | No | Free of charge / 'Pay what you want'-Donation
-Hoster | ATHP | None | Yes | 79,99 EUR
+Hoster | ATHP | None | Yes | 79.99 EUR
 
 ### Get Hoster license
 
@@ -236,7 +236,7 @@ Parameter | Description
 - SQLite and MySQL as well as MariaDB database setups
 - TSDNS
 - Temporary virtual server passwords
-- Exagear environments
+- ExaGear environments (Further information: http://eltechs.com/)
 
 ## Work flow of the script
 

@@ -23,6 +23,14 @@ Hotfix | Important fix for one more issues, which causes a not working TS3Update
 
 ## Releases
 
+### Version 4.4.0
+
+	* TSDNS: Decreased downtime while creating password backups and display backup message (GitHub issue [#23](https://github.com/TS3Tools/TS3UpdateScript/issues/23))
+	! New language variable 'TXT_EXECUTION_MECHANISM_GET_TEMPORARY_SERVER_PASSWORDS_INFO' was added
+	* Extended support of ExaGear for more than just Debian 8 (GitHub issue [#25](https://github.com/TS3Tools/TS3UpdateScript/issues/25))
+	* Backups are restored to the wrong instance (GitHub issue [#24](https://github.com/TS3Tools/TS3UpdateScript/issues/24))
+	! Backups will be saved twice now. Once in /tmp/TS3Tools/ and once in /var/backups/TS3Tools/.
+
 ### Version 4.3.1
 
 	! Tested and verified this release: GitHube issue #20 (https://github.com/TS3Tools/TS3UpdateScript/issues/20)
