@@ -3371,7 +3371,7 @@ while [ -n "$1" ]; do
 							LICENSE_KEY="$(cat license_key)";
 
 							if [[ -n "$IP_ADDRESS" ]] && [[ -n "$LICENSE_KEY" ]]; then
-								(echo "Payment eMail: ${PAYMENT_EMAIL}"; echo "IP: ${IP_ADDRESS}"; echo "License key: ${LICENSE_KEY}") | mail -s "TS3-Tools.info - TS3UpdateScript Hoster License" info@ts3-tools.info -c "${PAYMENT_EMAIL}"
+								(echo "Payment eMail: ${PAYMENT_EMAIL}"; echo "IP: ${IP_ADDRESS}"; echo "License: ${LICENSE_TYPE}"; echo "License key: ${LICENSE_KEY}") | mail -s "TS3-Tools.info - TS3UpdateScript ${LICENSE_TYPE} License" info@ts3-tools.info -c "${PAYMENT_EMAIL}"
 								if [[ $? -eq 0 ]]; then
 									echo "Email should be sent successful to info@ts3-tools.info and ${PAYMENT_EMAIL}. If you do not receive this email within the next minutes, you server is may not able to send emails through the internet.";
 									exit 0;
