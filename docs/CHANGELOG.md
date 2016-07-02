@@ -12,7 +12,7 @@ Release | Meaning
 :------------- | :-------------
 Major | New features, Re-development of code (structure) and fundamental changes to the TS3UpdateScript
 Minor | Small improvements, new best practice checks and something like this
-Hotfix | Important fix for one more issues, which causes a not working TS3UpdateScript
+Hotfix | Important fix for one more issues, which causes a not (correct) working TS3UpdateScript
 
 ## Legend / History
 
@@ -22,6 +22,20 @@ Hotfix | Important fix for one more issues, which causes a not working TS3Update
 	! Hint/Warning
 
 ## Releases
+
+### Version 4.5.0
+
+	* Migrated multiple configuraton files to one single file: configs/config.all
+	+ Added "which" command to list of required packages
+	* Improved formatting of ts3server_startscript.sh, when adding "inifile=ts3server.ini"
+	* Changed TS3UpdateScript licensing (see [Script Licenses](https://github.com/TS3Tools/TS3UpdateScript#script-licenses))
+	! Renamed license "Hoster" to "Enterprise" and "Non-Profit" to "Free" due of some misunderstandings
+	! Cronjobs are now available with the Professional and Enterprise license
+	* Updated all documentations regarding change of configuration file(s) and TS3UpdateScript licensing
+	* Updated all language files regarding change of configuration file(s)
+	+ Added feature request functionality for installing dynamic cronjobs (GitHub issue [#28](https://github.com/TS3Tools/TS3UpdateScript/issues/28))
+	! You're now able to provide an optional starting hour and minute. Install example for 22.15 o'clock:  ./TS3UpdateScript --install-cronjob 22 15 --check
+	* Improved function getServerQueryIP() for IPv6/multipe IP bindings support
 
 ### Version 4.4.0
 

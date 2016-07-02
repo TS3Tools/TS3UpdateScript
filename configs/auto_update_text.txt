@@ -1,1 +1,0 @@
-The server will be updated to version $VERSION in 5 minutes.

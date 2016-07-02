@@ -15,7 +15,7 @@ It checks, if a newer version for your TeamSpeak 3 server instance is available 
 - [Available Languages](https://github.com/TS3Tools/TS3UpdateScript#available-languages)
 	- [Help us](https://github.com/TS3Tools/TS3UpdateScript#help-us)
 - [Script licenses](https://github.com/TS3Tools/TS3UpdateScript#script-licenses)
-	- [Get Hoster license](https://github.com/TS3Tools/TS3UpdateScript#get-hoster-license)
+	- [Get Professional/Enterprise license](https://github.com/TS3Tools/TS3UpdateScript#get-hoster-license)
 - [Donations](https://github.com/TS3Tools/TS3UpdateScript#donations)
 - [Usage](https://github.com/TS3Tools/TS3UpdateScript#usage)
 - [Parameters / Options](https://github.com/TS3Tools/TS3UpdateScript#parameters--options)
@@ -97,16 +97,17 @@ Just grab a copy of your language file, which you understand and translate the c
 
 Name | Ideal for | Restrictions | 5-years Support | Costs
 :------------- | :------------- | :------------- | :------------- | :-------------
-Non-Profit | Unlicensed, NPL, AAL | Single Instance, no [BPA](https://github.com/TS3Tools/TS3UpdateScript/blob/master/docs/BEST_PRACTICES_ANALYZER.md), no Cronjob | No | Free of charge / 'Pay what you want'-Donation
-Hoster | ATHP | None | Yes | 79.99 EUR
+Free | Unlicensed, NPL, AAL | Single Instance, no [BPA](https://github.com/TS3Tools/TS3UpdateScript/blob/master/docs/BEST_PRACTICES_ANALYZER.md), no Cronjob | No | Free of charge / 'Pay what you want'-Donation
+Professional | Unlicensed, NPL, AAL | Single Instance | No | 29.99 EUR
+Enterprise | ATHP | None | Yes | 79.99 EUR
 
-### Get Hoster license
+### Get Professional/Enterprise license
 
 Send me your license information to get a invoice, which you need to pay:
 
-  user@tux:~$ ./TS3UpdateScript --send-license-information [Your invoice E-Mail address]
+  user@tux:~$ ./TS3UpdateScript --send-license-information [Your invoice E-Mail address] [professional | enterprise]
 
-  user@tux:~$ ./TS3UpdateScript --send-license-information you@example.com
+  user@tux:~$ ./TS3UpdateScript --send-license-information you@example.com professional
 
 Hint: You should receive a copy of this email within a few minutes. If not, your server is may not able to send emails. Please follow the alternative instructions instead.
 
@@ -114,8 +115,9 @@ Alternative you can send me those details manual via email to [info@ts3-tools.in
 - Your (invoice) E-Mail address
 - Public/WAN IP address, where you want to use the script
 - License key of your script (Parameter '--show-license-key')
+- Type of license, which you want: Professional or Enterprise
 
-If I have received everything, I will add you to the list of hosters.
+After you've paid the invoice, your script will be licensed within the next 48 hours. Usually, it only takes up to 24 hours.
 
 ## Donations
 
@@ -155,7 +157,7 @@ Parameter | Description
 --keep-backups | Keep created backups by the script
 --waiting-time-in-minutes [MINUTES] | Optionally the script can wait X minutes before it starts the update process
 --disable-temporary-password-backup | Disable feature to backup temporary passwords
---set-release | Do not use the official latest release. Use instead the set release from the given file configs/latestStableRelease.txt
+--set-release | Do not use the official latest release. Use instead the set release from the given file configs/config.all
 --beta-release | With this parameter you are able to detect and update your TeamSpeak server to the latest beta release
 --locale [LANGUAGE-CODE] | Change language of this script to some of the available under languages/verified/ directory. Default is en_US.
 --debug [DEBUG_FILENAME] | Enables debugging and writes output to file
@@ -215,6 +217,7 @@ Parameter | Description
 - Software packages
   - Required
     - bash
+    - which
     - rsync
     - wget
     - grep

@@ -33,7 +33,7 @@ This file shows you, how you can update the TS3UpdateScript.
 
 ## How-To Update automate using cronjob
 
-The cronjob feature is just available with the 'Hoster' license. Read [here](https://github.com/TS3Tools/TS3UpdateScript#script-licenses) for further license information.
+The cronjob feature is only available with the 'Professional'/'Enterprise' license. Read [here](https://github.com/TS3Tools/TS3UpdateScript#script-licenses) for further license information.
 
 1. Install a new cronjob and/or make sure, that you've installed following cronjob line
 

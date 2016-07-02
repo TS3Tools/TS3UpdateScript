@@ -25,7 +25,7 @@ The BPA checks each of installed TeamSpeak server instances against the latest l
 
 ## Hint / Note
 
-The BPA is just available with the 'Hoster' license. Read [here](https://github.com/TS3Tools/TS3UpdateScript#script-licenses) for further license information.
+The BPA is only available with the 'Enterprise' license. Read [here](https://github.com/TS3Tools/TS3UpdateScript#script-licenses) for further license information.
 
 ## Types
 

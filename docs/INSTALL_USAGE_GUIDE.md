@@ -32,24 +32,28 @@ c) Make the script executable:
 
   user@tux:~$ chmod +x TS3UpdateScript
 
-d) Set your configuration values:
-- auto_update_text.txt
-  This file/text will be used, if the cronjob executes the script. The server informs your online clients and will wait 5 minutes before it starts the update process.
-- update_text.txt
-  This file/text will be used, if you are executing the script manually. The update process starts, if you hit "yes".
-- displayed_user_name.txt
-  This file contains the username, which will be displayed for poke messages
-- ignore_clients.txt
-  This file contains client_database_id's of users, which should not get any poke messages about updates
+d) Set your configuration values in configs/config.all:
+- ADMINISTRATOR_EMAILS
+  Set a list of comma seperated email addresses for email notifications by the cronjob.
+- LATEST_STABLE_RELEASE
+  Set your own latest stable version. Useful for ATHP to prevent an update to the latest version before the release has been tested internal.
+- DISPLAYED_USERNAME
+  Set the username, which will be displayed for poke messages.
+- UPDATE_TEXT
+  Set the text, which will be used, if you are executing the script manually.
+- CRON_UPDATE_TEXT
+  Set the text, which will be used, if the cronjob executes the script automatic.
+  The server informs your online clients and will wait 5 minutes before it starts the update process.
+- IGNORE_CLIENTS
+  Set a list of comma seperated client_database_id of users, which should not get any poke messages about updates.
   HINT: Do NOT remove the number 1 from this file!
-- ignore_servergroups.txt
-  This file containts sgid's of servergroups, which should not get any poke messages about updates
+- IGNORE_SERVERGROUPS
+  Set a list of comma seperated sgid of servergroups, which should not get any poke messages about updates.
   HINT: Do NOT remove the number 1 and 2 from this file!
-- .password-file
-  This file contains the 'serveradmin' password to connect to your server
-  HINT: The .password-file is located in each TeamSpeak 3 server root directory
 
-HINT: Both texts has a limitation of 100 characters. The displayed_user_name.txt has a limitation of 30 characters. The script checks at the start, if you are using a valid length. After editing the file(s), you should run the script once manually to check and see, if the length is ok.
+If you want to be able to poke someone or improve the detection of your server details, you need to set your ServerQuery serveradmin password in the file .password-file at the root directory of your TeamSpeak 3 server installation.
+
+HINT: UPDATE_TEXT / CRON_UPDATE_TEXT has a limitation of 100 characters. The DISPLAYED_USERNAME has a limitation of 30 characters. The script checks at the start, if you are using a valid length. After editing the configuration), you should run the script once manually to check and see, if the length is ok.
 
 f) Finish! Read the USAGE below to see, how you can use it
 
@@ -69,7 +73,7 @@ b) The script has an included "help"-page:
 
 ## Update text examples
 
-Following you can see some examples, how you can fill your 'auto_update_text.txt' and 'update_text.txt' files:
+Following you can see some examples, how you can fill your 'CRON_UPDATE_TEXT' and 'UPDATE_TEXT' settings:
 
   * This server will be updated to version $VERSION in 5 minutes. Please wait...
   * Server update to version $VERSION in 5 minutes.
@@ -107,9 +111,17 @@ Check with deleting logs and informing online clients; Same as above, but works 
 
 Installs weekly check cronjob for monday at 3 AM
 Same as './TS3UpdateScript.sh --check', but it's automated - you don't have to enter yes or no. Default is 'yes'
-Don't forget to provide your E-Mail address in the following file: administrator_eMail.txt
+Don't forget to provide your E-Mail address in the settings file: ADMINISTRATOR_EMAILS
 
   user@tux:~$ ./TS3UpdateScript --install-cronjob --check
+
+Same as above, but it will install the cronjob at 9 AM (09.00 o'clock)
+
+  user@tux:~$ ./TS3UpdateScript --install-cronjob 9 --check
+
+Same as above, but it will install the cronjob at 9.30 AM (09.30 o'clock)
+
+  user@tux:~$ ./TS3UpdateScript --install-cronjob 9 30 --check
 
 Same as above, but it will also delete old logs
 
@@ -170,7 +182,7 @@ or
 
    HINT: Each clientinfo is between two pipes (|)!
 
-6. Save the client_database_id in the file 'ignore_clients.txt' in a extra line to ignore that client for update pokes
+6. Save the client_database_id in the configuration file at 'IGNORE_CLIENTS' with a comma as seperator to ignore that client for update pokes
    Here for example: 1243
 
 ## How-To get "sgid"
@@ -200,7 +212,7 @@ or
 
    HINT: Each servergroup info is between two pipes (|)!
 
-6. Save the sgid in the file 'ignore_servergroups.txt' in a extra line to ignore all clients of this group for update pokes
+6. Save the sgid in the configuration file at 'IGNORE_SERVERGROUPS' with a comma as seperator to ignore all clients of this group for update pokes
    Here for example: 6
 
 ## Debugging

@@ -16,8 +16,8 @@ exec 5<&0
 # Donations: https://www.paypal.com/cgi-bin/webscr?cmd=_s-xclick&hosted_button_id=7ZRXLSC2UBVWE
 #
 
-SCRIPT_VERSION="4.4.0"
-LAST_EDIT_DATE="2016-02-13"
+SCRIPT_VERSION="4.5.0"
+LAST_EDIT_DATE="2016-07-02"
 
 # DO NOT REMOVE OR CHANGE
 SOFTWARE_ABOUT="This is the most widely used and fastest shell script to update all your TeamSpeak 3 server instances."
@@ -82,7 +82,7 @@ function clearTerminalScreen() {
 # Return: 0:boolean or 1:boolean
 function checkConsistency() {
 	CHKSUM=$(cat $0 | grep -v "ORIGIN=" | head -202 | sha256sum | cut -d " " -f 1)
-	ORIGIN="cdb9647ed550e8224dde5c14dbdbe0d328f6524b44d099d1227871eb38e7bbf8"
+	ORIGIN="da59fbe384406aa74a87def9327d40e5df92e19d219a44ed9b570b8e156449d3"
 
 	if [[ "$CHKSUM" == "$ORIGIN" ]]; then
 		return 0;
@@ -154,23 +154,22 @@ function checkLicense() {
 			VERIFY_KEY=$(cat ${LICENSE_VERIFY_KEY})
 
 			if [[ ${VERIFY_KEY} == $(getVerifyKey) ]]; then
-				LICENSE="ACCEPTED";
+				VERIFY=$(wget -t 3 --timeout=5 -qO- "$(echo "${NEEDED_LICENSE_KEY}" | base64 --decode)${LICENSE_KEY}")
 			elif [[ ${VERIFY_KEY} == $(getVerifyKey "1 days ago") ]]; then
-				LICENSE="ACCEPTED";
+				VERIFY=$(wget -t 3 --timeout=5 -qO- "$(echo "${NEEDED_LICENSE_KEY}" | base64 --decode)${LICENSE_KEY}")
 			elif [[ ${VERIFY_KEY} == $(getVerifyKey "2 days ago") ]]; then
-				LICENSE="ACCEPTED";
+				VERIFY=$(wget -t 3 --timeout=5 -qO- "$(echo "${NEEDED_LICENSE_KEY}" | base64 --decode)${LICENSE_KEY}")
 			elif [[ ${VERIFY_KEY} == $(getVerifyKey "3 days ago") ]]; then
-				LICENSE="ACCEPTED";
+				VERIFY=$(wget -t 3 --timeout=5 -qO- "$(echo "${NEEDED_LICENSE_KEY}" | base64 --decode)${LICENSE_KEY}")
 			elif [[ ${VERIFY_KEY} == $(getVerifyKey "4 days ago") ]]; then
-				LICENSE="ACCEPTED";
+				VERIFY=$(wget -t 3 --timeout=5 -qO- "$(echo "${NEEDED_LICENSE_KEY}" | base64 --decode)${LICENSE_KEY}")
 			elif [[ ${VERIFY_KEY} == $(getVerifyKey "5 days ago") ]]; then
-				LICENSE="ACCEPTED";
+				VERIFY=$(wget -t 3 --timeout=5 -qO- "$(echo "${NEEDED_LICENSE_KEY}" | base64 --decode)${LICENSE_KEY}")
 			else
 				VERIFY=$(wget -t 3 --timeout=5 -qO- "$(echo "${NEEDED_LICENSE_KEY}" | base64 --decode)${LICENSE_KEY}")
 
-				if [[ "$VERIFY" == "ACCEPTED" ]]; then
+				if [[ "$VERIFY" == "ENTERPRISE" ]] || [[ "$VERIFY" == "PROFESSIONAL" ]]; then
 					getVerifyKey > ${LICENSE_VERIFY_KEY}
-					LICENSE="ACCEPTED";
 				else
 					rm -rf ${LICENSE_VERIFY_KEY} license_key
 				fi
@@ -178,15 +177,16 @@ function checkLicense() {
 		else
 			VERIFY=$(wget -t 3 --timeout=5 -qO- "$(echo "${NEEDED_LICENSE_KEY}" | base64 --decode)${LICENSE_KEY}")
 
-			if [[ "$VERIFY" == "ACCEPTED" ]]; then
+			if [[ "$VERIFY" == "ENTERPRISE" ]] || [[ "$VERIFY" == "PROFESSIONAL" ]]; then
 				getVerifyKey > ${LICENSE_VERIFY_KEY}
-				LICENSE="ACCEPTED";
 			else
 				rm -rf ${LICENSE_VERIFY_KEY}
 			fi
 		fi
 
-		if [[ "$LICENSE" == "ACCEPTED" ]]; then
+		if [[ "$VERIFY" == "ENTERPRISE" ]]; then
+			echo -n "2";
+		elif [[ "$VERIFY" == "PROFESSIONAL" ]]; then
 			echo -n "1";
 		else
 			echo -n "0";
@@ -236,6 +236,33 @@ function setUpBashCompletion() {
 			return 1;
 		fi
 	fi
+}
+
+# Replaces single configuration files with a single on
+function migrateMultipleConfigFilesToOne() {
+	SINGLE_CONF_FILE='configs/config.all'
+
+	for config_file in $(find configs/ -type f -exec basename {} \; | sort); do
+		if [[ ${config_file} == "administrator_eMail.txt" ]]; then
+			ADMINISTRATOR_EMAILS="ADMINISTRATOR_EMAILS=$(< configs/administrator_eMail.txt)";
+		elif [[ ${config_file} == "ignore_clients.txt" ]]; then
+			IGNORE_CLIENTS="IGNORE_CLIENTS=$(tr '\n' ',' < configs/ignore_clients.txt)";
+		elif [[ ${config_file} == "ignore_servergroups.txt" ]]; then
+			IGNORE_SERVERGROUPS="IGNORE_SERVERGROUPS=$(tr '\n' ',' < configs/ignore_servergroups.txt)";
+		elif [[ ${config_file} == "latestStableRelease.txt" ]]; then
+			LATEST_STABLE_RELEASE="LATEST_STABLE_RELEASE=$(< configs/latestStableRelease.txt)";
+		elif [[ ${config_file} == "displayed_user_name.txt" ]]; then
+			DISPLAYED_USERNAME="DISPLAYED_USERNAME=$(< configs/displayed_user_name.txt)";
+		elif [[ ${config_file} == "update_text.txt" ]]; then
+			UPDATE_TEXT="UPDATE_TEXT=$(< configs/update_text.txt)";
+		elif [[ ${config_file} == "auto_update_text.txt" ]]; then
+			CRON_UPDATE_TEXT="CRON_UPDATE_TEXT=$(< configs/auto_update_text.txt)";
+		fi
+
+		echo -e "${ADMINISTRATOR_EMAILS}\n${LATEST_STABLE_RELEASE}\n${DISPLAYED_USERNAME}\n${UPDATE_TEXT}\n${CRON_UPDATE_TEXT}\n${IGNORE_CLIENTS}\n${IGNORE_SERVERGROUPS}\n" > ${SINGLE_CONF_FILE};
+
+		rm configs/${config_file};
+	done
 }
 
 # Write warning message, that the checked software package is not installed
@@ -322,9 +349,9 @@ function detectKnownCronDPath() {
 # Check if the settings of the script have been changed
 # Return: 0:boolean or 1:boolean
 function scriptSettingsChanged() {
-	ADMIN_EMAIL_MD5SUM="$(cd ${ABSOLUTE_PATH}/configs && tr -d '\n' < administrator_eMail.txt | md5sum | cut -d " " -f 1 && cd - > /dev/null)";
+	ADMIN_EMAIL_MD5SUM="$(grep ADMINISTRATOR_EMAILS ${ABSOLUTE_PATH}/configs/config.all | cut -d '=' -f 2 | md5sum | cut -d ' ' -f 1)"
 
-	if [[ "$ADMIN_EMAIL_MD5SUM" != "b1a4b2518dbbdd47dd4a713d5cd1df94" ]]; then
+	if [[ "$ADMIN_EMAIL_MD5SUM" != "160dfa42c0cb8e25311b6aff3a4d5361" ]]; then
 		return 0;
 	else
 		return 1;
@@ -334,7 +361,7 @@ function scriptSettingsChanged() {
 # Get latest TS3 server version by file
 # Return: ServerVersion:string or 1:boolean
 function getLatestTSServerVersionByFile() {
-	TS3_SERVER_VERSION="$(cd ${ABSOLUTE_PATH}/configs && cat latestStableRelease.txt && cd - > /dev/null)";
+	TS3_SERVER_VERSION="$(grep LATEST_STABLE_RELEASE ${ABSOLUTE_PATH}/configs/config.all | cut -d "=" -f 2)";
 
 	if [[ -n "$TS3_SERVER_VERSION" ]]; then
 		echo -n "$TS3_SERVER_VERSION";
@@ -438,7 +465,7 @@ function getLatestTSServerVersion() {
 # Find all TeamSpeak 3 server instances
 # Return: 0:boolean or 1:boolean
 function findTS3ServerInstances() {
-	if [[ "$SCRIPT_LICENSE" == "1" ]]; then
+	if [[ "$SCRIPT_LICENSE" == "2" ]]; then
 		if [[ "$PAR_PATH_DIRECTORY" == "/" ]]; then
 			find / -name 'ts3server_startscript.sh' 2> /dev/null | grep -Eiv "/tmp/TS3Tools/TS3UpdateScript|/var/backups/TS3Tools/TS3UpdateScript" | sort > TS3InstancePaths.txt
 		else
@@ -812,10 +839,10 @@ function getDatabaseType() {
 
 # Get ServerQuery IP
 # Par 1: TeamSpeakRootDirectory:string
-# Return: ServerQueryIP:string
+# Return: ServerQueryIPs:string
 function getServerQueryIP() {
 	if INIFileExists ${1}; then
-		SERVER_QUERY_IP="$(grep -E '^query_ip=' < ${1}/ts3server.ini | cut -d '=' -f 2)"
+		SERVER_QUERY_IP="$(grep -E '^query_ip=' < ${1}/ts3server.ini | cut -d '=' -f 2 | cut -d ',' -f 1)"
 
 		if [[ -n "$SERVER_QUERY_IP" ]]; then
 			echo -n "$SERVER_QUERY_IP";
@@ -847,7 +874,7 @@ function getServerQueryPort() {
 # Get ServerQuery displayed name (clear text)
 # Return: ServerQueryDisplayedName:string or 1:boolean
 function getServerQueryDisplayedName() {
-	SERVER_QUERY_DISPLAYED_NAME="$(cd ${ABSOLUTE_PATH}/configs && tr -d '\n' < displayed_user_name.txt && cd - > /dev/null)"
+	SERVER_QUERY_DISPLAYED_NAME="$(grep DISPLAYED_USERNAME ${ABSOLUTE_PATH}/configs/config.all | cut -d '=' -f 2)"
 
 	if [[ -n "$SERVER_QUERY_DISPLAYED_NAME" ]]; then
 		if [[ $(echo -n "$SERVER_QUERY_DISPLAYED_NAME" | wc -c) -lt 30 ]]; then
@@ -863,7 +890,7 @@ function getServerQueryDisplayedName() {
 # Get ServerQuery displayed name (escaped)
 # Return: ServerQueryDisplayedNameEscaped:string or 1:boolean
 function getServerQueryDisplayedNameEscaped() {
-	SERVER_QUERY_DISPLAYED_NAME="$(cd ${ABSOLUTE_PATH}/configs && tr -d '\n' < displayed_user_name.txt && cd - > /dev/null)"
+	SERVER_QUERY_DISPLAYED_NAME="$(grep DISPLAYED_USERNAME ${ABSOLUTE_PATH}/configs/config.all | cut -d '=' -f 2)"
 
 	if [[ -n "$SERVER_QUERY_DISPLAYED_NAME" ]]; then
 		SERVER_QUERY_DISPLAYED_NAME_ESCAPED="$(echo ${SERVER_QUERY_DISPLAYED_NAME} | sed -r 's/ /\\\\s/g')"
@@ -881,7 +908,7 @@ function getServerQueryDisplayedNameEscaped() {
 # Get administrator eMail
 # Return: AdministratorEmail:string or 1:boolean
 function getAdministratorEmail() {
-	ADMINISTRATOR_EMAIL="$(cd ${ABSOLUTE_PATH}/configs && tr -d '\n' < administrator_eMail.txt && cd - > /dev/null)"
+	ADMINISTRATOR_EMAIL="$(grep ADMINISTRATOR_EMAILS /home/sebastian-kraetzig/github/TS3UpdateScript/configs/config.all | cut -d "=" -f 2)"
 
 	if [[ -n "$ADMINISTRATOR_EMAIL" ]]; then
 		echo -n "$ADMINISTRATOR_EMAIL";
@@ -894,7 +921,7 @@ function getAdministratorEmail() {
 # Par 1: LatestServerVersion:string
 # Return: PokeMessage:string or 1:boolean
 function getManuallyPokeMessage() {
-	POKE_MESSAGE="$(cd ${ABSOLUTE_PATH}/configs && tr -d '\n' < update_text.txt && cd - > /dev/null)"
+	POKE_MESSAGE="$(grep -E '^UPDATE_TEXT' ${ABSOLUTE_PATH}/configs/config.all | cut -d '=' -f 2)"
 
 	if [[ -n "$POKE_MESSAGE" ]]; then
 		POKE_MESSAGE="$(echo ${POKE_MESSAGE} | sed -e 's/\$VERSION/'${1}'/g')"
@@ -913,7 +940,7 @@ function getManuallyPokeMessage() {
 # Par 1: LatestServerVersion:string
 # Return: PokeMessageEscaped:string or 1:boolean
 function getManuallyPokeMessageEscaped() {
-	POKE_MESSAGE="$(cd ${ABSOLUTE_PATH}/configs && tr -d '\n' < update_text.txt && cd - > /dev/null)"
+	POKE_MESSAGE="$(grep -E '^UPDATE_TEXT' ${ABSOLUTE_PATH}/configs/config.all | cut -d '=' -f 2)"
 
 	if [[ -n "$POKE_MESSAGE" ]]; then
 		POKE_MESSAGE_ESCAPED="$(echo ${POKE_MESSAGE} | sed -r 's/ /\\\\s/g' | sed -e 's/\$VERSION/'${1}'/g')"
@@ -932,7 +959,7 @@ function getManuallyPokeMessageEscaped() {
 # Par 1: LatestServerVersion:string
 # Return: PokeMessage:string or 1:boolean
 function getCronjobPokeMessage() {
-	POKE_MESSAGE="$(cd ${ABSOLUTE_PATH}/configs && tr -d '\n' < auto_update_text.txt && cd - > /dev/null)"
+	POKE_MESSAGE="$(grep -E '^CRON_UPDATE_TEXT' ${ABSOLUTE_PATH}/configs/config.all | cut -d '=' -f 2)"
 
 	if [[ -n "$POKE_MESSAGE" ]]; then
 		POKE_MESSAGE="$(echo ${POKE_MESSAGE} | sed -e 's/\$VERSION/'${1}'/g')"
@@ -951,7 +978,7 @@ function getCronjobPokeMessage() {
 # Par 1: LatestServerVersion:string
 # Return: PokeMessageEscaped:string or 1:boolean
 function getCronjobPokeMessageEscaped() {
-	POKE_MESSAGE="$(cd ${ABSOLUTE_PATH}/configs && tr -d '\n' < auto_update_text.txt && cd - > /dev/null)"
+	POKE_MESSAGE="$(grep -E '^CRON_UPDATE_TEXT' ${ABSOLUTE_PATH}/configs/config.all | cut -d '=' -f 2)"
 
 	if [[ -n "$POKE_MESSAGE" ]]; then
 		POKE_MESSAGE_ESCAPED="$(echo ${POKE_MESSAGE} | sed -r 's/ /\\\\s/g' | sed -e 's/\$VERSION/'${1}'/g')"
@@ -969,7 +996,7 @@ function getCronjobPokeMessageEscaped() {
 # Get ignore client list (comata)
 # Return: IgnoreClientList:string or 1:boolean
 function getIgnoreClientList {
-	IGNORE_CLIENT_LIST="$(cat ${ABSOLUTE_PATH}/configs/ignore_clients.txt | sed ':a;N;$!ba;s/\n/, /g')"
+	IGNORE_CLIENT_LIST="$(grep 'IGNORE_CLIENTS' ${ABSOLUTE_PATH}/configs/config.all | cut -d '=' -f 2 | sed ':a;N;$!ba;s/\n/, /g')"
 
 	if [[ -n "$IGNORE_CLIENT_LIST" ]]; then
 		echo -n "$IGNORE_CLIENT_LIST";
@@ -981,7 +1008,7 @@ function getIgnoreClientList {
 # Get ignore server groups list (comata)
 # Return: IgnoreServerGroupsList:string or 1:boolean
 function getIgnoreServerGroupsList {
-	IGNORE_SERVERGROUPS_LIST="$(cat ${ABSOLUTE_PATH}/configs/ignore_servergroups.txt | sed ':a;N;$!ba;s/\n/, /g')"
+	IGNORE_SERVERGROUPS_LIST="$(grep 'IGNORE_SERVERGROUPS' ${ABSOLUTE_PATH}/configs/config.all | cut -d '=' -f 2 | sed ':a;N;$!ba;s/\n/, /g')"
 
 	if [[ -n "$IGNORE_SERVERGROUPS_LIST" ]]; then
 		echo -n "$IGNORE_SERVERGROUPS_LIST";
@@ -1081,12 +1108,12 @@ function getListOfClientsWhichShouldBeIgnored() {
 					send "use sid=${sid}\r"
 				USE
 
-				while read sgid; do
+				grep 'IGNORE_SERVERGROUPS' ${ABSOLUTE_PATH}/configs/config.all | cut -d '=' -f 2 | tr ',' '\n' | while read sgid; do
 					cat <<- SERVERGROUPCLIENTLIST
 						expect "error id=0 msg=ok"
 						send "servergroupclientlist sgid=${sgid}\r"
 					SERVERGROUPCLIENTLIST
-				done < ${ABSOLUTE_PATH}/configs/ignore_servergroups.txt
+				done
 			done < SERVERLIST.txt
 
 			cat <<- LOGOUT
@@ -1723,15 +1750,16 @@ function updateTeamSpeakInstance() {
 
 		# Add commandline parameter 'inifile=ts3server.ini' to ts3server_startscript.sh
 		if [[ "$TEAMSPEAK_DATABASE_TYPE" == "MySQL" ]] || [[ "$TEAMSPEAK_DATABASE_TYPE" == "MariaDB" ]] || [ -f ${INSTANCE_PATH}/ts3server.ini ]; then
+			IFS=''
 			while read line; do
-				if [[ "$line" == 'COMMANDLINE_PARAMETERS="${2}" #add any command line parameters you want to pass here' ]]; then
+				if [[ "$line" =~ 'COMMANDLINE_PARAMETERS=' ]]; then
 					echo 'COMMANDLINE_PARAMETERS="${2} inifile=ts3server.ini" #add any command line parameters you want to pass here' >> ${INSTANCE_PATH}/TEMP_ts3server_startscript.sh;
 				else
 					echo $line >> ${INSTANCE_PATH}/TEMP_ts3server_startscript.sh;
 				fi
 			done < ${INSTANCE_PATH}/ts3server_startscript.sh
 
-			if [ ! $(rm -rf ${INSTANCE_PATH}/ts3server_startscript.sh) ] && [ $(mv ${INSTANCE_PATH}/TEMP_ts3server_startscript.sh ${INSTANCE_PATH}/ts3server_startscript.sh) ]; then
+			if [ ! $(rm -f ${INSTANCE_PATH}/ts3server_startscript.sh) ] && [ $(mv ${INSTANCE_PATH}/TEMP_ts3server_startscript.sh ${INSTANCE_PATH}/ts3server_startscript.sh) ]; then
 				UPDATE_STATUS_FLAG=1;
 			fi
 		fi
@@ -1805,6 +1833,11 @@ function main() {
 		fi
 	fi
 
+	# Migrate multiple configuration files to one
+	if [[ ! -f configs/config.all ]]; then
+		migrateMultipleConfigFilesToOne
+	fi
+
 	# Check consistency of script
 	if ! checkConsistency; then
 		echo "${TXT_SELF_TEST_CHECK_CONSISTENCY}" >> SELF_TEST_STATUS.txt;
@@ -1835,19 +1868,19 @@ function main() {
 
 	# Execute software checks
 	if [ "$PAR_INFORM_ONLINE_CLIENTS" -eq 1 ]; then
-		if ! checkdeps bash rsync wget grep sed unzip bzip2 telnet expect; then
+		if ! checkdeps bash which rsync wget grep sed unzip bzip2 telnet expect; then
 			SELF_TEST_STATUS=1;
 		fi
 	elif [ "$PAR_CRONJOB_TASK" -eq 1 ] && [ "$PAR_INFORM_ONLINE_CLIENTS" -eq 1 ]; then
-		if ! checkdeps bash rsync wget grep sed unzip bzip2 mail telnet expect; then
+		if ! checkdeps bash which rsync wget grep sed unzip bzip2 mail telnet expect; then
 			SELF_TEST_STATUS=1;
 		fi
 	elif [ "$PAR_CRONJOB_TASK" -eq 1 ]; then
-		if ! checkdeps bash rsync wget grep sed unzip bzip2 mail; then
+		if ! checkdeps bash which rsync wget grep sed unzip bzip2 mail; then
 			SELF_TEST_STATUS=1;
 		fi
 	else
-		if ! checkdeps bash rsync wget grep sed unzip bzip2; then
+		if ! checkdeps bash which rsync wget grep sed unzip bzip2; then
 			SELF_TEST_STATUS=1;
 		fi
 	fi
@@ -2025,7 +2058,7 @@ function main() {
 									COLLECTING_INFORMATION_STATUS=1;
 								fi
 
-								if [[ "$SCRIPT_LICENSE" == "1" ]]; then
+								if [[ "$SCRIPT_LICENSE" == "1" ]] || [[ "$SCRIPT_LICENSE" == "2" ]]; then
 									if [[ "$OWNER" == "root" ]]; then
 										echo "${TXT_COLLECTING_INFORMATION_OWNER_ROOT_PERMISSIONS_INFO}" >> COLLECTING_INFORMATION_STATUS.txt;
 										COLLECTING_INFORMATION_STATUS=1;
@@ -2046,7 +2079,7 @@ function main() {
 						fi
 
 						# Check shell and display warning, if a valid shell is in use
-						if [[ "$SCRIPT_LICENSE" == "1" ]]; then
+						if [[ "$SCRIPT_LICENSE" == "1" ]] || [[ "$SCRIPT_LICENSE" == "2" ]]; then
 							if isShellOfOwnerValid ${OWNER}; then
 								echo "${TXT_COLLECTING_INFORMATION_IS_SHELL_VALID_FAILED}" >> COLLECTING_INFORMATION_STATUS.txt;
 							fi
@@ -2062,7 +2095,7 @@ function main() {
 									COLLECTING_INFORMATION_STATUS=1;
 								fi
 
-								if [[ "$SCRIPT_LICENSE" == "1" ]]; then
+								if [[ "$SCRIPT_LICENSE" == "1" ]] || [[ "$SCRIPT_LICENSE" == "2" ]]; then
 									if [[ "$GROUP" == "root" ]]; then
 										echo "${TXT_COLLECTING_INFORMATION_GROUP_ROOT_PERMISSIONS_INFO}" >> COLLECTING_INFORMATION_STATUS.txt;
 										COLLECTING_INFORMATION_STATUS=1;
@@ -2091,7 +2124,7 @@ function main() {
 						fi
 
 						# Check files/ storage and display warning, if a non-external storage is in use
-						if [[ "$SCRIPT_LICENSE" == "1" ]]; then
+						if [[ "$SCRIPT_LICENSE" == "1" ]] || [[ "$SCRIPT_LICENSE" == "2" ]]; then
 							if isFilesStorageExternal ${INSTANCE_PATH}; then
 								echo "${TXT_COLLECTING_INFORMATION_IS_FILES_STORAGE_EXTERNAL_FAILED}" >> COLLECTING_INFORMATION_STATUS.txt;
 							fi
@@ -2311,7 +2344,7 @@ function main() {
 				echo	"	Update Text (Manually): $(getManuallyPokeMessage ${LATEST_TS3_SERVER_VERSION})";
 				echo -e "	Update Text (Cronjob): $(getCronjobPokeMessage ${LATEST_TS3_SERVER_VERSION})\n";
 
-				echo -e "	Latest Stable Release: $(cat configs/latestStableRelease.txt)\n";
+				echo -e "	Latest Stable Release: $(grep LATEST_STABLE_RELEASE ${ABSOLUTE_PATH}/configs/config.all | cut -d '=' -f 2)\n";
 
 				echo	"	Ignore Clients: $(getIgnoreClientList)";
 				echo	"	Ignore ServerGroups: $(getIgnoreServerGroupsList)";
@@ -2339,15 +2372,26 @@ function main() {
 
 				echo -e "  45 2 * * 1  root $(pwd)/$(basename $0) --update-script\n" >> ${CROND_PATH_FILE};
 
-				CRONJOB_MINUTE="0";
-				CRONJOB_HOUR="3";
+				if [[ -n "$PAR_CRONJOB_MINUTE" ]]; then
+					CRONJOB_MINUTE=$PAR_CRONJOB_MINUTE;
+				else
+					CRONJOB_MINUTE="0";
+				fi
+				if [[ -n "$PAR_CRONJOB_HOUR" ]]; then
+					CRONJOB_HOUR=$PAR_CRONJOB_HOUR;
+				else
+					CRONJOB_HOUR="3";
+				fi
 
 				while read instanceInfo; do
 					INSTANCE_PATH=$(echo "$instanceInfo" | grep -Ev "^#" | cut -d "|" -f 2)
 
 					if [[ -n "$INSTANCE_PATH" ]]; then
 						echo -n "  ${CRONJOB_MINUTE} ${CRONJOB_HOUR} * * 1  root ${ABSOLUTE_PATH}/${SCRIPT_NAME} " >> ${CROND_PATH_FILE};
-						echo -n "--path ${INSTANCE_PATH} " >> ${CROND_PATH_FILE};
+
+						if [[ "$SCRIPT_LICENSE" == "2" ]]; then
+							echo -n "--path ${INSTANCE_PATH} " >> ${CROND_PATH_FILE};
+						fi
 
 						if [ "$PAR_CHECK" -eq 1 ]; then
 							echo -n "--check " >> ${CROND_PATH_FILE};
@@ -3037,7 +3081,7 @@ echo	"  | |  ___) |__) |_____| || (_) | (_) | \__ \_| | | | |  _| (_) |";
 echo -e "  |_| |____/____/       \__\___/ \___/|_|___(_)_|_| |_|_|  \___/\n";
 
 echo	"Script Version: $SCRIPT_VERSION ($LAST_EDIT_DATE)";
-echo -n "Script License: "; if [[ "$SCRIPT_LICENSE" == "1" ]]; then echo -e "Hoster\n"; else echo -n "Non-Profit"; if [[ "$EUID" != 0 ]]; then echo -e " (Just root can check your license!)\n"; else echo -e "\n"; fi fi
+echo -n "Script License: "; if [[ "$SCRIPT_LICENSE" == "2" ]]; then echo -e "Enterprise\n"; elif [[ "$SCRIPT_LICENSE" == "1" ]]; then echo -e "Professional\n"; else echo -n "Free (limited)"; if [[ "$EUID" != 0 ]]; then echo -e " (Just root can check your license!)\n"; else echo -e "\n"; fi fi
 
 echo -e "Donate and support this script: https://www.paypal.com/cgi-bin/webscr?cmd=_s-xclick&hosted_button_id=7ZRXLSC2UBVWE\n";
 
@@ -3087,10 +3131,10 @@ PAR_INSTALL_CRONJOB=0;
 PAR_DEINSTALL_CRONJOB=0;
 PAR_CRONJOB_TASK=0;
 if [ ! -t 0 ]; then
-	if [[ "$SCRIPT_LICENSE" == "1" ]]; then
+	if [[ "$SCRIPT_LICENSE" == "1" ]] || [[ "$SCRIPT_LICENSE" == "2" ]]; then
 		PAR_CRONJOB_TASK=1;
 	else
-		echo "Cronjobs are not possible under the Non-Profit license! You need to upgrade your license therefore. View README.md for more.";
+		echo "Cronjobs are not possible under the Free license! You need to upgrade your license therefore. View README.md for more.";
 		exit 1;
 	fi
 fi
@@ -3115,14 +3159,14 @@ while [ -n "$1" ]; do
 			echo	"--keep-backups				Keep created backups by the script";
 			echo	"--waiting-time-in-minutes <MINUTES>	Optionally the script can wait X minutes before it starts the update process";
 			echo	"--disable-temporary-password-backup	Disable feature to backup temporary passwords";
-			echo	"--set-release				Do not use the official latest release. Use instead the set release from the given file configs/latestStableRelease.txt";
+			echo	"--set-release				Do not use the official latest release. Use instead the set release from the configuration file configs/config.all";
 			echo	"--beta-release				With this parameter you are able to detect and update your TeamSpeak server to the latest beta release";
-			if [[ "$SCRIPT_LICENSE" == "1" ]]; then
+			if [[ "$SCRIPT_LICENSE" == "2" ]]; then
 				echo	"--path PATH				Just check the server in this directory and do not search for directories on the whole server";
 			fi
 			echo	"--locale <LANGUAGE-CODE>		Change language of this script to some of the available under languages/verified/ directory. Default is en_US.";
 			echo	"--debug <DEBUG_FILENAME>		Enables debugging and writes output to file";
-			echo -e "--install-cronjob			Installs weekly cronjob for monday at 3 AM (= 03:00 O'clock) with your given options\n";
+			echo -e "--install-cronjob <HOUR> <MINUTE>	Installs weekly cronjob for monday at your specified time (default: 3 AM (= 03:00 O'clock))\n";
 
 			echo	"Available single usable options:";
 			echo	"-h OR --help				Displays this help page";
@@ -3131,7 +3175,7 @@ while [ -n "$1" ]; do
 			echo	"--test-inform-online-clients		Execute test poke with current settings";
 			echo -e "--update-script\t			Updates the TS3UpdateScript to the latest version";
 			echo	"--show-license-key			Displays TS3UpdateScript license key";
-			echo	"--send-license-information <EMAIL>	Sends license information to info@ts3-tools.com to get hoster license (view README.md section 'Script Licenses'!)";
+			echo	"--send-license-information <EMAIL> <professional|enterprise>	Sends license information to info@ts3-tools.com to get Professional or Enterprise license (view README.md section 'Script Licenses'!)";
 			echo	"--deinstall-cronjob			Deinstalls weekly cronjob";
 
 			exit 0;
@@ -3147,16 +3191,16 @@ while [ -n "$1" ]; do
 			echo    "--keep-backups				Keep created backups by the script";
 			echo    "--waiting-time-in-minutes <MINUTES>	Optionally the script can wait X minutes before it starts the update process";
 			echo	"--disable-temporary-password-backup	Disable feature to backup temporary passwords";
-			echo    "--set-release				Do not use the official latest release. Use instead the set release from the given file configs/latestStableRelease.txt";
+			echo    "--set-release				Do not use the official latest release. Use instead the set release from the configuration file configs/config.all";
 			echo    "--beta-release				With this parameter you are able to detect and update your TeamSpeak server to the latest beta release";
-			if [[ "$SCRIPT_LICENSE" == "1" ]]; then
+			if [[ "$SCRIPT_LICENSE" == "2" ]]; then
 				echo    "--path PATH				Just check the server in this directory and do not search for directories on the whole server";
 			fi
 			echo -e "(--deactivate-host-alive-check)\t	Deactivates the part of self-test, which checks if all needed hosts are reachable. It is highly NOT recommended to use this parameter!";
 			echo -e "(--deactivate-permissions-check)	Deactivates the part of detection, which checks if the server is running as another user as root";
 			echo    "--locale <LANGUAGE-CODE>		Change language of this script to some of the available under languages/verified/ directory. Default is en_US.";
 			echo    "--debug <DEBUG_FILENAME>		Enables debugging and writes output to file";
-			echo -e "--install-cronjob			Installs weekly cronjob for monday at 3 AM (= 03:00 O'clock) with your given options\n";
+			echo -e "--install-cronjob <HOUR> <MINUTE>	Installs weekly cronjob for monday at your specified time (default: 3 AM (= 03:00 O'clock))\n";
 
 			echo    "Available single usable options:";
 			echo    "-h OR --help				Displays the help page";
@@ -3166,7 +3210,7 @@ while [ -n "$1" ]; do
 			echo    "--test-inform-online-clients		Execute test poke with current settings";
 			echo -e "--update-script\t			Updates the TS3UpdateScript to the latest version";
 			echo -e "--show-license-key			Displays TS3UpdateScript license key";
-			echo	"--send-license-information <EMAIL>	Sends license information to info@ts3-tools.com to get hoster license (view README.md section 'Script Licenses'!)";
+			echo	"--send-license-information <EMAIL> <professional|enterprise>	Sends license information to info@ts3-tools.com to get Professional or Enterprise license (view README.md section 'Script Licenses'!)";
 			echo    "--deinstall-cronjob			Deinstalls weekly cronjob";
 			
 			exit 0;
@@ -3243,10 +3287,10 @@ while [ -n "$1" ]; do
 			if [[ -n "$2" ]]; then
 				if [[ -d "$2" ]]; then
 					if [[ -f "${2}/ts3server_startscript.sh" ]]; then
-						if [[ "$SCRIPT_LICENSE" == "1" ]]; then
+						if [[ "$SCRIPT_LICENSE" == "2" ]]; then
 							PAR_PATH_DIRECTORY="$2";
 						else
-							echo "The parameter '--path' is not available under the Non-Profit license! You need to upgrade your license therefore. View README.md for more.";
+							echo "The parameter '--path' is only available under the Enterprise license! You need to upgrade your license therefore. View README.md for more.";
 							exit 1;
 						fi
 					else
@@ -3277,10 +3321,28 @@ while [ -n "$1" ]; do
 		;;
 
 		--install-cronjob)
-			if [[ "$SCRIPT_LICENSE" == "1" ]]; then
+			if [[ "$SCRIPT_LICENSE" == "1" ]] || [[ "$SCRIPT_LICENSE" == "2" ]]; then
 				PAR_INSTALL_CRONJOB=1;
+				if [[ -n "$2" ]] && [[ "$2" =~ [0-9]{1,2} ]]; then
+					if [[ "$2" -ge 0 ]] && [[ "$2" -le 23 ]]; then
+						PAR_CRONJOB_HOUR="$2";
+						shift;
+					else
+						echo "'$2' is an invalid hour on the clock! Please use a positive number between 0 and 23.";
+						exit 1;
+					fi
+				fi
+				if [[ -n "$2" ]] && [[ "$2" =~ [0-9]{1,2} ]]; then
+					if [[ "$2" -ge 0 ]] && [[ "$2" -le 59 ]]; then
+						PAR_CRONJOB_MINUTE="$2";
+						shift;
+					else
+						echo "'$2' is an invalid minute on the clock! Please use a positive number between 0 and 59.";
+						exit 1;
+					fi
+				fi
 			else
-				echo "The parameter '--install-cronjob' is not available under the Non-Profit license! You need to upgrade your license therefore. View README.md for more.";
+				echo "The parameter '--install-cronjob' is not available under the Free license! You need to upgrade your license therefore. View README.md for more.";
 				exit 1;
 			fi
 
@@ -3300,25 +3362,37 @@ while [ -n "$1" ]; do
 		--send-license-information)
 			if [[ "$EUID" == 0 ]]; then
 				if [[ -n "$2" ]]; then
-					PAYMENT_EMAIL="$2";
-					IP_ADDRESS=$(wget -t 3 --timeout=5 -qO- "$(echo "${NEEDED_LICENSE_IP}" | base64 --decode)");
-					LICENSE_KEY="$(cat license_key)";
+					if [[ -n "$3" ]]; then
+						LICENSE_TYPE=$(echo -n "$3" | tr '[:lower:]' '[:upper:]')
 
-					if [[ -n "$IP_ADDRESS" ]] && [[ -n "$LICENSE_KEY" ]]; then
-						(echo "Payment eMail: ${PAYMENT_EMAIL}"; echo "IP: ${IP_ADDRESS}"; echo "License key: ${LICENSE_KEY}") | mail -s "TS3-Tools.info - TS3UpdateScript Hoster License" info@ts3-tools.info -c "${PAYMENT_EMAIL}"
-						if [[ $? -eq 0 ]]; then
-							echo "Email should be sent successful to info@ts3-tools.info and ${PAYMENT_EMAIL}. If you do not receive this email within the next minutes, you server is may not able to send emails through the internet.";
-							exit 0;
+						if [[ "${LICENSE_TYPE}" == "PROFESSIONAL" ]] || [[ "${LICENSE_TYPE}" == "ENTERPRISE" ]]; then
+							PAYMENT_EMAIL="$2";
+							IP_ADDRESS=$(wget -t 3 --timeout=5 -qO- "$(echo "${NEEDED_LICENSE_IP}" | base64 --decode)");
+							LICENSE_KEY="$(cat license_key)";
+
+							if [[ -n "$IP_ADDRESS" ]] && [[ -n "$LICENSE_KEY" ]]; then
+								(echo "Payment eMail: ${PAYMENT_EMAIL}"; echo "IP: ${IP_ADDRESS}"; echo "License key: ${LICENSE_KEY}") | mail -s "TS3-Tools.info - TS3UpdateScript Hoster License" info@ts3-tools.info -c "${PAYMENT_EMAIL}"
+								if [[ $? -eq 0 ]]; then
+									echo "Email should be sent successful to info@ts3-tools.info and ${PAYMENT_EMAIL}. If you do not receive this email within the next minutes, you server is may not able to send emails through the internet.";
+									exit 0;
+								else
+									echo "Could not send email. The 'mail' command is may not available.";
+									exit 1;
+								fi
+							else
+								echo "Could not detect your IP address or your license key. Please try again.";
+								exit 1;
+							fi
 						else
-							echo "Could not send email. The 'mail' command is may not available.";
+							echo "'${LICENSE_TYPE}' is no valid license. Please set a valid one. Available licenses are 'Professional' and 'Enterprise'.";
 							exit 1;
 						fi
 					else
-						echo "Could not detect your IP address or your license key. Please try again.";
+						echo "Specifiy the license for which you want to apply. For example: --send-license-information you@example.com professional";
 						exit 1;
 					fi
 				else
-					echo "Specify your payment email address, with which you have payed your license! For example: --send-license-information you@example.com";
+					echo "Specify your payment email address, with which you have payed your license! For example: --send-license-information you@example.com professional";
 					exit 1;
 				fi
 			else
