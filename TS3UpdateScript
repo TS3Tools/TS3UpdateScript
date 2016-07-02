@@ -908,7 +908,7 @@ function getServerQueryDisplayedNameEscaped() {
 # Get administrator eMail
 # Return: AdministratorEmail:string or 1:boolean
 function getAdministratorEmail() {
-	ADMINISTRATOR_EMAIL="$(grep ADMINISTRATOR_EMAILS /home/sebastian-kraetzig/github/TS3UpdateScript/configs/config.all | cut -d "=" -f 2)"
+	ADMINISTRATOR_EMAIL="$(grep ADMINISTRATOR_EMAILS ${ABSOLUTE_PATH}/configs/config.all | cut -d "=" -f 2)"
 
 	if [[ -n "$ADMINISTRATOR_EMAIL" ]]; then
 		echo -n "$ADMINISTRATOR_EMAIL";
@@ -2414,15 +2414,15 @@ function main() {
 						fi
 
 						if [ "$PAR_LATEST_RELEASE" -eq 1 ]; then
-							echo "--latest-release" >> ${CROND_PATH_FILE};
+							echo -n "--latest-release" >> ${CROND_PATH_FILE};
 						fi
 
 						if [ "$PAR_BETA_RELEASE" -eq 1 ]; then
-							echo "--beta-release" >> ${CROND_PATH_FILE};
+							echo -n "--beta-release" >> ${CROND_PATH_FILE};
 						fi
 
 						if [ "$PAR_LOCALE" != "languages/verified/en_US.conf" ]; then
-							echo "--locale ${ABSOLUTE_PATH}/verified/${PAR_LOCALE}" >> ${CROND_PATH_FILE};
+							echo -n "--locale ${ABSOLUTE_PATH}/verified/${PAR_LOCALE}" >> ${CROND_PATH_FILE};
 						fi
 
 						echo -e "\n" >> ${CROND_PATH_FILE};
