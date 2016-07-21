@@ -33,6 +33,8 @@ c) Make the script executable:
   user@tux:~$ chmod +x TS3UpdateScript
 
 d) Set your configuration values in configs/config.all:
+- DEFAULT_LANGUAGE
+  Set/Change the default language. For example 'de_DE' for German. Default is always English.
 - ADMINISTRATOR_EMAILS
   Set a list of comma seperated email addresses for email notifications by the cronjob.
 - LATEST_STABLE_RELEASE

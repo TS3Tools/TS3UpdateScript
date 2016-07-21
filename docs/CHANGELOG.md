@@ -23,6 +23,14 @@ Hotfix | Important fix for one more issues, which causes a not (correct) working
 
 ## Releases
 
+### Version 4.6.0
+
+	* Improved sending of license requests (GitHub issue [#34](https://github.com/TS3Tools/TS3UpdateScript/issues/34))
+	+ The instance log file of the failed instance will be logged as further debugging information (Due of GitHub issue [#35](https://github.com/TS3Tools/TS3UpdateScript/issues/35))
+	+ Added option to config.all file for a default language: DEFAULT_LANGUAGE
+	! Please add this option manual to your config.all. Example: DEFAULT_LANGUAGE=de_DE
+	* Added option DEFAULT_LANGUAGE to docs/INSTALL_USAGE_GUIDE.md
+
 ### Version 4.5.0
 
 	* Migrated multiple configuraton files to one single file: configs/config.all

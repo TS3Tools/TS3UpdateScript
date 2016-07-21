@@ -16,8 +16,8 @@ exec 5<&0
 # Donations: https://www.paypal.com/cgi-bin/webscr?cmd=_s-xclick&hosted_button_id=7ZRXLSC2UBVWE
 #
 
-SCRIPT_VERSION="4.5.0"
-LAST_EDIT_DATE="2016-07-02"
+SCRIPT_VERSION="4.6.0"
+LAST_EDIT_DATE="2016-07-21"
 
 # DO NOT REMOVE OR CHANGE
 SOFTWARE_ABOUT="This is the most widely used and fastest shell script to update all your TeamSpeak 3 server instances."
@@ -82,7 +82,7 @@ function clearTerminalScreen() {
 # Return: 0:boolean or 1:boolean
 function checkConsistency() {
 	CHKSUM=$(cat $0 | grep -v "ORIGIN=" | head -202 | sha256sum | cut -d " " -f 1)
-	ORIGIN="da59fbe384406aa74a87def9327d40e5df92e19d219a44ed9b570b8e156449d3"
+	ORIGIN="6703f0073a7821deb8346dc8952feb844b7c34cf5e5dcd85474e1e2d277b32a6"
 
 	if [[ "$CHKSUM" == "$ORIGIN" ]]; then
 		return 0;
@@ -2873,6 +2873,13 @@ function main() {
 									# Rollback to version before
 									if [[ "$EXECUTION_MECHANISM_STATUS" -eq 1 ]]; then
 										if backup ${INSTANCE_PATH} exists; then
+											# Save instance log file content to debug file
+											if [ ${PAR_DEBUG} -eq 1 ]; then
+												echo "### INSTANCE LOG ###";
+												find ${INSTANCE_PATH}/logs/ -name *_0.log -exec cat {} \;
+												echo "### END INSTANCE LOG ###";
+											fi
+
 											BACKUP_PATH="/tmp/TS3Tools/TS3UpdateScript/$(echo -n "${INSTANCE_PATH}/" | md5sum | cut -d " " -f 1)/"
 
 											if backup ${INSTANCE_PATH} deploy ${DATABASE_TYPE}; then
@@ -3138,7 +3145,16 @@ if [ ! -t 0 ]; then
 		exit 1;
 	fi
 fi
-PAR_LOCALE="languages/verified/en_US.conf";
+LANGUAGE_CODE="$(grep 'DEFAULT_LANGUAGE' ${ABSOLUTE_PATH}/configs/config.all | cut -d '=' -f 2)";
+if [[ -n "${LANGUAGE_CODE}" ]]; then
+	if [[ -f "${ABSOLUTE_PATH}/languages/verified/${LANGUAGE_CODE}.conf" ]]; then
+		PAR_LOCALE="languages/verified/${LANGUAGE_CODE}.conf";
+	else
+		PAR_LOCALE="languages/verified/en_US.conf";
+	fi
+else
+	PAR_LOCALE="languages/verified/en_US.conf";
+fi
 PAR_DEBUG=0;
 
 # Save parameter list
@@ -3371,7 +3387,7 @@ while [ -n "$1" ]; do
 							LICENSE_KEY="$(cat license_key)";
 
 							if [[ -n "$IP_ADDRESS" ]] && [[ -n "$LICENSE_KEY" ]]; then
-								(echo "Payment eMail: ${PAYMENT_EMAIL}"; echo "IP: ${IP_ADDRESS}"; echo "License: ${LICENSE_TYPE}"; echo "License key: ${LICENSE_KEY}") | mail -s "TS3-Tools.info - TS3UpdateScript ${LICENSE_TYPE} License" info@ts3-tools.info -c "${PAYMENT_EMAIL}"
+								(echo "Payment eMail: ${PAYMENT_EMAIL}"; echo "IP: ${IP_ADDRESS}"; echo "License: ${LICENSE_TYPE}"; echo "License key: ${LICENSE_KEY}") | mail -s "TS3-Tools.info - TS3UpdateScript ${LICENSE_TYPE} License" info@ts3-tools.info,${PAYMENT_EMAIL}
 								if [[ $? -eq 0 ]]; then
 									echo "Email should be sent successful to info@ts3-tools.info and ${PAYMENT_EMAIL}. If you do not receive this email within the next minutes, you server is may not able to send emails through the internet.";
 									exit 0;
