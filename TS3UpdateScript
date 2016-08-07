@@ -16,8 +16,8 @@ exec 5<&0
 # Donations: https://www.paypal.com/cgi-bin/webscr?cmd=_s-xclick&hosted_button_id=7ZRXLSC2UBVWE
 #
 
-SCRIPT_VERSION="4.6.0"
-LAST_EDIT_DATE="2016-07-21"
+SCRIPT_VERSION="4.6.1"
+LAST_EDIT_DATE="2016-08-07"
 
 # DO NOT REMOVE OR CHANGE
 SOFTWARE_ABOUT="This is the most widely used and fastest shell script to update all your TeamSpeak 3 server instances."
@@ -82,7 +82,7 @@ function clearTerminalScreen() {
 # Return: 0:boolean or 1:boolean
 function checkConsistency() {
 	CHKSUM=$(cat $0 | grep -v "ORIGIN=" | head -202 | sha256sum | cut -d " " -f 1)
-	ORIGIN="6703f0073a7821deb8346dc8952feb844b7c34cf5e5dcd85474e1e2d277b32a6"
+	ORIGIN="00387d4fe3bdecb2cfeaffd6971cb097c3794b7e21cb82d069e4b9be5ebddf9a"
 
 	if [[ "$CHKSUM" == "$ORIGIN" ]]; then
 		return 0;
@@ -529,7 +529,7 @@ function checkServeradminPassword() {
 			expect "error id="
 			send "quit\r"
 		LOGIN
-	) | expect 2> /dev/null | grep -Eo "error id=[0-9]+ msg=[a-z]+" | head -1 | grep -Eo "=[a-z]+" | grep -Eo "[a-z]+" > RESULT.txt
+	) | expect 2> /dev/null | grep -Eo "^error id=[0-9]+ msg=[a-z]+$" | head -1 | grep -Eo "=[a-z]+" | grep -Eo "ok" > RESULT.txt
 
 	RESULT="$(cat RESULT.txt)"
 

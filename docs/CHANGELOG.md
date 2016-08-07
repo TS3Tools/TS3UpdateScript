@@ -23,6 +23,10 @@ Hotfix | Important fix for one more issues, which causes a not (correct) working
 
 ## Releases
 
+### Version 4.6.1
+
+	* Improved serveradmin password check
+
 ### Version 4.6.0
 
 	* Improved sending of license requests (GitHub issue [#34](https://github.com/TS3Tools/TS3UpdateScript/issues/34))
