@@ -23,6 +23,10 @@ Hotfix | Important fix for one more issues, which causes a not (correct) working
 
 ## Releases
 
+### Version 4.6.2
+
+	* Improved serveradmin password check again, because some operating systems returned a wrong formatted login check, which was not possible to verify
+
 ### Version 4.6.1
 
 	* Improved serveradmin password check
