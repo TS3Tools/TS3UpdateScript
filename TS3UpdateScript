@@ -16,8 +16,8 @@ exec 5<&0
 # Donations: https://www.paypal.com/cgi-bin/webscr?cmd=_s-xclick&hosted_button_id=7ZRXLSC2UBVWE
 #
 
-SCRIPT_VERSION="4.6.2"
-LAST_EDIT_DATE="2016-08-09"
+SCRIPT_VERSION="5.0.0"
+LAST_EDIT_DATE="2016-08-18"
 
 # DO NOT REMOVE OR CHANGE
 SOFTWARE_ABOUT="This is the most widely used and fastest shell script to update all your TeamSpeak 3 server instances."
@@ -82,7 +82,7 @@ function clearTerminalScreen() {
 # Return: 0:boolean or 1:boolean
 function checkConsistency() {
 	CHKSUM=$(cat $0 | grep -v "ORIGIN=" | head -202 | sha256sum | cut -d " " -f 1)
-	ORIGIN="9efa762c731c4d47ee6a02c31aa1837557f7b368d258387035c5de502f57d722"
+	ORIGIN="46971feb9893ba751c0fc69a80e052903fb4a02f7f6f1599ca2530d6c3fe9bd7"
 
 	if [[ "$CHKSUM" == "$ORIGIN" ]]; then
 		return 0;
@@ -1528,21 +1528,27 @@ function databaseBackup() {
 	DIRECTORY_MD5SUM=$(echo -n "${TEAMSPEAK_ROOT_DIRECTORY}" | md5sum | cut -d " " -f 1)
 	DATABASE_INI_FILE="$(getDatabaseINIFile ${2})"
 
-	DB_USERNAME="$(grep -E '^username=.+$' ${TEAMSPEAK_ROOT_DIRECTORY}${DATABASE_INI_FILE} | cut -d '=' -f 2)"
-	DB_PASSWORD="$(grep -E '^password=.+$' ${TEAMSPEAK_ROOT_DIRECTORY}${DATABASE_INI_FILE} | cut -d '=' -f 2)"
-	DB_NAME="$(grep -E '^database=.+$' ${TEAMSPEAK_ROOT_DIRECTORY}${DATABASE_INI_FILE} | cut -d '=' -f 2)"
-	DB_HOST="$(grep -E '^host=.+$' ${TEAMSPEAK_ROOT_DIRECTORY}${DATABASE_INI_FILE} | cut -d '=' -f 2)"
+	DB_USERNAME=$(grep -Ei '^username=.+$' ${TEAMSPEAK_ROOT_DIRECTORY}${DATABASE_INI_FILE} | cut -d '=' -f 2 | sed -e "s/^'//" -e 's/^"//' -e "s/'$//" -e 's/"$//')
+	DB_PASSWORD=$(grep -Ei '^password=.+$' ${TEAMSPEAK_ROOT_DIRECTORY}${DATABASE_INI_FILE} | cut -d '=' -f 2 | sed -e "s/^'//" -e 's/^"//' -e "s/'$//" -e 's/"$//')
+	DB_NAME=$(grep -Ei '^database=.+$' ${TEAMSPEAK_ROOT_DIRECTORY}${DATABASE_INI_FILE} | cut -d '=' -f 2 | sed -e "s/^'//" -e 's/^"//' -e "s/'$//" -e 's/"$//')
+	DB_HOST=$(grep -Ei '^host=.+$' ${TEAMSPEAK_ROOT_DIRECTORY}${DATABASE_INI_FILE} | cut -d '=' -f 2 | sed -e "s/^'//" -e 's/^"//' -e "s/'$//" -e 's/"$//')
+	DB_PORT=$(grep -Ei '^port=.+$' ${TEAMSPEAK_ROOT_DIRECTORY}${DATABASE_INI_FILE} | cut -d '=' -f 2 | sed -e "s/^'//" -e 's/^"//' -e "s/'$//" -e 's/"$//')
 
 	if [[ "${1}" == "export" ]]; then
-		if [ ! $(mysqldump --add-drop-table --user=${DB_USERNAME} --password=${DB_PASSWORD} ${DB_NAME} --host=${DB_HOST} > /tmp/TS3Tools/TS3UpdateScript/${DIRECTORY_MD5SUM}/ts3DatabaseBackup.sql) ]; then
-			if [ ! $(mysqldump --add-drop-table --user=${DB_USERNAME} --password=${DB_PASSWORD} ${DB_NAME} --host=${DB_HOST} > /var/backups/TS3Tools/TS3UpdateScript/${DIRECTORY_MD5SUM}/ts3DatabaseBackup.sql) ]; then
+		mysqldump --add-drop-table --user=${DB_USERNAME} --password=${DB_PASSWORD} ${DB_NAME} --host=${DB_HOST} --port=${DB_PORT} > /tmp/TS3Tools/TS3UpdateScript/${DIRECTORY_MD5SUM}/ts3DatabaseBackup.sql
+		if [ $? -eq 0 ]; then
+			mysqldump --add-drop-table --user=${DB_USERNAME} --password=${DB_PASSWORD} ${DB_NAME} --host=${DB_HOST} --port=${DB_PORT} > /var/backups/TS3Tools/TS3UpdateScript/${DIRECTORY_MD5SUM}/ts3DatabaseBackup.sql
+			if [ $? -eq 0 ]; then
 				return 0;
+			else
+				return 1
 			fi
 		else
 			return 1;
 		fi
 	elif [[ "${1}" == "import" ]]; then
-		if [ ! $(mysql --user=${DB_USERNAME} --password=${DB_PASSWORD} ${DB_NAME} --host=${DB_HOST} < /tmp/TS3Tools/TS3UpdateScript/${DIRECTORY_MD5SUM}/ts3DatabaseBackup.sql) ]; then
+		mysql --user=${DB_USERNAME} --password=${DB_PASSWORD} ${DB_NAME} --host=${DB_HOST} --port=${DB_PORT} < /tmp/TS3Tools/TS3UpdateScript/${DIRECTORY_MD5SUM}/ts3DatabaseBackup.sql
+		if [ $? -eq 0 ]; then
 			return 0;
 		else
 			return 1;
@@ -1764,6 +1770,14 @@ function updateTeamSpeakInstance() {
 			fi
 		fi
 
+		# The new file transfer routines on unix systems now depend on async io (aio*) routines
+		# For FreeBSD this probably means you need to load the aio kernel module
+		if [[ "$INSTALLED_TS3_SERVER_PLATFORM" == "FreeBSD" ]]; then
+			if [ ! $(kldload aio) ]; then
+				UPDATE_STATUS_FLAG=1;
+			fi
+		fi
+
 		# Make sure, that ts3server binary is executable
 		if [ -f ts3server ]; then
 			chmod 0755 ts3server
@@ -1791,6 +1805,94 @@ function updateTeamSpeakInstance() {
 		else
 			return 1;
 		fi
+	else
+		return 1;
+	fi
+}
+
+# Creates a debug report for the failed TeamSpeak 3 server instance
+# Par 1: TeamSpeakRootDirectory:string
+# Return: 0:boolean or 1:boolean
+function createDebugReport() {
+	TEAMSPEAK_ROOT_DIRECTORY="${1}"
+
+	CURRENT_DATE_TIME="$(date +'%Y%m%d-%H%M')"
+	DEBUG_REPORT_FILE="${TEAMSPEAK_ROOT_DIRECTORY}/${CURRENT_DATE_TIME}-ts3us-debug-report.md"
+
+	if [ ! -f "${DEBUG_REPORT_FILE}" ]; then
+		echo -e "# TS3tools TS3UpdateScript Debug Report\n" >> ${DEBUG_REPORT_FILE};
+		echo	"Date and time of report: ${CURRENT_DATE_TIME}" >> ${DEBUG_REPORT_FILE};
+		echo	"TS3UpdateScript version: ${SCRIPT_VERSION}" >> ${DEBUG_REPORT_FILE};
+		echo -e "TS3UpdateScript parameters: ${PAR_LIST}\n" >> ${DEBUG_REPORT_FILE};
+
+		echo -e "## TS3UpdateScript output\n" >> ${DEBUG_REPORT_FILE};
+		echo -e "Please copy and paste the output of the shell below this line and/or attach a debug file of this script.\n" >> ${DEBUG_REPORT_FILE};
+
+		echo -e "## Operating System Details\n" >> ${DEBUG_REPORT_FILE};
+		echo -e "$(lsb_release --all 2> /dev/null)\n" >> ${DEBUG_REPORT_FILE};
+		echo -e "$(uname -a)\n" >> ${DEBUG_REPORT_FILE};
+	fi
+
+	echo -e "## TS3 Update Details\n" >> ${DEBUG_REPORT_FILE};
+	echo	"Update path: ${INSTALLED_TS3_SERVER_VERSION} -> ${LATEST_TS3_SERVER_VERSION}" >> ${DEBUG_REPORT_FILE};
+	echo	"Instance path: ${INSTANCE_PATH}" >> ${DEBUG_REPORT_FILE};
+	if isFilesStorageExternal ${INSTANCE_PATH}; then
+		echo	"Type Of Files Storage: Local disk" >> ${DEBUG_REPORT_FILE};
+	else
+		echo	"Type Of Files Storage: Shared network storage" >> ${DEBUG_REPORT_FILE};
+	fi
+
+	if [[ "$PAR_INFORM_ONLINE_CLIENTS" -eq 1 ]] || checkdeps telnet expect; then
+		echo	"ServerQuery IP: ${SERVER_QUERY_IP}" >> ${DEBUG_REPORT_FILE};
+		echo	"ServerQuery Port: ${SERVER_QUERY_PORT}" >> ${DEBUG_REPORT_FILE};
+	fi
+
+	echo	"Installed TS3 Server Version: ${INSTALLED_TS3_SERVER_VERSION}" >> ${DEBUG_REPORT_FILE};
+	echo	"Installed TS3 Server Build: ${INSTALLED_TS3_SERVER_BUILD}" >> ${DEBUG_REPORT_FILE};
+	echo	"Installed TS3 Server Platform: ${INSTALLED_TS3_SERVER_PLATFORM}" >> ${DEBUG_REPORT_FILE};
+	echo	"TS3 Server Instance Log Path: ${TS3_SERVER_INSTANCE_LOG_PATH}" >> ${DEBUG_REPORT_FILE};
+	echo	"TS3 Server Architecture: ${TS3_SERVER_ARCHITECTURE}" >> ${DEBUG_REPORT_FILE};
+	echo	"*nix Owner: ${OWNER} (UID ${OWNER_ID})" >> ${DEBUG_REPORT_FILE};
+	echo	"*nix Group: ${GROUP} (GID ${GROUP_ID})" >> ${DEBUG_REPORT_FILE};
+	echo	"Database Type: ${DATABASE_TYPE}" >> ${DEBUG_REPORT_FILE};
+	echo	"Update Text (Manually): $(getManuallyPokeMessage ${LATEST_TS3_SERVER_VERSION})" >> ${DEBUG_REPORT_FILE};
+	echo	"Update Text (Cronjob): $(getCronjobPokeMessage ${LATEST_TS3_SERVER_VERSION})" >> ${DEBUG_REPORT_FILE};
+	echo	"Ignore Clients: $(getIgnoreClientList)" >> ${DEBUG_REPORT_FILE};
+	echo -e "Ignore ServerGroups: $(getIgnoreServerGroupsList)\n" >> ${DEBUG_REPORT_FILE};
+
+	echo -e "## INI Files\n" >> ${DEBUG_REPORT_FILE};
+	echo -e "### ts3server.ini\n" >> ${DEBUG_REPORT_FILE};
+	if INIFileExists ${TEAMSPEAK_ROOT_DIRECTORY}; then
+		echo -e "$(< ${TEAMSPEAK_ROOT_DIRECTORY}/ts3server.ini)\n" >> ${DEBUG_REPORT_FILE};
+
+		DATABASE_INI_FILE="$(getDatabaseINIFile ${TEAMSPEAK_ROOT_DIRECTORY})"
+
+		echo -e "### Database INI-file\n" >> ${DEBUG_REPORT_FILE};
+		if [ -f "${TEAMSPEAK_ROOT_DIRECTORY}/${DATABASE_INI_FILE}" ]; then
+			echo -e "$(< ${TEAMSPEAK_ROOT_DIRECTORY}/${DATABASE_INI_FILE})\n" >> ${DEBUG_REPORT_FILE};
+			sed -i 's/.*password=.*/.*password=CENSORED_PASS/g' ${DEBUG_REPORT_FILE};
+		else
+			echo -e "Database INI-file does not exist\n" >> ${DEBUG_REPORT_FILE};
+		fi
+	else
+		echo -e "ts3server.ini file does not exist\n" >> ${DEBUG_REPORT_FILE};
+	fi
+
+	echo -e "## Log files\n" >> ${DEBUG_REPORT_FILE};
+	echo -e "### Instance Log file\n" >> ${DEBUG_REPORT_FILE};
+	echo -e "$(find ${TS3_SERVER_INSTANCE_LOG_PATH} -name *_0.log | sort -nr | head -1 | tr -d '\n' | xargs -0 cat)\n" >> ${DEBUG_REPORT_FILE};
+
+	echo -e "### Virtual Server Log file(s)\n" >> ${DEBUG_REPORT_FILE};
+	for logFile in $(find ${TS3_SERVER_INSTANCE_LOG_PATH} -name ts3server_$(date +'%Y-%m-%d__%H' -d "2 hour ago")_*.log); do
+		VIRTUAL_SID=$(echo -n ${logFile} | grep -Eo '_([0-9]+)\.log' | grep -Eo '[0-9]+');
+		if [[ "${VIRTUAL_SID}" != "0" ]]; then
+			echo	"**Virtual Server ID: ${VIRTUAL_SID}**" >> ${DEBUG_REPORT_FILE};
+			echo -e "$(< ${logFile})\n" >> ${DEBUG_REPORT_FILE};
+		fi
+	done
+
+	if [ -f "${DEBUG_REPORT_FILE}" ]; then
+		return 0;
 	else
 		return 1;
 	fi
@@ -2555,6 +2657,7 @@ function main() {
 					fi
 
 					if [[ -n "$INSTANCE_PATH" ]]; then
+createDebugReport ${INSTANCE_PATH}; ## REMOVE ME
 						if [[ "$INSTALLED_TS3_SERVER_VERSION" != "$LATEST_TS3_SERVER_VERSION" ]]; then
 							if ts3server ${INSTANCE_PATH} status; then
 								echo	"############################################################################";
@@ -2872,12 +2975,21 @@ function main() {
 									## ROLLBACK PROCESS START ##
 									# Rollback to version before
 									if [[ "$EXECUTION_MECHANISM_STATUS" -eq 1 ]]; then
+										# Create debug report
+										if createDebugReport ${INSTANCE_PATH}; then
+											echo "${TXT_EXECUTION_MECHANISM_DEBUG_REPORT_SUCCESSFUL} ${INSTANCE_PATH}";
+										else
+											echo "${TXT_EXECUTION_MECHANISM_DEBUG_REPORT_FAILED}";
+										fi
+
 										if backup ${INSTANCE_PATH} exists; then
 											# Save instance log file content to debug file
 											if [ ${PAR_DEBUG} -eq 1 ]; then
+												set +x
 												echo "### INSTANCE LOG ###";
-												find ${INSTANCE_PATH}/logs/ -name *_0.log -exec cat {} \;
+												find ${INSTANCE_PATH}/logs/ -name *_0.log | sort -nr | head -1 | tr -d '\n' | xargs -0 cat;
 												echo "### END INSTANCE LOG ###";
+												set -x
 											fi
 
 											BACKUP_PATH="/tmp/TS3Tools/TS3UpdateScript/$(echo -n "${INSTANCE_PATH}/" | md5sum | cut -d " " -f 1)/"

@@ -23,6 +23,19 @@ Hotfix | Important fix for one more issues, which causes a not (correct) working
 
 ## Releases
 
+### Version 5.0.0
+
+	+ FreeBSD will now load automatic the async io (aio*) module (GitHub issue [#40](https://github.com/TS3Tools/TS3UpdateScript/issues/40))
+	* Improved database backup: Config parameters in ts3db INI-file will be detected case insensitive (GitHub issue [41](https://github.com/TS3Tools/TS3UpdateScript/issues/41))
+	* Improved database backup: Added database port to SQL connection (GitHub issue [41](https://github.com/TS3Tools/TS3UpdateScript/issues/41))
+	* Improved database backup: Leading and trailing quotation marks of all SQL config values will be removed (GitHub issue [41](https://github.com/TS3Tools/TS3UpdateScript/issues/41))
+	* Improved database backup: Exit codes on failed SQL commands were not detected correct (GitHub issue [41](https://github.com/TS3Tools/TS3UpdateScript/issues/41))
+	! Please note, that the quotation marks are not necessary in the ts3db INI-file
+	* Improved output of instance log in debug file
+	+ Added function createDebugReport() for creating a debug report, if the update failed
+	! Debug report will be saved in the root directory of each TS3 server instance
+	! New text variables are available: TXT_EXECUTION_MECHANISM_DEBUG_REPORT_SUCCESSFUL, TXT_EXECUTION_MECHANISM_DEBUG_REPORT_FAILED
+
 ### Version 4.6.2
 
 	* Improved serveradmin password check again, because some operating systems returned a wrong formatted login check, which was not possible to verify
