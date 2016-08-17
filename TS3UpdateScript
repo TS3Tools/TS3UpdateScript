@@ -2657,7 +2657,6 @@ function main() {
 					fi
 
 					if [[ -n "$INSTANCE_PATH" ]]; then
-createDebugReport ${INSTANCE_PATH}; ## REMOVE ME
 						if [[ "$INSTALLED_TS3_SERVER_VERSION" != "$LATEST_TS3_SERVER_VERSION" ]]; then
 							if ts3server ${INSTANCE_PATH} status; then
 								echo	"############################################################################";
