@@ -23,6 +23,18 @@ Hotfix | Important fix for one more issues, which causes a not (correct) working
 
 ## Releases
 
+### Version 5.0.1
+
+	+ Added lsb_release command as required software package (available in package lsb-release)
+	+ Added output of 'locale' to debug report
+	+ Added listing of files - except in files, serverquerydocs, doc, logs - to debug report
+	* Removed leading '.*' from censored ts3db INI-line in debug report
+	* Improved script overall a bit by using [ShellCheck](https://github.com/koalaman/shellcheck)
+	+ Installed Build 1461597405 needs an database update to 25
+	! Usually, it should be updated automatic
+	+ Added sqlite3 command as required software package (available in package sqlite3)
+	* Improved detection of TSDNS PID and path
+
 ### Version 5.0.0
 
 	+ FreeBSD will now load automatic the async io (aio*) module (GitHub issue [#40](https://github.com/TS3Tools/TS3UpdateScript/issues/40))

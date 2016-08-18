@@ -223,6 +223,8 @@ Parameter | Description
     - grep
     - sed
     - unzip
+    - lsb-release
+    - sqlite3
   - Optional
     - any MTA like postfix or exim (for receiving cronjob mails)
     - expect (if you want to inform online clients about updates and get a higher detection rate of properties/settings)
