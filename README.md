@@ -160,6 +160,7 @@ Parameter | Description
 --disable-temporary-password-backup | Disable feature to backup temporary passwords
 --set-release | Do not use the official latest release. Use instead the set release from the given file configs/config.all
 --beta-release | With this parameter you are able to detect and update your TeamSpeak server to the latest beta release
+--path | Specify the absolute path to the TS3 server instance, which should be updated instead of searching for all
 --locale [LANGUAGE-CODE] | Change language of this script to some of the available under languages/verified/ directory. Default is en_US.
 --debug [DEBUG_FILENAME] | Enables debugging and writes output to file
 --install-cronjob | Installs weekly cronjob for monday at 3 AM (= 03:00 O'clock) with your given options
