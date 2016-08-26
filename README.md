@@ -69,7 +69,7 @@ It checks, if a newer version for your TeamSpeak 3 server instance is available 
 - Pre-Validation of collected data to prevent possible update issues
 - Best Practices Analyzer
 - Debug feature, if you got some issues with the script
-- Debug Report feature, if your update failed (Example [Debug Report](https://github.com/TS3Tools/TS3UpdateScript/blob/master/docs/EXAMPLE_DEBUG_REPORT.md))
+- Debug Report feature, if your update failed (Example [Debug Report](https://raw.githubusercontent.com/TS3Tools/TS3UpdateScript/master/docs/EXAMPLE_DEBUG_REPORT.md))
 
 ## Stay tuned!
 
