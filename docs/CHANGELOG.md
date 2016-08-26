@@ -23,6 +23,24 @@ Hotfix | Important fix for one more issues, which causes a not (correct) working
 
 ## Releases
 
+### Version 5.1.0
+
+	! This version fixes the issue with the current update problem
+	* Removed debug report from debug file
+	* Added permission view to listing of files
+	+ Added backtrace using gdb to function createDebugReport for further debug information
+	! Requires the Linux package gdb; gdb was added to the required list of packages
+	+ Added example debug file (docs/EXAMPLE_DEBUG_REPORT.md)
+	* Debug report: Improved logging of virtual server log files
+	* Debug report: Improved listing of files
+	* Debug report: Added absolute path of debug report file to TS3UpdateScript output
+	+ Added descriptions of packages to README.md
+	* Fixed incorrect parameter check at script part 'MENU / HELP'
+	* Improved update process of TeamSpeak 3 servers
+	* Improved detection of ServerQuery IP address (GitHub issue [#45](https://github.com/TS3Tools/TS3UpdateScript/issues/45) and [#46](https://github.com/TS3Tools/TS3UpdateScript/issues/46))
+	* Changed text for example suggestion / recommendation in docs/BEST_PRACTICES_ANALYZER.md to prevent missunderstandings
+	+ Added Best Practices document for the TS3UpdateScript in [docs/TS3US_BEST_PRACTICES.md](https://github.com/TS3Tools/TS3UpdateScript/blob/master/docs/TS3US_BEST_PRACTICES.md)
+
 ### Version 5.0.1
 
 	+ Added lsb_release command as required software package (available in package lsb-release)

@@ -69,6 +69,7 @@ It checks, if a newer version for your TeamSpeak 3 server instance is available 
 - Pre-Validation of collected data to prevent possible update issues
 - Best Practices Analyzer
 - Debug feature, if you got some issues with the script
+- Debug Report feature, if your update failed (Example [Debug Report](https://github.com/TS3Tools/TS3UpdateScript/blob/master/docs/EXAMPLE_DEBUG_REPORT.md))
 
 ## Stay tuned!
 
@@ -216,19 +217,21 @@ Parameter | Description
 - One or more installed TeamSpeak 3 server instances on a Root server/VPS/virtual machine
 - Software packages
   - Required
-    - bash
+    - bash (GNU Bourne Again SHell)
     - which
-    - rsync
-    - wget
-    - grep
-    - sed
-    - unzip
-    - lsb-release
-    - sqlite3
+    - rsync (fast, versatile, remote (and local) file-copying tool)
+    - wget (retrieves files from the web)
+    - grep (GNU grep, egrep and fgrep)
+    - sed (The GNU sed stream editor)
+    - unzip (De-archiver for .zip files)
+	- bzip2 (high-quality block-sorting file compressor - utilities)
+    - lsb-release (Linux Standard Base version reporting utility)
+    - sqlite3 (Command line interface for SQLite 3)
+    - gdb (GNU Debugger)
   - Optional
     - any MTA like postfix or exim (for receiving cronjob mails)
-    - expect (if you want to inform online clients about updates and get a higher detection rate of properties/settings)
-    - telnet (if you want to inform online clients about updates)
+    - expect (Automates interactive applications) (if you want to inform online clients about updates and get a higher detection rate of properties/settings)
+    - telnet (The telnet client) (if you want to inform online clients about updates)
 - root user access on your Linux system (below a list of some reasons, why the script needs root permissions)
   - Automated detection of one or more TeamSpeak 3 server instances
   - Detecting and changing/adjusting file/directory permissions after update process

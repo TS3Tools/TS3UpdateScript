@@ -34,7 +34,7 @@ The script includes following types of best practices:
 Type | Needs to be fixed | Examples
 :------------- | :------------- | :-------------
 Warning | No | You should disable the login for the user
-Suggestion / Recommendation | Yes | Do not run the software as root
+Suggestion / Recommendation | Yes | Do not run the TeamSpeak 3 server as root
 
 ## Why should you have this feature?
 

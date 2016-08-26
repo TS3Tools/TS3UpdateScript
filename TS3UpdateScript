@@ -16,8 +16,8 @@ exec 5<&0
 # Donations: https://www.paypal.com/cgi-bin/webscr?cmd=_s-xclick&hosted_button_id=7ZRXLSC2UBVWE
 #
 
-SCRIPT_VERSION="5.0.1"
-LAST_EDIT_DATE="2016-08-18"
+SCRIPT_VERSION="5.1.0"
+LAST_EDIT_DATE="2016-08-27"
 
 # DO NOT REMOVE OR CHANGE
 SOFTWARE_ABOUT="This is the most widely used and fastest shell script to update all your TeamSpeak 3 server instances."
@@ -82,7 +82,7 @@ function clearTerminalScreen() {
 # Return: 0:boolean or 1:boolean
 function checkConsistency() {
 	CHKSUM=$(grep -v "ORIGIN=" "$0" | head -202 | sha256sum | cut -d " " -f 1)
-	ORIGIN="4950e35888dfe362a9979fe3986d64cc5dbc19d803f26eefe57b900d032690e5"
+	ORIGIN="65f9b73224f5f5392560f6f9d267c210d8b4457132132c0a720a35810c334b56"
 
 	if [[ "$CHKSUM" == "$ORIGIN" ]]; then
 		return 0;
@@ -843,11 +843,32 @@ function getDatabaseType() {
 function getServerQueryIP() {
 	if INIFileExists ${1}; then
 		SERVER_QUERY_IP="$(grep -E '^query_ip=' < ${1}/ts3server.ini | cut -d '=' -f 2 | cut -d ',' -f 1)"
+	else
+		# Detect database type (SQLite, MySQL or MariaDB)
+		DATABASE_TYPE="$(getDatabaseType ${INSTANCE_PATH})"
 
-		if [[ -n "$SERVER_QUERY_IP" ]]; then
-			echo -n "$SERVER_QUERY_IP";
+		if [[ "${DATABASE_TYPE}" == SQLite ]]; then
+			SERVER_QUERY_IP="$(sqlite3 ${INSTANCE_PATH}/ts3server.sqlitedb 'SELECT ip FROM bindings WHERE type=2;')"
+		elif [[ "${DATABASE_TYPE}" == "MySQL" ]] || [[ "${DATABASE_TYPE}" == "MariaDB" ]]; then
+			DATABASE_INI_FILE="$(getDatabaseINIFile ${1})"
+
+			DB_USERNAME=$(grep -Ei '^username=.+$' ${1}${DATABASE_INI_FILE} | cut -d '=' -f 2 | sed -e "s/^'//" -e 's/^"//' -e "s/'$//" -e 's/"$//')
+			DB_PASSWORD=$(grep -Ei '^password=.+$' ${1}${DATABASE_INI_FILE} | cut -d '=' -f 2 | sed -e "s/^'//" -e 's/^"//' -e "s/'$//" -e 's/"$//')
+			DB_NAME=$(grep -Ei '^database=.+$' ${1}${DATABASE_INI_FILE} | cut -d '=' -f 2 | sed -e "s/^'//" -e 's/^"//' -e "s/'$//" -e 's/"$//')
+			DB_HOST=$(grep -Ei '^host=.+$' ${1}${DATABASE_INI_FILE} | cut -d '=' -f 2 | sed -e "s/^'//" -e 's/^"//' -e "s/'$//" -e 's/"$//')
+			DB_PORT=$(grep -Ei '^port=.+$' ${1}${DATABASE_INI_FILE} | cut -d '=' -f 2 | sed -e "s/^'//" -e 's/^"//' -e "s/'$//" -e 's/"$//')
+
+			SERVER_QUERY_IP="$(echo 'SELECT ip FROM bindings WHERE type=2;' | mysql --user=${DB_USERNAME} --password=${DB_PASSWORD} ${DB_NAME} --host=${DB_HOST} --port=${DB_PORT} | tail -1)"
 		else
 			echo -n "127.0.0.1";
+		fi
+	fi
+
+	if [[ -n "$SERVER_QUERY_IP" ]]; then
+		if [[ "$SERVER_QUERY_IP" == "0.0.0.0" ]]; then
+			echo -n "127.0.0.1";
+		else
+			echo -n "$SERVER_QUERY_IP";
 		fi
 	else
 		echo -n "127.0.0.1";
@@ -1717,12 +1738,12 @@ function updateTeamSpeakInstance() {
 			fi
 		# Importing MySQL database and associated files
 		elif [[ "$DATABASE_TYPE" == "MySQL" ]]; then
-			if [ $(cp -f /tmp/TS3Tools/TS3UpdateScript/${DIRECTORY_MD5SUM}/libts3db_mysql.so ${INSTANCE_PATH}) ] && [ $(cp -f /tmp/TS3Tools/TS3UpdateScript/${DIRECTORY_MD5SUM}/serverkey.dat ${INSTANCE_PATH}) ] && [ $(cp -f /tmp/TS3Tools/TS3UpdateScript/${DIRECTORY_MD5SUM}/ts3db_mysql.ini ${INSTANCE_PATH}) ]&& [ $(cp -f /tmp/TS3Tools/TS3UpdateScript/${DIRECTORY_MD5SUM}/ts3server.ini ${INSTANCE_PATH}) ]; then
+			if [ $(cp -f /tmp/TS3Tools/TS3UpdateScript/${DIRECTORY_MD5SUM}/serverkey.dat ${INSTANCE_PATH}) ] && [ $(cp -f /tmp/TS3Tools/TS3UpdateScript/${DIRECTORY_MD5SUM}/ts3db_mysql.ini ${INSTANCE_PATH}) ]&& [ $(cp -f /tmp/TS3Tools/TS3UpdateScript/${DIRECTORY_MD5SUM}/ts3server.ini ${INSTANCE_PATH}) ]; then
 				UPDATE_STATUS_FLAG=1;
 			fi
 		# Importing MariaDB database and associated files
 		elif [[ "$DATABASE_TYPE" == "MariaDB" ]]; then
-			if [ $(cp -f /tmp/TS3Tools/TS3UpdateScript/${DIRECTORY_MD5SUM}/libts3db_mariadb.so ${INSTANCE_PATH}) ] && [ $(cp -f /tmp/TS3Tools/TS3UpdateScript/${DIRECTORY_MD5SUM}/serverkey.dat ${INSTANCE_PATH}) ] && [ $(cp -f /tmp/TS3Tools/TS3UpdateScript/${DIRECTORY_MD5SUM}/libts3db_mariadb.so ${INSTANCE_PATH}) ]&& [ $(cp -f /tmp/TS3Tools/TS3UpdateScript/${DIRECTORY_MD5SUM}/ts3server.ini ${INSTANCE_PATH}) ]; then
+			if [ $(cp -f /tmp/TS3Tools/TS3UpdateScript/${DIRECTORY_MD5SUM}/serverkey.dat ${INSTANCE_PATH}) ] && [ $(cp -f /tmp/TS3Tools/TS3UpdateScript/${DIRECTORY_MD5SUM}/ts3server.ini ${INSTANCE_PATH}) ]; then
 				UPDATE_STATUS_FLAG=1;
 			fi
 		fi
@@ -1732,21 +1753,6 @@ function updateTeamSpeakInstance() {
 		if [[ "$DATABASE_TYPE" == "MySQL" ]] && [[ "$INSTALLED_BUILD" == "1388593719" ]]; then
 			if [ $(mysql --user=${DB_USER_NAME} --password=${DB_PASSWORD} ${DB_NAME} < ${INSTANCE_PATH}/sql/updates_and_fixes/convert_mysql_to_mariadb.sql) ] && [ $(mysql --user=${DB_USER_NAME} --password=${DB_PASSWORD} ${DB_NAME} < ${INSTANCE_PATH}/sql/updates_and_fixes/mariadb_fix_latin_utf8.sql) ]; then
 				UPDATE_STATUS_FLAG=1;
-			fi
-		fi
-
-		# Installed Build 1461597405 needs an database update to 25
-		if [[ "$INSTALLED_BUILD" == "1461597405" ]]; then
-			if [[ "$DATABASE_TYPE" == "MySQL" ]] || [[ "$DATABASE_TYPE" == "MariaDB" ]]; then
-				if [ $(mysql --user=${DB_USER_NAME} --password=${DB_PASSWORD} ${DB_NAME} < ${INSTANCE_PATH}/sql/update_25.sql) ]; then
-					UPDATE_STATUS_FLAG=1;
-				fi
-			fi
-
-			if [[ "$DATABASE_TYPE" == "SQLite" ]]; then
-				if [ $(sqlite3 ${INSTANCE_PATH}/ts3server.sqlitedb < ${INSTANCE_PATH}/sql/update_25.sql) ]; then
-					UPDATE_STATUS_FLAG=1;
-				fi
 			fi
 		fi
 
@@ -1829,6 +1835,10 @@ function updateTeamSpeakInstance() {
 # Par 1: TeamSpeakRootDirectory:string
 # Return: 0:boolean or 1:boolean
 function createDebugReport() {
+	# Don't write debug report to debug file
+	if [ ${PAR_DEBUG} -eq 1 ]; then
+		set +x
+	fi
 	TEAMSPEAK_ROOT_DIRECTORY="${1}"
 
 	CURRENT_DATE_TIME="$(date +'%Y%m%d-%H%M')"
@@ -1904,17 +1914,63 @@ function createDebugReport() {
 	echo -e "### Instance Log file\n" >> ${DEBUG_REPORT_FILE};
 	echo -e "$(find ${TS3_SERVER_INSTANCE_LOG_PATH} -name *_0.log | sort -nr | head -1 | tr -d '\n' | xargs -0 cat)\n" >> ${DEBUG_REPORT_FILE};
 
+	echo -e "### Backtrace using gdb\n" >> ${DEBUG_REPORT_FILE};
+	TS3BINARY="$(grep BINARYNAME ${TEAMSPEAK_ROOT_DIRECTORY}/ts3server_startscript.sh | head -1 | cut -d "=" -f 2 | tr -d '"')"
+
+	if INIFileExists ${TEAMSPEAK_ROOT_DIRECTORY}; then
+		(
+			cat <<- GDD_BACKTRACE
+				spawn su -s "$(which bash)" -c "cd $1 && export LD_LIBRARY_PATH=\".:$LD_LIBRARY_PATH\" && gdb ${TS3BINARY} && cd - > /dev/null" - $(getOwnerOfTS3ServerFiles $1)
+				expect "(gdb)"
+				send {run -x start inifile=ts3server.ini}
+				expect "run -x start"
+				send "\r"
+				expect "(gdb)"
+				send "bt\r"
+				expect "(gdb)"
+				send "quit\r"
+			GDD_BACKTRACE
+		) | expect >> /tmp/${CURRENT_DATE_TIME}-ts3us-debug-report.md
+	else
+		(
+			cat <<- GDD_BACKTRACE
+				spawn su -s "$(which bash)" -c "cd $1 && export LD_LIBRARY_PATH=\".:$LD_LIBRARY_PATH\" && gdb ${TS3BINARY} && cd - > /dev/null" - $(getOwnerOfTS3ServerFiles $1)
+				expect "(gdb)"
+				send {run -x start}
+				expect "run -x start"
+				send "\r"
+				expect "(gdb)"
+				send "bt\r"
+				expect "(gdb)"
+				send "quit\r"
+			GDD_BACKTRACE
+		) | expect >> /tmp/${CURRENT_DATE_TIME}-ts3us-debug-report.md
+	fi
+
+	cat /tmp/${CURRENT_DATE_TIME}-ts3us-debug-report.md >> ${DEBUG_REPORT_FILE} && rm /tmp/${CURRENT_DATE_TIME}-ts3us-debug-report.md
+	echo -e "\n" >> ${DEBUG_REPORT_FILE};
+
 	echo -e "### Virtual Server Log file(s)\n" >> ${DEBUG_REPORT_FILE};
 	for logFile in $(find ${TS3_SERVER_INSTANCE_LOG_PATH} -name ts3server_$(date +'%Y-%m-%d__%H' -d "2 hour ago")_*.log); do
-		VIRTUAL_SID=$(echo -n ${logFile} | grep -Eo '_([0-9]+)\.log' | grep -Eo '[0-9]+');
+		VIRTUAL_SID=$(echo -n ${logFile} | grep -Eo '_[0-9]+\.log' | grep -Eo '[0-9]+');
 		if [[ "${VIRTUAL_SID}" != "0" ]]; then
 			echo	"**Virtual Server ID: ${VIRTUAL_SID}**" >> ${DEBUG_REPORT_FILE};
-			echo -e "$(< ${logFile})\n" >> ${DEBUG_REPORT_FILE};
+			cat ${logFile} >> ${DEBUG_REPORT_FILE};
+			echo -e "\n" >> ${DEBUG_REPORT_FILE};
 		fi
 	done
 
-	echo -e "### Files in ${TEAMSPEAK_ROOT_DIRECTORY}\n" >> ${DEBUG_REPORT_FILE};
-	echo -e "$(find ${TEAMSPEAK_ROOT_DIRECTORY} | grep -Ev 'files|serverquerydocs|doc|logs')\n" >> ${DEBUG_REPORT_FILE};
+	echo	"### Permissions in ${TEAMSPEAK_ROOT_DIRECTORY}" >> ${DEBUG_REPORT_FILE};
+	for ts3Directory in $(find "${TEAMSPEAK_ROOT_DIRECTORY}/" -maxdepth 3 -type d); do
+		if [[ ! "${ts3Directory}" =~ files|serverquerydocs|doc|logs ]]; then
+			echo -e "\n${ts3Directory}" >> ${DEBUG_REPORT_FILE};
+			ls -lha "${ts3Directory}" >> ${DEBUG_REPORT_FILE};
+		fi
+	done
+
+	if [ ${PAR_DEBUG} -eq 1 ]; then
+		set -x
+	fi
 
 	if [ -f "${DEBUG_REPORT_FILE}" ]; then
 		return 0;
@@ -1995,19 +2051,19 @@ function main() {
 
 	# Execute software checks
 	if [ "$PAR_INFORM_ONLINE_CLIENTS" -eq 1 ]; then
-		if ! checkdeps bash which rsync wget grep sed unzip bzip2 lsb_release sqlite3 telnet expect; then
+		if ! checkdeps bash which rsync wget grep sed unzip bzip2 lsb_release sqlite3 gdb telnet expect; then
 			SELF_TEST_STATUS=1;
 		fi
 	elif [ "$PAR_CRONJOB_TASK" -eq 1 ] && [ "$PAR_INFORM_ONLINE_CLIENTS" -eq 1 ]; then
-		if ! checkdeps bash which rsync wget grep sed unzip bzip2 lsb_release sqlite3 mail telnet expect; then
+		if ! checkdeps bash which rsync wget grep sed unzip bzip2 lsb_release sqlite3 gdb mail telnet expect; then
 			SELF_TEST_STATUS=1;
 		fi
 	elif [ "$PAR_CRONJOB_TASK" -eq 1 ]; then
-		if ! checkdeps bash which rsync wget grep sed unzip bzip2 lsb_release sqlite3 mail; then
+		if ! checkdeps bash which rsync wget grep sed unzip bzip2 lsb_release sqlite3 gdb mail; then
 			SELF_TEST_STATUS=1;
 		fi
 	else
-		if ! checkdeps bash which rsync wget grep sed unzip bzip2 lsb_release sqlite3; then
+		if ! checkdeps bash which rsync wget grep sed unzip bzip2 lsb_release sqlite3 gdb; then
 			SELF_TEST_STATUS=1;
 		fi
 	fi
@@ -2092,6 +2148,14 @@ function main() {
 						INSTANCE_PATH=$(dirname $instancePath)
 
 						echo -e "\n${TXT_COLLECTING_INFORMATION_COLLECTING_INFO}: ${INSTANCE_PATH}" >> COLLECTING_INFORMATION_STATUS.txt;
+
+						# Detect database type (SQLite, MySQL or MariaDB)
+						DATABASE_TYPE="$(getDatabaseType ${INSTANCE_PATH})"
+
+						if [[ "$DATABASE_TYPE" == "1" ]]; then
+							echo "${TXT_COLLECTING_INFORMATION_DATABASE_DETECTION_FAILED}" >> COLLECTING_INFORMATION_STATUS.txt;
+							COLLECTING_INFORMATION_STATUS=1;
+						fi
 
 						if [[ "$PAR_INFORM_ONLINE_CLIENTS" -eq 1 ]] || checkdeps telnet expect; then
 							# Detect ServerQuery IP
@@ -2239,14 +2303,6 @@ function main() {
 
 						if [[ "$GROUP_ID" == "1" ]]; then
 							echo "${TXT_COLLECTING_INFORMATION_GROUP_GROUP_ID_DETECTION_FAILED}" >> COLLECTING_INFORMATION_STATUS.txt;
-							COLLECTING_INFORMATION_STATUS=1;
-						fi
-
-						# Detect database type (SQLite, MySQL or MariaDB)
-						DATABASE_TYPE="$(getDatabaseType ${INSTANCE_PATH})"
-
-						if [[ "$DATABASE_TYPE" == "1" ]]; then
-							echo "${TXT_COLLECTING_INFORMATION_DATABASE_DETECTION_FAILED}" >> COLLECTING_INFORMATION_STATUS.txt;
 							COLLECTING_INFORMATION_STATUS=1;
 						fi
 
@@ -3001,7 +3057,7 @@ function main() {
 									if [[ "$EXECUTION_MECHANISM_STATUS" -eq 1 ]]; then
 										# Create debug report
 										if createDebugReport ${INSTANCE_PATH}; then
-											echo "${TXT_EXECUTION_MECHANISM_DEBUG_REPORT_SUCCESSFUL} ${INSTANCE_PATH}";
+											echo "${TXT_EXECUTION_MECHANISM_DEBUG_REPORT_SUCCESSFUL} ${DEBUG_REPORT_FILE}";
 										else
 											echo "${TXT_EXECUTION_MECHANISM_DEBUG_REPORT_FAILED}";
 										fi
@@ -3243,7 +3299,7 @@ cd - > /dev/null
 ##
 
 # If no option is set, show the usage message
-if [ "$1" = "" ]; then
+if [ "$1" == "" ]; then
 	echo "$SCRIPT_NAME: missing option";
 	echo -e "\nMultiple option usage: ./${SCRIPT_NAME} [--check] [--delete-old-logs] [--inform-online-clients] [--latest-release | --beta-release] [--install-cronjob]";
 	echo -e "\nSingle option usage: ./${SCRIPT_NAME} [--test-inform-online-clients] | [--update-script] | [--deinstall-cronjob]";
