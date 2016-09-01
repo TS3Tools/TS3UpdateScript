@@ -2,45 +2,59 @@
 
 **TS3UpdateScript** is the most used bash-script by companies to automate and optimaze the TeamSpeak 3 server update process. It is the fastest script you have ever seen for this task.
 
-[Show script licenses](https://github.com/TS3Tools/TS3UpdateScript#script-licenses)
+[Show TS3UpdateScript Best Practices](docs/TS3US_BEST_PRACTICES.md)
 
 It checks, if a newer version for your TeamSpeak 3 server instance is available or not. If yes, you can choose, if the script should update the server or not. You also have some parameters like "delete old logs files" and so on. Well... If you don't want to update your TeamSpeak 3 server manually, you can use this script. This script is doing ALL steps for a correct update process of your TeamSpeak 3 server.
 
 ## Table of content
 
-- [Developers](https://github.com/TS3Tools/TS3UpdateScript#developers)
-- [Main features](https://github.com/TS3Tools/TS3UpdateScript#main-features)
-- [Special features](https://github.com/TS3Tools/TS3UpdateScript#special-features)
-- [Stay tuned!](https://github.com/TS3Tools/TS3UpdateScript#stay-tuned)
-- [Available Languages](https://github.com/TS3Tools/TS3UpdateScript#available-languages)
-	- [Help us](https://github.com/TS3Tools/TS3UpdateScript#help-us)
-- [Script licenses](https://github.com/TS3Tools/TS3UpdateScript#script-licenses)
-	- [Get Professional/Enterprise license](https://github.com/TS3Tools/TS3UpdateScript#get-hoster-license)
-- [Donations](https://github.com/TS3Tools/TS3UpdateScript#donations)
-- [Usage](https://github.com/TS3Tools/TS3UpdateScript#usage)
-- [Parameters / Options](https://github.com/TS3Tools/TS3UpdateScript#parameters--options)
- 	- [Multi usable](https://github.com/TS3Tools/TS3UpdateScript#multi-usable)
-	- [Single usable](https://github.com/TS3Tools/TS3UpdateScript#single-usable)
-- [Requirements](https://github.com/TS3Tools/TS3UpdateScript#requirements)
-- [Supports](https://github.com/TS3Tools/TS3UpdateScript#supports)
-- [Work flow of the script](https://github.com/TS3Tools/TS3UpdateScript#work-flow-of-the-script)
-- [Used Ressources by the script](https://github.com/TS3Tools/TS3UpdateScript#used-ressources-by-the-script)
-- [Directory Structure - Where can I find which file?](https://github.com/TS3Tools/TS3UpdateScript#directory-structure---where-can-i-find-which-file)
-- [Why got this script a high version number?](https://github.com/TS3Tools/TS3UpdateScript#why-got-this-script-a-high-version-number)
+- [Developers](#developers)
+- [Contributors](#contributors)
+- [Donations](#donations)
+- [Main Features](#main-features)
+- [Special Features](#special-features)
+- [Stay tuned!](#stay-tuned)
+- [Requirements](#requirements)
+- [Supports](#supports)
+- [Available Languages](#available-languages)
+	- [Help us](#help-us)
+- [Script licenses](#script-licenses)
+	- [Get Professional / Enterprise license](#get-professional-enterprise-license)
+	- [Extended support subscription plans](#extended-support-subscription-plans)
+- [Usage](#usage)
+- [Parameters / Options](#parameters--options)
+ 	- [Multi usable](#multi-usable)
+	- [Single usable](#single-usable)
+- [Work flow of the script](#work-flow-of-the-script)
+- [Used Ressources by the script](#used-ressources-by-the-script)
+- [Directory Structure - Where can I find which file?](#directory-structure---where-can-i-find-which-file)
+- [Why got this script a high version number?](#why-got-this-script-a-high-version-number)
 
 ![Example Output](https://raw.githubusercontent.com/TS3Tools/TS3UpdateScript/master/img/TS3UpdateScript_Example_Summary.png)
 
-[Open CHANGELOG](https://github.com/TS3Tools/TS3UpdateScript/blob/master/docs/CHANGELOG.md)
+[Open CHANGELOG](/blob/master/docs/CHANGELOG.md)
 
-[Open install and usage guide](https://github.com/TS3Tools/TS3UpdateScript/blob/master/docs/INSTALL_USAGE_GUIDE.md)
+[Open install and usage guide](/blob/master/docs/INSTALL_USAGE_GUIDE.md)
 
-[Open upgrade guide](https://github.com/TS3Tools/TS3UpdateScript/blob/master/docs/UPDATE_GUIDE.md)
+[Open upgrade guide](/blob/master/docs/UPDATE_GUIDE.md)
 
-[Open GNU GPLv3 license](https://github.com/TS3Tools/TS3UpdateScript/blob/master/LICENSE_GNU_GPL.md)
+[Show script licenses](#script-licenses)
+
+[Open GNU GPLv3 license](/blob/master/LICENSE_GNU_GPL.md)
 
 ## Developers
 
   * Sebastian Kraetzig [info@ts3-tools.info]
+
+## Contributors
+
+[Open list of contributors](graphs/contributors)
+
+## Donations
+
+**TS3UpdateScript** is free software and is made available free of charge. Your donation, which is purely optional, supports me at improving the software as well as reducing my costs of this project. If you like the software, please consider a donation. Thank you very much!
+
+[Donate with PayPal](https://www.paypal.com/cgi-bin/webscr?cmd=_s-xclick&hosted_button_id=7ZRXLSC2UBVWE)
 
 ## Main features
 
@@ -75,7 +89,49 @@ It checks, if a newer version for your TeamSpeak 3 server instance is available 
 
 - [Official Project Homepage](https://www.ts3-tools.info/)
 - [facebook Fanpage](https://www.facebook.com/TS3Tools)
-- [GitHub](https://github.com/TS3Tools/TS3UpdateScript/)
+- [GitHub](/)
+
+## Requirements
+
+- Linux (should work on the most distributations; below a list of explicit tested distributations)
+  - Debian 7 & 8
+  - Ubuntu 15
+  - CentOS 7
+  - OpenSUSE 13
+  - Fedora 21
+  - IPFire 2
+- One or more installed TeamSpeak 3 server instances on a Root server/VPS/virtual machine
+- Software packages
+  - Required
+    - bash (GNU Bourne Again SHell)
+    - which
+    - rsync (fast, versatile, remote (and local) file-copying tool)
+    - wget (retrieves files from the web)
+    - grep (GNU grep, egrep and fgrep)
+    - sed (The GNU sed stream editor)
+    - unzip (De-archiver for .zip files)
+    - bzip2 (high-quality block-sorting file compressor - utilities)
+    - lsb-release / redhat-lsb (Linux Standard Base version reporting utility)
+    - gdb (GNU Debugger)
+  - Optional
+    - sqlite3 (Command line interface for SQLite 3) (Only required, if you've changed your IP bindings in the SQLite database)
+    - any MTA like postfix or exim (for receiving cronjob mails)
+    - expect (Automates interactive applications) (if you want to inform online clients about updates and get a higher detection rate of properties/settings)
+    - telnet (The telnet client) (if you want to inform online clients about updates)
+- root user access on your Linux system (below a list of some reasons, why the script needs root permissions)
+  - Automated detection of one or more TeamSpeak 3 server instances
+  - Detecting and changing/adjusting file/directory permissions after update process
+  - Creating a backup
+  - Installing a cronjob
+
+## Supports
+
+- Linux and FreeBSD binary
+- SQLite and MySQL as well as MariaDB database setups
+- TSDNS
+- Temporary virtual server passwords
+- ExaGear environments (Further information: http://eltechs.com/)
+- [TS3Monitor](https://github.com/TS3Tools/TS3Monitor/)
 
 ## Available Languages
 
@@ -96,35 +152,42 @@ Just grab a copy of your language file, which you understand and translate the c
 
 ## Script licenses
 
-Name | Ideal for | Restrictions | 5-years Support | Costs
+Name | Ideal for | Restrictions | 2-years Support | Costs
 :------------- | :------------- | :------------- | :------------- | :-------------
-Free | Unlicensed, NPL, AAL | Single Instance, no [BPA](https://github.com/TS3Tools/TS3UpdateScript/blob/master/docs/BEST_PRACTICES_ANALYZER.md), no Cronjob | No | Free of charge / 'Pay what you want'-Donation
+Free | Unlicensed, NPL, AAL | Single Instance, no [BPA](/blob/master/docs/BEST_PRACTICES_ANALYZER.md), no Cronjob | No | Free of charge / 'Pay what you want'-Donation
 Professional | Unlicensed, NPL, AAL | Single Instance | No | 29.99 EUR
 Enterprise | ATHP | None | Yes | 79.99 EUR
 
-### Get Professional/Enterprise license
+### Get Professional / Enterprise license
 
 Send me your license information to get a invoice, which you need to pay:
 
-  user@tux:~$ ./TS3UpdateScript --send-license-information [Your invoice E-Mail address] [professional | enterprise]
+  user@tux:~$ ./TS3UpdateScript --request-license [Your invoice E-Mail address] [professional | enterprise]
 
-  user@tux:~$ ./TS3UpdateScript --send-license-information you@example.com professional
+  user@tux:~$ ./TS3UpdateScript --request-license you@example.com professional
 
 Hint: You should receive a copy of this email within a few minutes. If not, your server is may not able to send emails. Please follow the alternative instructions instead.
 
 Alternative you can send me those details manual via email to [info@ts3-tools.info](info@ts3-tools.info):
 - Your (invoice) E-Mail address
+- Product name (TS3UpdateScript)
 - Public/WAN IP address, where you want to use the script
 - License key of your script (Parameter '--show-license-key')
 - Type of license, which you want: Professional or Enterprise
 
 After you've paid the invoice, your script will be licensed within the next 48 hours. Usually, it only takes up to 24 hours.
 
-## Donations
+### Extended support subscription plans
 
-**TS3UpdateScript** is free software and is made available free of charge. Your donation, which is purely optional, supports me at improving the software as well as reducing my costs of this project. If you like the software, please consider a donation. Thank you very much!
+If you only have bought a Professional license or just require more support, you can buy a renewable support subscription plan.
 
-[Donate with PayPal](https://www.paypal.com/cgi-bin/webscr?cmd=_s-xclick&hosted_button_id=7ZRXLSC2UBVWE)
+Below are the available subscription plans including their SLA:
+
+Name | Included support | SLA Respond time | Costs
+:------------- | :------------- | :------------- | :------------- | :-------------
+Basis SLA | 1 year | Within a week | 14.99 EUR
+Professional SLA | 1 year | Within 48 hours | 49.99 EUR
+Enterprise SLA | 3 year | Within 48 hours | 119.99 EUR
 
 ## Usage
 
@@ -189,7 +252,7 @@ Parameter | Description
 --test-inform-online-clients | Execute test poke with current settings
 --update-script | Updates the TS3UpdateScript to the latest version
 --show-license-key | Displays TS3UpdateScript license key
---send-license-information [EMAIL] | Sends license information to info@ts3-tools.com to get hoster license ([see Script Licenses](https://github.com/TS3Tools/TS3UpdateScript#script-licenses)!)
+--request-license [EMAIL] [professional | enterprise] | Sends license information to info@ts3-tools.com to get professional/enterprise license ([see Script Licenses](#script-licenses)!)
 --deinstall-cronjob | Deinstalls weekly cronjob
 
 #### Examples
@@ -204,48 +267,7 @@ Parameter | Description
 
   user@tux:~$ sudo ./TS3UpdateScript --update-script
 
-  user@tux:~$ sudo ./TS3UpdateScript --send-license-information mail@example.com
-
-## Requirements
-
-- Linux (should work on the most distributations; below a list of explicit tested distributations)
-  - Debian 7 & 8
-  - Ubuntu 15
-  - CentOS 7
-  - OpenSUSE 13
-  - Fedora 21
-  - IPFire 2
-- One or more installed TeamSpeak 3 server instances on a Root server/VPS/virtual machine
-- Software packages
-  - Required
-    - bash (GNU Bourne Again SHell)
-    - which
-    - rsync (fast, versatile, remote (and local) file-copying tool)
-    - wget (retrieves files from the web)
-    - grep (GNU grep, egrep and fgrep)
-    - sed (The GNU sed stream editor)
-    - unzip (De-archiver for .zip files)
-	- bzip2 (high-quality block-sorting file compressor - utilities)
-    - lsb-release (Linux Standard Base version reporting utility)
-    - sqlite3 (Command line interface for SQLite 3)
-    - gdb (GNU Debugger)
-  - Optional
-    - any MTA like postfix or exim (for receiving cronjob mails)
-    - expect (Automates interactive applications) (if you want to inform online clients about updates and get a higher detection rate of properties/settings)
-    - telnet (The telnet client) (if you want to inform online clients about updates)
-- root user access on your Linux system (below a list of some reasons, why the script needs root permissions)
-  - Automated detection of one or more TeamSpeak 3 server instances
-  - Detecting and changing/adjusting file/directory permissions after update process
-  - Creating a backup
-  - Installing a cronjob
-
-## Supports
-
-- Linux and FreeBSD binary
-- SQLite and MySQL as well as MariaDB database setups
-- TSDNS
-- Temporary virtual server passwords
-- ExaGear environments (Further information: http://eltechs.com/)
+  user@tux:~$ sudo ./TS3UpdateScript --request-license mail@example.com professional
 
 ## Work flow of the script
 

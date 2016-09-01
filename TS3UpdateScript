@@ -16,8 +16,8 @@ exec 5<&0
 # Donations: https://www.paypal.com/cgi-bin/webscr?cmd=_s-xclick&hosted_button_id=7ZRXLSC2UBVWE
 #
 
-SCRIPT_VERSION="5.1.0"
-LAST_EDIT_DATE="2016-08-27"
+SCRIPT_VERSION="5.2.0"
+LAST_EDIT_DATE="2016-09-01"
 
 # DO NOT REMOVE OR CHANGE
 SOFTWARE_ABOUT="This is the most widely used and fastest shell script to update all your TeamSpeak 3 server instances."
@@ -82,7 +82,7 @@ function clearTerminalScreen() {
 # Return: 0:boolean or 1:boolean
 function checkConsistency() {
 	CHKSUM=$(grep -v "ORIGIN=" "$0" | head -202 | sha256sum | cut -d " " -f 1)
-	ORIGIN="65f9b73224f5f5392560f6f9d267c210d8b4457132132c0a720a35810c334b56"
+	ORIGIN="229dad843d05730b90fdd648306a6499b9396d4fe29eb50f5db12bd5a7d03434"
 
 	if [[ "$CHKSUM" == "$ORIGIN" ]]; then
 		return 0;
@@ -267,24 +267,90 @@ function migrateMultipleConfigFilesToOne() {
 	done
 }
 
-# Write warning message, that the checked software package is not installed
-function warn() {
-	printf >&2 "$*\n" >> SELF_TEST_STATUS.txt
-}
-
-# Check, if the software package is installed/installed/usable
-function iscmd() {
-	command -v >&- "$@"
-}
-
 # Checks list of given software packages
 function checkdeps() {
 	for cmd; do
-		iscmd "$cmd" || {
-			warn $"$cmd is not found. Please install this package"
-			return 1;
+		package_cmd=$(echo $cmd | cut -d ':' -f 1)
+		package=$(echo $cmd | cut -d ':' -f 2)
+
+		if [[ -z "$package" ]]; then
+			package=$cmd
+		fi
+
+		command -v >&- "$package_cmd" || {
+			printf >&2 "$package is not found. Please install this package\n" >> SELF_TEST_STATUS.txt;
+			SELF_TEST_STATUS=1;
 		}
 	done
+}
+
+# Writes BPA disable options to config file and displays BPA message, if allowed
+# Par 1: BPAText:string
+# Return: BPAText:string or 1:boolean
+function displayBPAText() {
+	BPA_CONFIG_FILE="configs/config.bpa"
+	BPA_TEXT="${1}"
+	BPA_TEXT_VARIABLE_NAME=$(grep "${BPA_TEXT}" languages/verified/*.conf | cut -d ':' -f 2 | cut -d '=' -f 1)
+	BPA_TYPE="RECOMMENDATION"
+
+	if [[ "${BPA_TEXT_VARIABLE_NAME}" == "TXT_COLLECTING_INFORMATION_OWNER_ROOT_PERMISSIONS_INFO" ]]; then
+		BPA_OPTION="OWNER_ROOT_PERMISSIONS_INFO"
+	elif [[ "${BPA_TEXT_VARIABLE_NAME}" == "TXT_COLLECTING_INFORMATION_GROUP_ROOT_PERMISSIONS_INFO" ]]; then
+		BPA_OPTION="GROUP_ROOT_PERMISSIONS_INFO"
+	elif [[ "${BPA_TEXT_VARIABLE_NAME}" == "TXT_COLLECTING_INFORMATION_IS_SHELL_VALID_FAILED" ]]; then			
+		BPA_OPTION="IS_SHELL_VALID_FAILED"
+		BPA_TYPE="WARNING"
+	elif [[ "${BPA_TEXT_VARIABLE_NAME}" == "TXT_COLLECTING_INFORMATION_OWNER_DETECTION_FAILED" ]]; then			
+		BPA_OPTION="OWNER_DETECTION_FAILED"
+	elif [[ "${BPA_TEXT_VARIABLE_NAME}" == "TXT_COLLECTING_INFORMATION_OWNER_USER_ID_DETECTION_FAILED" ]]; then	
+		BPA_OPTION="OWNER_USER_ID_DETECTION_FAILED"
+	elif [[ "${BPA_TEXT_VARIABLE_NAME}" == "TXT_COLLECTING_INFORMATION_GROUP_DETECTION_FAILED" ]]; then			
+		BPA_OPTION="GROUP_DETECTION_FAILED"
+	elif [[ "${BPA_TEXT_VARIABLE_NAME}" == "TXT_COLLECTING_INFORMATION_GROUP_GROUP_ID_DETECTION_FAILED" ]]; then
+		BPA_OPTION="GROUP_GROUP_ID_DETECTION_FAILED"
+	elif [[ "${BPA_TEXT_VARIABLE_NAME}" == "TXT_COLLECTING_INFORMATION_IS_FILES_STORAGE_EXTERNAL_FAILED" ]]; then
+		BPA_OPTION="IS_FILES_STORAGE_EXTERNAL_FAILED"
+		BPA_TYPE="WARNING"
+	elif [[ "${BPA_TEXT_VARIABLE_NAME}" == "TXT_COLLECTING_INFORMATION_SYSTEM_LOCALE" ]]; then
+		BPA_OPTION="SYSTEM_LOCALE"
+		BPA_TYPE="WARNING"
+	fi
+
+	if [[ ! -f "${BPA_CONFIG_FILE}" ]]; then
+		echo "# Disable BPA messages by replacing 'false' with 'true'" > ${BPA_CONFIG_FILE};
+	fi
+
+	BPA_OPTION_COUNT=$(grep -c "${BPA_OPTION}=" ${BPA_CONFIG_FILE})
+
+	if [[ "${BPA_OPTION_COUNT}" -eq 0 ]]; then
+		echo "${BPA_OPTION}=false" >> ${BPA_CONFIG_FILE};
+
+		if [[ $? -eq 0 ]]; then
+			echo "${BPA_TEXT}" >> COLLECTING_INFORMATION_STATUS.txt;
+
+			if [[ $? -eq 0 ]]; then
+				if [[ "${BPA_TYPE}" == "RECOMMENDATION" ]]; then
+					COLLECTING_INFORMATION_STATUS=1;
+				fi
+				return 0;
+			fi
+		fi
+	else
+		BPA_OPTION_VALUE=$(grep "${BPA_OPTION}=" ${BPA_CONFIG_FILE} | cut -d '=' -f 2 | tr '[:lower:]' '[:upper:]')
+
+		if [[ "${BPA_OPTION_VALUE}" != "TRUE" ]]; then
+			echo "${BPA_TEXT}" >> COLLECTING_INFORMATION_STATUS.txt;
+
+			if [[ $? -eq 0 ]]; then
+				if [[ "${BPA_TYPE}" == "RECOMMENDATION" ]]; then
+					COLLECTING_INFORMATION_STATUS=1;
+				fi
+				return 0;
+			fi
+		fi
+	fi
+
+	return 1;
 }
 
 # Returns time difference
@@ -496,6 +562,20 @@ function findRealTS3RootDirectory() {
 	fi
 
 	echo -n "${TEAMSPEAK_ROOT_DIRECTORY}";
+}
+
+# If one more lines containing 'The system locale is set to' are in the instance log, it will return 1
+# Par 1: TeamSpeakRootDirectory:String
+# Return: 1:boolean or 0:boolean
+function checkSystemLocale() {
+	INSTANCE_LOG_FILE="$(find $(getTS3ServerInstanceLogPath ${1}) -name *_0.log | sort -nr | head -1)"
+	COUNT_LOCALE_MESSAGE=$(grep -E "The system locale is set to" ${INSTANCE_LOG_FILE} | wc -l)
+
+	if [[ "${COUNT_LOCALE_MESSAGE}" -ge 1 ]]; then
+		return 1;
+	else
+		return 0;
+	fi
 }
 
 # Check serveradmin password
@@ -847,7 +927,7 @@ function getServerQueryIP() {
 		# Detect database type (SQLite, MySQL or MariaDB)
 		DATABASE_TYPE="$(getDatabaseType ${INSTANCE_PATH})"
 
-		if [[ "${DATABASE_TYPE}" == SQLite ]]; then
+		if [[ "${DATABASE_TYPE}" == SQLite ]] && checkdeps sqlite3; then
 			SERVER_QUERY_IP="$(sqlite3 ${INSTANCE_PATH}/ts3server.sqlitedb 'SELECT ip FROM bindings WHERE type=2;')"
 		elif [[ "${DATABASE_TYPE}" == "MySQL" ]] || [[ "${DATABASE_TYPE}" == "MariaDB" ]]; then
 			DATABASE_INI_FILE="$(getDatabaseINIFile ${1})"
@@ -1661,35 +1741,28 @@ function backup() {
 # Return: 0:boolean or 1:boolean
 function updateTeamSpeakInstance() {
 	UPDATE_STATUS_FLAG=0;
-	DIRECTORY=$(findRealTS3RootDirectory ${1})
-
-	if [ -n "$DIRECTORY" ] && [ -d "$DIRECTORY" ]; then
-		DIRECTORY_MD5SUM=$(echo -n "${DIRECTORY}" | md5sum | cut -d " " -f 1)
+	TS3_INSTANCE_ROOT_DIRECTORY=$(findRealTS3RootDirectory ${1})
+	
+	if [ -n "${TS3_INSTANCE_ROOT_DIRECTORY}" ] && [ -d "${TS3_INSTANCE_ROOT_DIRECTORY}" ]; then
 		LATEST_RELEASE="$(getLatestTSServerVersion)"
 		RELEASE_NUMBER="$(echo $LATEST_RELEASE | grep -Eo '^[0-9\.?]+')"
+		TS3_INSTANCE_ROOT_DIRECTORY_MD5SUM=$(echo -n "${TS3_INSTANCE_ROOT_DIRECTORY}" | md5sum | cut -d " " -f 1)
 
-		while read instanceInfo; do
-			STATUS_FLAG=$(echo "$instanceInfo" | grep -Ev "^#" | cut -d "|" -f 1)
-			INSTANCE_PATH=$(echo "$instanceInfo" | grep -Ev "^#" | cut -d "|" -f 2)
-			INSTALLED_TS3_SERVER_VERSION=$(echo "$instanceInfo" | grep -Ev "^#" | cut -d "|" -f 3)
-			INSTALLED_TS3_SERVER_BUILD=$(echo "$instanceInfo" | grep -Ev "^#" | cut -d "|" -f 4)
-			INSTALLED_TS3_SERVER_PLATFORM=$(echo "$instanceInfo" | grep -Ev "^#" | cut -d "|" -f 5 | tr '[:upper:]' '[:lower:]')
-			TS3SERVER_INSTANCE_LOG_PATH=$(echo "$instanceInfo" | grep -Ev "^#" | cut -d "|" -f 6)
-			TS3SERVER_ARCHITECTURE=$(echo "$instanceInfo" | grep -Ev "^#" | cut -d "|" -f 7)
-			OWNER=$(echo "$instanceInfo" | grep -Ev "^#" | cut -d "|" -f 8)
-			OWNER_ID=$(echo "$instanceInfo" | grep -Ev "^#" | cut -d "|" -f 9)
-			GROUP=$(echo "$instanceInfo" | grep -Ev "^#" | cut -d "|" -f 10)
-			GROUP_ID=$(echo "$instanceInfo" | grep -Ev "^#" | cut -d "|" -f 11)
-			SERVERQUERY_IP=$(echo "$instanceInfo" | grep -Ev "^#" | cut -d "|" -f 12)
-			SERVERQUERY_PORT=$(echo "$instanceInfo" | grep -Ev "^#" | cut -d "|" -f 13)
-			DATABASE_TYPE=$(echo "$instanceInfo" | grep -Ev "^#" | cut -d "|" -f 14)
-
-			if [ -n "$INSTANCE_PATH" ]; then
-				if [ "$INSTANCE_PATH" == "$DIRECTORY" ]; then
-					break;
-				fi
-			fi
-		done < TS3InstanceInfos.txt
+		INSTANCE_INFO_LINE="$(grep \"${TS3_INSTANCE_ROOT_DIRECTORY}\" TS3InstanceInfos.txt)"
+		STATUS_FLAG=$(echo "${INSTANCE_INFO_LINE}" | cut -d "|" -f 1)
+		INSTANCE_PATH=$(echo "${INSTANCE_INFO_LINE}" | cut -d "|" -f 2)
+		INSTALLED_TS3_SERVER_VERSION=$(echo "${INSTANCE_INFO_LINE}" | cut -d "|" -f 3)
+		INSTALLED_TS3_SERVER_BUILD=$(echo "${INSTANCE_INFO_LINE}" | cut -d "|" -f 4)
+		INSTALLED_TS3_SERVER_PLATFORM=$(echo "${INSTANCE_INFO_LINE}" | cut -d "|" -f 5 | tr '[:upper:]' '[:lower:]')
+		TS3SERVER_INSTANCE_LOG_PATH=$(echo "${INSTANCE_INFO_LINE}" | cut -d "|" -f 6)
+		TS3SERVER_ARCHITECTURE=$(echo "${INSTANCE_INFO_LINE}" | cut -d "|" -f 7)
+		OWNER=$(echo "${INSTANCE_INFO_LINE}" | cut -d "|" -f 8)
+		OWNER_ID=$(echo "${INSTANCE_INFO_LINE}" | cut -d "|" -f 9)
+		GROUP=$(echo "${INSTANCE_INFO_LINE}" | cut -d "|" -f 10)
+		GROUP_ID=$(echo "${INSTANCE_INFO_LINE}" | cut -d "|" -f 11)
+		SERVERQUERY_IP=$(echo "${INSTANCE_INFO_LINE}" | cut -d "|" -f 12)
+		SERVERQUERY_PORT=$(echo "${INSTANCE_INFO_LINE}" | cut -d "|" -f 13)
+		DATABASE_TYPE=$(echo "${INSTANCE_INFO_LINE}" | cut -d "|" -f 14)
 
 		cd ${INSTANCE_PATH}
 
@@ -1718,7 +1791,7 @@ function updateTeamSpeakInstance() {
 
 			wget ${TS3_SERVER_DOWNLOAD_LINK} -q -O teamspeak3-server.tar.gz
 		fi
-
+		
 		if [ -f teamspeak3-server.tar.bz2 ]; then
 			bzip2 -d teamspeak3-server.tar.bz2 && tar xopf teamspeak3-server.tar
 			cp -R teamspeak3-server_${INSTALLED_TS3_SERVER_PLATFORM}_${TS3SERVER_ARCHITECTURE}/* .
@@ -1730,52 +1803,16 @@ function updateTeamSpeakInstance() {
 			rm -rf teamspeak3-server_${INSTALLED_TS3_SERVER_PLATFORM}-${TS3SERVER_ARCHITECTURE}/
 			rm teamspeak3-server.tar.gz
 		fi
-
-		# Importing SQLite database
-		if [ "$DATABASE_TYPE" == "SQLite" ]; then
-			if [ $(cp -f /tmp/TS3Tools/TS3UpdateScript/${DIRECTORY_MD5SUM}/ts3server.sqlitedb ${INSTANCE_PATH}) ]; then
-				UPDATE_STATUS_FLAG=1;
-			fi
-		# Importing MySQL database and associated files
-		elif [[ "$DATABASE_TYPE" == "MySQL" ]]; then
-			if [ $(cp -f /tmp/TS3Tools/TS3UpdateScript/${DIRECTORY_MD5SUM}/serverkey.dat ${INSTANCE_PATH}) ] && [ $(cp -f /tmp/TS3Tools/TS3UpdateScript/${DIRECTORY_MD5SUM}/ts3db_mysql.ini ${INSTANCE_PATH}) ]&& [ $(cp -f /tmp/TS3Tools/TS3UpdateScript/${DIRECTORY_MD5SUM}/ts3server.ini ${INSTANCE_PATH}) ]; then
-				UPDATE_STATUS_FLAG=1;
-			fi
-		# Importing MariaDB database and associated files
-		elif [[ "$DATABASE_TYPE" == "MariaDB" ]]; then
-			if [ $(cp -f /tmp/TS3Tools/TS3UpdateScript/${DIRECTORY_MD5SUM}/serverkey.dat ${INSTANCE_PATH}) ] && [ $(cp -f /tmp/TS3Tools/TS3UpdateScript/${DIRECTORY_MD5SUM}/ts3server.ini ${INSTANCE_PATH}) ]; then
-				UPDATE_STATUS_FLAG=1;
-			fi
-		fi
-
+		
 		# If database MySQL was used, update database to MariaDB
 		# Installed Build 1388593719 is latest version 3.0.10.3 with MySQL support
-		if [[ "$DATABASE_TYPE" == "MySQL" ]] && [[ "$INSTALLED_BUILD" == "1388593719" ]]; then
+		if [[ "$DATABASE_TYPE" == "MySQL" ]] && [[ "$INSTALLED_BUILD" -le 1388593719 ]]; then
 			if [ $(mysql --user=${DB_USER_NAME} --password=${DB_PASSWORD} ${DB_NAME} < ${INSTANCE_PATH}/sql/updates_and_fixes/convert_mysql_to_mariadb.sql) ] && [ $(mysql --user=${DB_USER_NAME} --password=${DB_PASSWORD} ${DB_NAME} < ${INSTANCE_PATH}/sql/updates_and_fixes/mariadb_fix_latin_utf8.sql) ]; then
 				UPDATE_STATUS_FLAG=1;
 			fi
 		fi
-
-		# Importing licensekey
-		if [ -f /tmp/TS3Tools/TS3UpdateScript/${DIRECTORY_MD5SUM}/licensekey.dat ]; then
-			if [ $(mv /tmp/TS3Tools/TS3UpdateScript/${DIRECTORY_MD5SUM}/licensekey.dat ${INSTANCE_PATH}) ]; then
-				UPDATE_STATUS_FLAG=1;
-			fi
-		fi
-
-		# Importing Query IP white- and blacklist
-		if [ $(cp -f /tmp/TS3Tools/TS3UpdateScript/${DIRECTORY_MD5SUM}/query_ip_*.txt ${INSTANCE_PATH}) ]; then
-			UPDATE_STATUS_FLAG=1;
-		fi
-
-		# Importing 'tsdns_settings.ini' file
-		if [ -f "/tmp/TS3Tools/TS3UpdateScript/${DIRECTORY_MD5SUM}/tsdns/tsdns_settings.ini" ]; then
-			if [ $(cp -f /tmp/TS3Tools/TS3UpdateScript/${DIRECTORY_MD5SUM}/tsdns/tsdns_settings.ini ${INSTANCE_PATH}/tsdns/) ]; then
-				UPDATE_STATUS_FLAG=1;
-			fi
-		fi
-
-		# Add commandline parameter 'inifile=ts3server.ini' to ts3server_startscript.sh
+		
+		# Add commandline parameter 'inifile=ts3server.ini' to ts3server_startscript.sh, if it was present before or will be required
 		if [[ "$TEAMSPEAK_DATABASE_TYPE" == "MySQL" ]] || [[ "$TEAMSPEAK_DATABASE_TYPE" == "MariaDB" ]] || [ -f ${INSTANCE_PATH}/ts3server.ini ]; then
 			IFS=''
 			while read line; do
@@ -1798,18 +1835,18 @@ function updateTeamSpeakInstance() {
 				UPDATE_STATUS_FLAG=1;
 			fi
 		fi
-
+		
 		# Make sure, that ts3server binary is executable
 		if [ -f ts3server ]; then
 			chmod 0755 ts3server
 		else
 			chmod 0755 ts3server_*
 		fi
-
-		if [ -f ${DIRECTORY}/ts3server_startscript.sh ]; then
-			chmod 0755 ${DIRECTORY}/ts3server_startscript.sh
+		
+		if [ -f ${INSTANCE_PATH}/ts3server_startscript.sh ]; then
+			chmod 0755 ${INSTANCE_PATH}/ts3server_startscript.sh
 		fi
-
+		
 		# Change owner and group of files
 		if [[ -z "$GROUP" ]]; then
 			chown ${OWNER} -R ${INSTANCE_PATH}/
@@ -1823,12 +1860,10 @@ function updateTeamSpeakInstance() {
 
 		if [[ "$UPDATE_STATUS_FLAG" -eq 0 ]]; then
 			return 0;
-		else
-			return 1;
 		fi
-	else
-		return 1;
 	fi
+	
+	return 1;
 }
 
 # Creates a debug report for the failed TeamSpeak 3 server instance
@@ -1855,7 +1890,7 @@ function createDebugReport() {
 		echo -e "Please copy and paste the output of the shell below this line and/or attach a debug file of this script.\n" >> ${DEBUG_REPORT_FILE};
 
 		echo -e "## Operating System Details\n" >> ${DEBUG_REPORT_FILE};
-		echo -e "$(lsb_release --all 2> /dev/null)\n" >> ${DEBUG_REPORT_FILE};
+		echo -e "$(lsb_release -idrc)\n" >> ${DEBUG_REPORT_FILE};
 		echo -e "$(uname -a)\n" >> ${DEBUG_REPORT_FILE};
 
 		echo -e "### root User locale\n" >> ${DEBUG_REPORT_FILE};
@@ -2038,7 +2073,7 @@ function main() {
 	# Latest version of script installed?
 	LATEST_SCRIPT_VERSION=$(getLatestScriptVersion)
 
-	if [[ "$LATEST_SCRIPT_VERSION" != 1 ]]; then
+	if [[ "$LATEST_SCRIPT_VERSION" != 1 ]] && [[ "$PAR_UPDATE_SCRIPT" -eq 0 ]]; then
 		if [[ -n "$LATEST_SCRIPT_VERSION" ]]; then
 			if [[ "$SCRIPT_VERSION" != "$LATEST_SCRIPT_VERSION" ]]; then
 				echo -e "${TXT_SELF_TEST_TS3UPDATESCRIPT_RELEASED}: ./$SCRIPT_NAME --update-script\n" >> SELF_TEST_STATUS.txt;
@@ -2050,20 +2085,37 @@ function main() {
 	fi
 
 	# Execute software checks
-	if [ "$PAR_INFORM_ONLINE_CLIENTS" -eq 1 ]; then
-		if ! checkdeps bash which rsync wget grep sed unzip bzip2 lsb_release sqlite3 gdb telnet expect; then
+	if ! checkdeps bash which rsync wget grep sed unzip bzip2 gdb; then
+		SELF_TEST_STATUS=1;
+	fi
+
+	# Debian specific packages
+	if [ -f /etc/debian_version ]; then
+		if ! checkdeps lsb_release; then
 			SELF_TEST_STATUS=1;
 		fi
-	elif [ "$PAR_CRONJOB_TASK" -eq 1 ] && [ "$PAR_INFORM_ONLINE_CLIENTS" -eq 1 ]; then
-		if ! checkdeps bash which rsync wget grep sed unzip bzip2 lsb_release sqlite3 gdb mail telnet expect; then
-			SELF_TEST_STATUS=1;
-		fi
-	elif [ "$PAR_CRONJOB_TASK" -eq 1 ]; then
-		if ! checkdeps bash which rsync wget grep sed unzip bzip2 lsb_release sqlite3 gdb mail; then
+	# RedHat/CentOS specific
+	elif [ -f /etc/redhat-release ]; then
+		if ! checkdeps "lsb_release:redhat-lsb"; then
 			SELF_TEST_STATUS=1;
 		fi
 	else
-		if ! checkdeps bash which rsync wget grep sed unzip bzip2 lsb_release sqlite3 gdb; then
+		if ! checkdeps lsb_release; then
+			SELF_TEST_STATUS=1;
+		fi
+	fi
+
+	# Task/Parameter specific
+	if [ "$PAR_INFORM_ONLINE_CLIENTS" -eq 1 ]; then
+		if ! checkdeps telnet expect; then
+			SELF_TEST_STATUS=1;
+		fi
+	elif [ "$PAR_CRONJOB_TASK" -eq 1 ] && [ "$PAR_INFORM_ONLINE_CLIENTS" -eq 1 ]; then
+		if ! checkdeps mail telnet expect; then
+			SELF_TEST_STATUS=1;
+		fi
+	elif [ "$PAR_CRONJOB_TASK" -eq 1 ]; then
+		if ! checkdeps mail; then
 			SELF_TEST_STATUS=1;
 		fi
 	fi
@@ -2231,6 +2283,13 @@ function main() {
 							COLLECTING_INFORMATION_STATUS=1;
 						fi
 
+						# Check for lines with 'The system locale is set to'
+						if [[ "$SCRIPT_LICENSE" == "1" ]] || [[ "$SCRIPT_LICENSE" == "2" ]]; then
+							if ! checkSystemLocale; then
+								displayBPAText "${TXT_COLLECTING_INFORMATION_SYSTEM_LOCALE}"
+							fi
+						fi
+
 						# Detect architecture
 						TS3_SERVER_ARCHITECTURE="$(getArchitectureOfInstalledTS3Server ${INSTANCE_PATH})";
 
@@ -2251,28 +2310,25 @@ function main() {
 
 								if [[ "$SCRIPT_LICENSE" == "1" ]] || [[ "$SCRIPT_LICENSE" == "2" ]]; then
 									if [[ "$OWNER" == "root" ]]; then
-										echo "${TXT_COLLECTING_INFORMATION_OWNER_ROOT_PERMISSIONS_INFO}" >> COLLECTING_INFORMATION_STATUS.txt;
-										COLLECTING_INFORMATION_STATUS=1;
+										displayBPAText "${TXT_COLLECTING_INFORMATION_OWNER_ROOT_PERMISSIONS_INFO}"
 									fi
 								fi
 							fi
 						else
-							echo "${TXT_COLLECTING_INFORMATION_OWNER_DETECTION_FAILED}" >> COLLECTING_INFORMATION_STATUS.txt;
-							COLLECTING_INFORMATION_STATUS=1;
+							displayBPAText "${TXT_COLLECTING_INFORMATION_OWNER_DETECTION_FAILED}"
 						fi
 
 						# Detect owner ID
 						OWNER_ID="$(getOwnerID ${INSTANCE_PATH})";
 
 						if [[ "$OWNER_ID" == "1" ]]; then
-							echo "${TXT_COLLECTING_INFORMATION_OWNER_USER_ID_DETECTION_FAILED}" >> COLLECTING_INFORMATION_STATUS.txt;
-							COLLECTING_INFORMATION_STATUS=1;
+							displayBPAText "${TXT_COLLECTING_INFORMATION_OWNER_USER_ID_DETECTION_FAILED}"
 						fi
 
 						# Check shell and display warning, if a valid shell is in use
 						if [[ "$SCRIPT_LICENSE" == "1" ]] || [[ "$SCRIPT_LICENSE" == "2" ]]; then
 							if isShellOfOwnerValid ${OWNER}; then
-								echo "${TXT_COLLECTING_INFORMATION_IS_SHELL_VALID_FAILED}" >> COLLECTING_INFORMATION_STATUS.txt;
+								displayBPAText "${TXT_COLLECTING_INFORMATION_IS_SHELL_VALID_FAILED}"
 							fi
 						fi
 
@@ -2288,28 +2344,25 @@ function main() {
 
 								if [[ "$SCRIPT_LICENSE" == "1" ]] || [[ "$SCRIPT_LICENSE" == "2" ]]; then
 									if [[ "$GROUP" == "root" ]]; then
-										echo "${TXT_COLLECTING_INFORMATION_GROUP_ROOT_PERMISSIONS_INFO}" >> COLLECTING_INFORMATION_STATUS.txt;
-										COLLECTING_INFORMATION_STATUS=1;
+										displayBPAText "${TXT_COLLECTING_INFORMATION_GROUP_ROOT_PERMISSIONS_INFO}"
 									fi
 								fi
 							fi
 						else
-							echo "${TXT_COLLECTING_INFORMATION_GROUP_DETECTION_FAILED}" >> COLLECTING_INFORMATION_STATUS.txt;
-							COLLECTING_INFORMATION_STATUS=1;
+							displayBPAText "${TXT_COLLECTING_INFORMATION_GROUP_DETECTION_FAILED}"
 						fi
 
 						# Detect group ID
 						GROUP_ID="$(getGroupID ${INSTANCE_PATH})";
 
 						if [[ "$GROUP_ID" == "1" ]]; then
-							echo "${TXT_COLLECTING_INFORMATION_GROUP_GROUP_ID_DETECTION_FAILED}" >> COLLECTING_INFORMATION_STATUS.txt;
-							COLLECTING_INFORMATION_STATUS=1;
+							displayBPAText "${TXT_COLLECTING_INFORMATION_GROUP_GROUP_ID_DETECTION_FAILED}"
 						fi
 
 						# Check files/ storage and display warning, if a non-external storage is in use
 						if [[ "$SCRIPT_LICENSE" == "1" ]] || [[ "$SCRIPT_LICENSE" == "2" ]]; then
 							if isFilesStorageExternal ${INSTANCE_PATH}; then
-								echo "${TXT_COLLECTING_INFORMATION_IS_FILES_STORAGE_EXTERNAL_FAILED}" >> COLLECTING_INFORMATION_STATUS.txt;
+								displayBPAText "${TXT_COLLECTING_INFORMATION_IS_FILES_STORAGE_EXTERNAL_FAILED}"
 							fi
 						fi
 
@@ -2842,6 +2895,9 @@ function main() {
 										echo "${TXT_EXECUTION_MECHANISM_TEMPORARY_SERVER_PASSWORDS_WERE_NOT_BACKUPED_INFO}";
 									fi
 
+									# Lock TeamSpeak 3 server instance for TS3Monitor
+									touch ${INSTANCE_PATH}/.ts3updatescript.lock
+
 									## UPDATE PROCESS START ##
 									# Stop TSDNS, if running
 									if tsdns ${INSTANCE_PATH} status; then
@@ -3119,6 +3175,9 @@ function main() {
 											echo "${TXT_EXECUTION_MECHANISM_BACKUP_DOES_STILL_EXISTS_INFO}: ${BACKUP_PATH}";
 										fi
 									fi
+
+									# Delete lock of TeamSpeak 3 server instance for TS3Monitor
+									rm ${INSTANCE_PATH}/.ts3updatescript.lock
 								## ROLLBACK PROCESS END ##
 								elif [[ "$ANSWER" == "n" ]] || [[ "$ANSWER" == "no" ]]; then
 									echo "${TXT_EXECUTION_MECHANISM_TS3SERVER_NO_UPDATE_INFO}";
@@ -3383,7 +3442,7 @@ while [ -n "$1" ]; do
 			echo	"--test-inform-online-clients		Execute test poke with current settings";
 			echo -e "--update-script\t			Updates the TS3UpdateScript to the latest version";
 			echo	"--show-license-key			Displays TS3UpdateScript license key";
-			echo	"--send-license-information <EMAIL> <professional|enterprise>	Sends license information to info@ts3-tools.com to get Professional or Enterprise license (view README.md section 'Script Licenses'!)";
+			echo	"--request-license <EMAIL> <professional|enterprise>	Sends license information to info@ts3-tools.com to get Professional or Enterprise license (view README.md section 'Script Licenses'!)";
 			echo	"--deinstall-cronjob			Deinstalls weekly cronjob";
 
 			exit 0;
@@ -3418,7 +3477,7 @@ while [ -n "$1" ]; do
 			echo    "--test-inform-online-clients		Execute test poke with current settings";
 			echo -e "--update-script\t			Updates the TS3UpdateScript to the latest version";
 			echo -e "--show-license-key			Displays TS3UpdateScript license key";
-			echo	"--send-license-information <EMAIL> <professional|enterprise>	Sends license information to info@ts3-tools.com to get Professional or Enterprise license (view README.md section 'Script Licenses'!)";
+			echo	"--request-license <EMAIL> <professional|enterprise>	Sends license information to info@ts3-tools.com to get Professional or Enterprise license (view README.md section 'Script Licenses'!)";
 			echo    "--deinstall-cronjob			Deinstalls weekly cronjob";
 			
 			exit 0;
@@ -3567,7 +3626,7 @@ while [ -n "$1" ]; do
 			exit 0;
 		;;
 
-		--send-license-information)
+		--request-license)
 			if [[ "$EUID" == 0 ]]; then
 				if [[ -n "$2" ]]; then
 					if [[ -n "$3" ]]; then
@@ -3596,11 +3655,11 @@ while [ -n "$1" ]; do
 							exit 1;
 						fi
 					else
-						echo "Specifiy the license for which you want to apply. For example: --send-license-information you@example.com professional";
+						echo "Specifiy the license for which you want to apply. For example: --request-license you@example.com professional";
 						exit 1;
 					fi
 				else
-					echo "Specify your payment email address, with which you have payed your license! For example: --send-license-information you@example.com professional";
+					echo "Specify your payment email address, with which you have payed your license! For example: --request-license you@example.com professional";
 					exit 1;
 				fi
 			else
@@ -3628,6 +3687,7 @@ while [ -n "$1" ]; do
 			if [[ -n "$2" ]]; then
 				if [[ -f "${ABSOLUTE_PATH}/languages/verified/${2}.conf" ]]; then
 					PAR_LOCALE="languages/verified/${2}.conf";
+					echo "This parameter is deprecated and will be removed soon! Set the variable 'DEFAULT_LANGUAGE' in your config/config.all instead.";
 				elif [[ -f "${ABSOLUTE_PATH}/languages/need_review/${2}.conf" ]]; then
 					echo "This language file has not been verified yet. Fallback to language en_US.";
 					PAR_LOCALE="languages/verified/en_US.conf";

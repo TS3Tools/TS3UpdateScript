@@ -29,3 +29,8 @@ Optional | --waiting-time-in-minutes [MINUTES] | Optionally the script can wait 
 Yes | --disable-temporary-password-backup | Disable feature to backup temporary passwords
 Optional | --set-release | Do not use the official latest release. Use instead the set release from the given file configs/config.all
 No | --beta-release | With this parameter you are able to detect and update your TeamSpeak server to the latest beta release
+Yes | --path | Specify the absolute path to the TS3 server instance, which should be updated instead of searching for all
+
+- ``Optional`` means, that it is up to you, if you want to use it or not. It does not really impact the performance of the script.
+- ``Yes`` mans, that you should use this parameter, because it helps to increase the performance.
+- ``No`` means, that you should NOT use this parameter, because it reduces the performance.

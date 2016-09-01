@@ -23,6 +23,29 @@ Hotfix | Important fix for one more issues, which causes a not (correct) working
 
 ## Releases
 
+### Version 5.2.0
+
+	* Improved update process of TeamSpeak 3 servers for more performance
+	* Removed sqlite3 from required packages and added it to optional packages (GitHub issue [#48](https://github.com/TS3Tools/TS3UpdateScript/issues/48))
+	! Please notice, that you will need the sqlite3 package, if you have changed your ServerQuery IP binding in the SQLite database
+	* Removed version of lsb_release from debug report by changing the parameters
+	+ Added support for [TS3Monitor](https://github.com/TS3Tools/TS3Monitor/)
+	* Renamed parameter '--send-license-information' to '--request-license'
+	* Database upgrade from MySQL to MariaDB was only imported, if the latest supported MySQL build was installed
+	+ Added deprecated message for parameter '--locale' (Set the variable 'DEFAULT_LANGUAGE' in your config/config.all instead.)
+	! This parameter will be removed with one of the next versions
+	* (Only) New Enterprise license purchases will have 2 instead of 5-years support
+	! Customers, who already bought such a license, will still have 5-years support
+	+ Added extended support subscription plans to README.md
+	* Improved checking of required packages: The script will now display all missing packages instead of a single one at every execution
+	* Fixed overlapping output by updating the script
+	+ BPA: Added check for system locale (GitHub issue [#44](https://github.com/TS3Tools/TS3UpdateScript/issues/44))
+	! New variable was added to language file: TXT_COLLECTING_INFORMATION_SYSTEM_LOCALE
+	* Removed absolute URL from all docs
+	+ Added feature to disable BPA messages, which were displayed once (GitHub issue [#47](https://github.com/TS3Tools/TS3UpdateScript/issues/47))
+	! The script will create and fill a new config file for disabling the BPA messages: configs/config.bpa
+	* Updated all documentations (GitHub issue [#50](https://github.com/TS3Tools/TS3UpdateScript/issues/50))
+
 ### Version 5.1.0
 
 	! This version fixes the issue with the current update problem

@@ -10,18 +10,19 @@ The BPA checks each of installed TeamSpeak server instances against the latest l
 
 ## Table of content
 
-- [Hint / Note](https://github.com/TS3Tools/TS3UpdateScript/blob/master/docs/BEST_PRACTICES_ANALYZER.md#hint--note)
-- [Types](https://github.com/TS3Tools/TS3UpdateScript/blob/master/docs/BEST_PRACTICES_ANALYZER.md#types)
-- [Why should you have this feature?](https://github.com/TS3Tools/TS3UpdateScript/blob/master/docs/BEST_PRACTICES_ANALYZER.md#why-should-you-have-this-feature)
-- [How-to fix best practice...](https://github.com/TS3Tools/TS3UpdateScript/blob/master/docs/BEST_PRACTICES_ANALYZER.md#how-to-fix-best-practice)
-	- [Your server is running under owner root permissions. This is not recommend.](https://github.com/TS3Tools/TS3UpdateScript/blob/master/docs/BEST_PRACTICES_ANALYZER.md#your-server-is-running-under-owner-root-permissions-this-is-not-recommend)
-	- [Your server is running under group root permissions. This is not recommend.](https://github.com/TS3Tools/TS3UpdateScript/blob/master/docs/BEST_PRACTICES_ANALYZER.md#your-server-is-running-under-group-root-permissions-this-is-not-recommend)
-	- [WARNING: Use an invalid shell like /bin/false or /usr/sbin/nologin to host your TeamSpeak 3 server a bit safer.](https://github.com/TS3Tools/TS3UpdateScript/blob/master/docs/BEST_PRACTICES_ANALYZER.md#warning-use-an-invalid-shell-like-binfalse-or-usrsbinnologin-to-host-your-teamspeak-3-server-a-bit-safer)
-	- [Could not identify the owner of the TeamSpeak 3 server files.](https://github.com/TS3Tools/TS3UpdateScript/blob/master/docs/BEST_PRACTICES_ANALYZER.md#could-not-identify-the-owner-of-the-teamspeak-3-server-files)
-	- [Could not identify the user ID of the owner.](https://github.com/TS3Tools/TS3UpdateScript/blob/master/docs/BEST_PRACTICES_ANALYZER.md#could-not-identify-the-user-id-of-the-owner)
-	- [Could not identify the group of the TeamSpeak 3 server files.](https://github.com/TS3Tools/TS3UpdateScript/blob/master/docs/BEST_PRACTICES_ANALYZER.md#could-not-identify-the-group-of-the-teamspeak-3-server-files)
- 	- [Could not identify the group ID.](https://github.com/TS3Tools/TS3UpdateScript/blob/master/docs/BEST_PRACTICES_ANALYZER.md#could-not-identify-the-group-id)
-	- [WARNING: You rather should use an external storage for your files/ directory regarding big file uploads.](https://github.com/TS3Tools/TS3UpdateScript/blob/master/docs/BEST_PRACTICES_ANALYZER.md#warning-you-rather-should-use-an-external-storage-for-your-files-directory-regarding-big-file-uploads)
+- [Hint / Note](#hint--note)
+- [Types](#types)
+- [Why should you have this feature?](#why-should-you-have-this-feature)
+- [How-to fix best practice...](#how-to-fix-best-practice)
+	- [Your server is running under owner root permissions. This is not recommend.](#your-server-is-running-under-owner-root-permissions-this-is-not-recommend)
+	- [Your server is running under group root permissions. This is not recommend.](#your-server-is-running-under-group-root-permissions-this-is-not-recommend)
+	- [WARNING: Use an invalid shell like /bin/false or /usr/sbin/nologin to host your TeamSpeak 3 server a bit safer.](#warning-use-an-invalid-shell-like-binfalse-or-usrsbinnologin-to-host-your-teamspeak-3-server-a-bit-safer)
+	- [Could not identify the owner of the TeamSpeak 3 server files.](#could-not-identify-the-owner-of-the-teamspeak-3-server-files)
+	- [Could not identify the user ID of the owner.](#could-not-identify-the-user-id-of-the-owner)
+	- [Could not identify the group of the TeamSpeak 3 server files.](#could-not-identify-the-group-of-the-teamspeak-3-server-files)
+ 	- [Could not identify the group ID.](#could-not-identify-the-group-id)
+	- [WARNING: You rather should use an external storage for your files/ directory regarding big file uploads.](#warning-you-rather-should-use-an-external-storage-for-your-files-directory-regarding-big-file-uploads)
+	- [The system locale is set to 'C' this can cause unexpected behavior. TeamSpeak advices you to repair your locale!](#The-system-locale-is-set-to-C-this-can-cause-unexpected-behavior.-TeamSpeak-advices-you-to-repair-your-locale)
 
 ## Hint / Note
 
@@ -53,25 +54,25 @@ This simply means, that your server is running as root user and this is not reco
 1. Login as user 'root' on your Root-Server/virtual Server/VPS
 2. Add a new user with a disabled login shell and the TeamSpeak instance directory as home folder
 
-  root@tux:~# adduser --home /path/to/teamspeak/instance/ --shell /bin/false --disabled-login teamspeak
+  ``root@tux:~# adduser --home /path/to/teamspeak/instance/ --shell /bin/false --disabled-login teamspeak``
 
 3. Stop your TeamSpeak server
 
-  root@tux:~# cd /path/to/teamspeak/instance/
+  ``root@tux:~# cd /path/to/teamspeak/instance/``
 
-  root@tux:~# ./ts3server_startscript.sh stop
+  ``root@tux:~# ./ts3server_startscript.sh stop``
 
 4. Change the ownership of all TeamSpeak server files and directories to the new user
 
-  root@tux:~# chown teamspeak -R /path/to/teamspeak/instance/
+  ``root@tux:~# chown teamspeak -R /path/to/teamspeak/instance/``
 
 5. Login as new user
 
-  root@tux:~# su -s /bin/bash - teamspeak
+  ``root@tux:~# su -s /bin/bash - teamspeak``
 
 6. Start your TeamSpeak server as the new user instead of root
 
-  teamspeak@tux:~$ ./ts3server_startscript.sh start
+  ``teamspeak@tux:~$ ./ts3server_startscript.sh start``
 
 ### Your server is running under group root permissions. This is not recommend.
 
@@ -82,27 +83,27 @@ This simply means, that your server is running as root user and this is not reco
 1. Login as user 'root' on your Root-Server/virtual Server/VPS
 2. Add a new group for the owner of the TeamSpeak server files or use the group "users"
 
-  root@tux:~# addgroup teamspeak
+  ``root@tux:~# addgroup teamspeak``
 
-  root@tux:~# usermod -g teamspeak teamspeak
+  ``root@tux:~# usermod -g teamspeak teamspeak``
 
 3. Stop your TeamSpeak server as owner of the TeamSpeak server files
 
-  teamspeak@tux:~$ cd /path/to/teamspeak/instance/
+  ``teamspeak@tux:~$ cd /path/to/teamspeak/instance/``
 
-  teamspeak@tux:~$ ./ts3server_startscript.sh stop
+  ``teamspeak@tux:~$ ./ts3server_startscript.sh stop``
 
 4. Change the ownership of all TeamSpeak server files and directories to the new group or 'users'
 
-  root@tux:~# chgrp teamspeak -R /path/to/teamspeak/instance/
+  ``root@tux:~# chgrp teamspeak -R /path/to/teamspeak/instance/``
 
 5. Login as user
 
-  root@tux:~# su -s /bin/bash - teamspeak
+  ``root@tux:~# su -s /bin/bash - teamspeak``
 
 6. Start your TeamSpeak server as the new user instead of root
 
-  teamspeak@tux:~$ ./ts3server_startscript.sh start
+  ``teamspeak@tux:~$ ./ts3server_startscript.sh start``
 
 ### WARNING: Use an invalid shell like /bin/false or /usr/sbin/nologin to host your TeamSpeak 3 server a bit safer.
 
@@ -113,7 +114,7 @@ This means, that you rather should disable the login for the owner of the TeamSp
 1. Login as user 'root' on your Root-Server/virtual Server/VPS
 2. Edit the file /etc/passwd
 
-  root@tux:~# vim /etc/passwd
+  ``root@tux:~# vim /etc/passwd``
 
 3. Find the user (owner) of the TeamSpeak server files
 
@@ -121,9 +122,9 @@ This means, that you rather should disable the login for the owner of the TeamSp
 
 4. Change the shell of this user to /bin/false or /usr/sbin/nologin
 
-  teamspeak:x:1002:1002:TeamSpeak,,,:/path/to/teamspeak/instance/:/bin/bash
+  ``teamspeak:x:1002:1002:TeamSpeak,,,:/path/to/teamspeak/instance/:/bin/bash``
 
-  teamspeak:x:1002:1002:TeamSpeak,,,:/path/to/teamspeak/instance/:/bin/false
+  ``teamspeak:x:1002:1002:TeamSpeak,,,:/path/to/teamspeak/instance/:/bin/false``
 
 ### Could not identify the owner of the TeamSpeak 3 server files.
 ### Could not identify the user ID of the owner.
@@ -135,55 +136,47 @@ This means, that the script could not detect the owner or it's ID of the TeamSpe
 1. Login as user 'root' on your Root-Server/virtual Server/VPS
 2. View the permissions and ownerships of the TeamSpeak server files
 
+```
   root@tux:~# ls -lh /path/to/teamspeak/instance/
-
   -rw-r--r-- 1 teamspeak teamspeak  45K Okt 24 17:42 CHANGELOG
-
   drwxr-xr-x 2 teamspeak teamspeak 4,0K Okt 20  2014 doc
-
   drwx------ 8 teamspeak teamspeak 4,0K Dez 17  2014 files
-
      .
-
      .
-
      .
-
   -rwxr-xr-x 1 teamspeak teamspeak 3,9K Okt 24 17:42 ts3server_startscript.sh
-
   drwxr-xr-x 2 teamspeak teamspeak 4,0K Jul 16  2014 tsdns
-
                    ^         ^
-
                  User      Group
+```
 
 2. View the file /etc/passwd
 
-  root@tux:~# less /etc/passwd
+  ``root@tux:~# less /etc/passwd``
 
 3. Verify, if the user exists
 
 4. Create the missing user with a disabled login shell and the TeamSpeak instance directory as home folder
 
-  root@tux:~# adduser --home /path/to/teamspeak/instance/ --shell /bin/false --disabled-login teamspeak
+  ``root@tux:~# adduser --home /path/to/teamspeak/instance/ --shell /bin/false --disabled-login teamspeak``
 
 5. Stop your TeamSpeak server (probably as root, because the owner of your TeamSpeak server files does not exist anymore)
 
-  root@tux:~# cd /path/to/teamspeak/instance/
+  ``root@tux:~# cd /path/to/teamspeak/instance/``
 
-  root@tux:~# ./ts3server_startscript.sh stop
+  ``root@tux:~# ./ts3server_startscript.sh stop``
 
 6. Change the ownership of all TeamSpeak server files and directories to the new user
 
-  root@tux:~# chown teamspeak -R /path/to/teamspeak/instance/
+  ``root@tux:~# chown teamspeak -R /path/to/teamspeak/instance/``
 
 7. Login as new user
 
-  root@tux:~# su -s /bin/bash - teamspeak
+  ``root@tux:~# su -s /bin/bash - teamspeak``
 
 8. Start your TeamSpeak server as the new user instead of root
 
-  teamspeak@tux:~$ ./ts3server_startscript.sh start
+  ``teamspeak@tux:~$ ./ts3server_startscript.sh start``
 
 ### Could not identify the group of the TeamSpeak 3 server files.
 ### Could not identify the group ID.
@@ -195,57 +188,49 @@ This means, that the script could not detect the group or it's ID of the TeamSpe
 1. Login as user 'root' on your Root-Server/virtual Server/VPS
 2. View the permissions and ownerships of the TeamSpeak server files
 
+```
   root@tux:~# ls -lh /path/to/teamspeak/instance/
-
   -rw-r--r-- 1 teamspeak teamspeak  45K Okt 24 17:42 CHANGELOG
-
   drwxr-xr-x 2 teamspeak teamspeak 4,0K Okt 20  2014 doc
-
   drwx------ 8 teamspeak teamspeak 4,0K Dez 17  2014 files
-
      .
-
      .
-
      .
-
   -rwxr-xr-x 1 teamspeak teamspeak 3,9K Okt 24 17:42 ts3server_startscript.sh
-
   drwxr-xr-x 2 teamspeak teamspeak 4,0K Jul 16  2014 tsdns
-
                    ^         ^
-
                  User      Group
+```
 
 2. View the file /etc/group
 
-  root@tux:~# less /etc/group
+  ``root@tux:~# less /etc/group``
 
 3. Verify, if the group exists
 
 4. Create the missing group for the owner of the TeamSpeak server files or use the group "users"
 
-  root@tux:~# addgroup teamspeak
+  ``root@tux:~# addgroup teamspeak``
 
-  root@tux:~# usermod -g teamspeak teamspeak
+  ``root@tux:~# usermod -g teamspeak teamspeak``
 
 3. Stop your TeamSpeak server as owner of the TeamSpeak server files
 
-  teamspeak@tux:~$ cd /path/to/teamspeak/instance/
+  ``teamspeak@tux:~$ cd /path/to/teamspeak/instance/``
 
-  teamspeak@tux:~$ ./ts3server_startscript.sh stop
+  ``teamspeak@tux:~$ ./ts3server_startscript.sh stop``
 
 4. Change the ownership of all TeamSpeak server files and directories to the new group or 'users'
 
-  root@tux:~# chgrp teamspeak -R /path/to/teamspeak/instance/
+  ``root@tux:~# chgrp teamspeak -R /path/to/teamspeak/instance/``
 
 7. Login as the user, which owns the TeamSpeak server files
 
-  root@tux:~# su -s /bin/bash - teamspeak
+  ``root@tux:~# su -s /bin/bash - teamspeak``
 
 8. Start your TeamSpeak server as the new user instead of root
 
-  teamspeak@tux:~$ ./ts3server_startscript.sh start
+  ``teamspeak@tux:~$ ./ts3server_startscript.sh start``
 
 ### WARNING: You rather should use an external storage for your files/ directory regarding big file uploads.
 
@@ -262,3 +247,25 @@ Solutions:
 3. Make sure, that the file transfers are able to save files on this new storage (check the permissions)
 
 Please note, that you should migrate existing data from your current/old storage to the new one. rsync is an useful software to migrate/copy your data.
+
+### The system locale is set to 'C' this can cause unexpected behavior. TeamSpeak advices you to repair your locale!
+
+Type: Warning
+
+This means, that you rather should change your locale to something like en_US.UTF8 or de_DE.UTF8 instead of POSIX, C or similar locales.
+
+1. Login as root user and edit the file ``/etc/default/locale`` (Debian/Ubuntu) or ``/etc/sysconfig/i18n`` (RedHat/CentOS) using a text editor like nano or vim:
+
+  ``root@tux:~# nano /etc/default/locale``
+
+  ``root@tux:~# nano /etc/sysconfig/i18n``
+
+2. Change your locale by editing the ``LANG`` variable
+
+  ``LANG="en_US.UTF-8"``
+
+  ``LANG="de_DE.UTF-8"``
+
+3. Save the file
+
+4. Reboot the system
