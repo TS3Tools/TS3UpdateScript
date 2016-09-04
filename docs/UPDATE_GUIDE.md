@@ -20,7 +20,7 @@ This file shows you, how you can update the TS3UpdateScript.
 
   ``root@tux:~# unzip master.zip TS3UpdateScript-master/* -x TS3UpdateScript-master/configs/*``
 
-5. Check, if your used parameters have been changed or not and adjust them, if needed (read [docs/CHANGELOG.md](https://github.com/TS3Tools/TS3UpdateScript/blob/master/docs/CHANGELOG.md) therefore)
+5. Check, if your used parameters have been changed or not and adjust them, if needed (read [docs/CHANGELOG.md](CHANGELOG.md) therefore)
 
 ## How-To Update automate
 
@@ -29,11 +29,11 @@ This file shows you, how you can update the TS3UpdateScript.
   ``root@tux:~# ./TS3UpdateScript --update-script``
 
 2. The script will check for newer version and will ask you, if you want to update the script. Enter 'y' or 'yes', if you want to start the update process for the script
-3. Check, if your used parameters have been changed or not and adjust them, if needed (read [docs/CHANGELOG.md](https://github.com/TS3Tools/TS3UpdateScript/blob/master/docs/CHANGELOG.md) therefore)
+3. Check, if your used parameters have been changed or not and adjust them, if needed (read [docs/CHANGELOG.md](CHANGELOG.md) therefore)
 
 ## How-To Update automate using cronjob
 
-The cronjob feature is only available with the 'Professional'/'Enterprise' license. Read [here](https://github.com/TS3Tools/TS3UpdateScript#script-licenses) for further license information.
+The cronjob feature is only available with the 'Professional'/'Enterprise' license. Read [here](../README.md#script-licenses) for further license information.
 
 1. Install a new cronjob with your required parameters:
 

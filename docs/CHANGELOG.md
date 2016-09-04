@@ -23,6 +23,12 @@ Hotfix | Important fix for one more issues, which causes a not (correct) working
 
 ## Releases
 
+### Version 5.2.1
+
+	* Updated some documentations due of some wrong URLs
+	* Fixed 'rm: cannot remove ‘/.ts3updatescript.lock’: No such file or directory'
+	* Fixed 'bzip2: Compressed file ends unexpectedly' (GitHub issue [#51](https://github.com/TS3Tools/TS3UpdateScript/issues/51))
+
 ### Version 5.2.0
 
 	* Improved update process of TeamSpeak 3 servers for more performance

@@ -32,15 +32,15 @@ It checks, if a newer version for your TeamSpeak 3 server instance is available 
 
 ![Example Output](https://raw.githubusercontent.com/TS3Tools/TS3UpdateScript/master/img/TS3UpdateScript_Example_Summary.png)
 
-[Open CHANGELOG](/blob/master/docs/CHANGELOG.md)
+[Open CHANGELOG](docs/CHANGELOG.md)
 
-[Open install and usage guide](/blob/master/docs/INSTALL_USAGE_GUIDE.md)
+[Open install and usage guide](docs/INSTALL_USAGE_GUIDE.md)
 
-[Open upgrade guide](/blob/master/docs/UPDATE_GUIDE.md)
+[Open upgrade guide](docs/UPDATE_GUIDE.md)
 
 [Show script licenses](#script-licenses)
 
-[Open GNU GPLv3 license](/blob/master/LICENSE_GNU_GPL.md)
+[Open GNU GPLv3 license](LICENSE_GNU_GPL.md)
 
 ## Developers
 
@@ -154,7 +154,7 @@ Just grab a copy of your language file, which you understand and translate the c
 
 Name | Ideal for | Restrictions | 2-years Support | Costs
 :------------- | :------------- | :------------- | :------------- | :-------------
-Free | Unlicensed, NPL, AAL | Single Instance, no [BPA](/blob/master/docs/BEST_PRACTICES_ANALYZER.md), no Cronjob | No | Free of charge / 'Pay what you want'-Donation
+Free | Unlicensed, NPL, AAL | Single Instance, no [BPA](docs/BEST_PRACTICES_ANALYZER.md), no Cronjob | No | Free of charge / 'Pay what you want'-Donation
 Professional | Unlicensed, NPL, AAL | Single Instance | No | 29.99 EUR
 Enterprise | ATHP | None | Yes | 79.99 EUR
 

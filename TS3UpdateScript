@@ -16,8 +16,8 @@ exec 5<&0
 # Donations: https://www.paypal.com/cgi-bin/webscr?cmd=_s-xclick&hosted_button_id=7ZRXLSC2UBVWE
 #
 
-SCRIPT_VERSION="5.2.0"
-LAST_EDIT_DATE="2016-09-01"
+SCRIPT_VERSION="5.2.1"
+LAST_EDIT_DATE="2016-09-04"
 
 # DO NOT REMOVE OR CHANGE
 SOFTWARE_ABOUT="This is the most widely used and fastest shell script to update all your TeamSpeak 3 server instances."
@@ -82,7 +82,7 @@ function clearTerminalScreen() {
 # Return: 0:boolean or 1:boolean
 function checkConsistency() {
 	CHKSUM=$(grep -v "ORIGIN=" "$0" | head -202 | sha256sum | cut -d " " -f 1)
-	ORIGIN="229dad843d05730b90fdd648306a6499b9396d4fe29eb50f5db12bd5a7d03434"
+	ORIGIN="51987c352058a60a467d122071d71bb028c1824e7894263504d9ad16b3117dee"
 
 	if [[ "$CHKSUM" == "$ORIGIN" ]]; then
 		return 0;
@@ -925,10 +925,10 @@ function getServerQueryIP() {
 		SERVER_QUERY_IP="$(grep -E '^query_ip=' < ${1}/ts3server.ini | cut -d '=' -f 2 | cut -d ',' -f 1)"
 	else
 		# Detect database type (SQLite, MySQL or MariaDB)
-		DATABASE_TYPE="$(getDatabaseType ${INSTANCE_PATH})"
+		DATABASE_TYPE="$(getDatabaseType ${1})"
 
 		if [[ "${DATABASE_TYPE}" == SQLite ]] && checkdeps sqlite3; then
-			SERVER_QUERY_IP="$(sqlite3 ${INSTANCE_PATH}/ts3server.sqlitedb 'SELECT ip FROM bindings WHERE type=2;')"
+			SERVER_QUERY_IP="$(sqlite3 ${1}/ts3server.sqlitedb 'SELECT ip FROM bindings WHERE type=2;')"
 		elif [[ "${DATABASE_TYPE}" == "MySQL" ]] || [[ "${DATABASE_TYPE}" == "MariaDB" ]]; then
 			DATABASE_INI_FILE="$(getDatabaseINIFile ${1})"
 
@@ -1748,7 +1748,7 @@ function updateTeamSpeakInstance() {
 		RELEASE_NUMBER="$(echo $LATEST_RELEASE | grep -Eo '^[0-9\.?]+')"
 		TS3_INSTANCE_ROOT_DIRECTORY_MD5SUM=$(echo -n "${TS3_INSTANCE_ROOT_DIRECTORY}" | md5sum | cut -d " " -f 1)
 
-		INSTANCE_INFO_LINE="$(grep \"${TS3_INSTANCE_ROOT_DIRECTORY}\" TS3InstanceInfos.txt)"
+		INSTANCE_INFO_LINE=$(grep "${TS3_INSTANCE_ROOT_DIRECTORY}" TS3InstanceInfos.txt)
 		STATUS_FLAG=$(echo "${INSTANCE_INFO_LINE}" | cut -d "|" -f 1)
 		INSTANCE_PATH=$(echo "${INSTANCE_INFO_LINE}" | cut -d "|" -f 2)
 		INSTALLED_TS3_SERVER_VERSION=$(echo "${INSTANCE_INFO_LINE}" | cut -d "|" -f 3)
@@ -1794,12 +1794,24 @@ function updateTeamSpeakInstance() {
 		
 		if [ -f teamspeak3-server.tar.bz2 ]; then
 			bzip2 -d teamspeak3-server.tar.bz2 && tar xopf teamspeak3-server.tar
+			if [[ $? -ne 0 ]]; then
+				UPDATE_STATUS_FLAG=1;
+			fi
 			cp -R teamspeak3-server_${INSTALLED_TS3_SERVER_PLATFORM}_${TS3SERVER_ARCHITECTURE}/* .
+			if [[ $? -ne 0 ]]; then
+				UPDATE_STATUS_FLAG=1;
+			fi
 			rm -rf teamspeak3-server_${INSTALLED_TS3_SERVER_PLATFORM}_${TS3SERVER_ARCHITECTURE}/
 			rm teamspeak3-server.tar
 		elif [ -f teamspeak3-server.tar.gz ]; then
 			tar xf teamspeak3-server.tar.gz
+			if [[ $? -ne 0 ]]; then
+				UPDATE_STATUS_FLAG=1;
+			fi
 			cp -R teamspeak3-server_${INSTALLED_TS3_SERVER_PLATFORM}-${TS3SERVER_ARCHITECTURE}/* .
+			if [[ $? -ne 0 ]]; then
+				UPDATE_STATUS_FLAG=1;
+			fi
 			rm -rf teamspeak3-server_${INSTALLED_TS3_SERVER_PLATFORM}-${TS3SERVER_ARCHITECTURE}/
 			rm teamspeak3-server.tar.gz
 		fi
@@ -2285,7 +2297,7 @@ function main() {
 
 						# Check for lines with 'The system locale is set to'
 						if [[ "$SCRIPT_LICENSE" == "1" ]] || [[ "$SCRIPT_LICENSE" == "2" ]]; then
-							if ! checkSystemLocale; then
+							if ! checkSystemLocale ${INSTANCE_PATH}; then
 								displayBPAText "${TXT_COLLECTING_INFORMATION_SYSTEM_LOCALE}"
 							fi
 						fi
@@ -3177,7 +3189,9 @@ function main() {
 									fi
 
 									# Delete lock of TeamSpeak 3 server instance for TS3Monitor
-									rm ${INSTANCE_PATH}/.ts3updatescript.lock
+									if [[ -f ${INSTANCE_PATH}/.ts3updatescript.lock ]]; then
+										rm ${INSTANCE_PATH}/.ts3updatescript.lock
+									fi
 								## ROLLBACK PROCESS END ##
 								elif [[ "$ANSWER" == "n" ]] || [[ "$ANSWER" == "no" ]]; then
 									echo "${TXT_EXECUTION_MECHANISM_TS3SERVER_NO_UPDATE_INFO}";
