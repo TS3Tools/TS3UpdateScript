@@ -23,6 +23,14 @@ Hotfix | Important fix for one more issues, which causes a not (correct) working
 
 ## Releases
 
+### Version 5.2.2
+
+	* Improved checking of required packages (GitHub issue [#52](https://github.com/TS3Tools/TS3UpdateScript/issues/52))
+	* Importing temporary server passwords will now only be executed, once the TS3 server is listening on the ServerQuery interface (GitHub issue [#51](https://github.com/TS3Tools/TS3UpdateScript/issues/51))
+	* Set owner and group of .password-file to root
+	* Added retries of 3 and timeout of each 10 seconds for detecting the latest stable/beta TS3 server release
+	! The TS3UpdateScript hanged sometimes multiple minutes at 'Collecting necessary information for further tasks', because dl.4players.de did not respond
+
 ### Version 5.2.1
 
 	* Updated some documentations due of some wrong URLs

@@ -16,8 +16,8 @@ exec 5<&0
 # Donations: https://www.paypal.com/cgi-bin/webscr?cmd=_s-xclick&hosted_button_id=7ZRXLSC2UBVWE
 #
 
-SCRIPT_VERSION="5.2.1"
-LAST_EDIT_DATE="2016-09-04"
+SCRIPT_VERSION="5.2.2"
+LAST_EDIT_DATE="2016-09-08"
 
 # DO NOT REMOVE OR CHANGE
 SOFTWARE_ABOUT="This is the most widely used and fastest shell script to update all your TeamSpeak 3 server instances."
@@ -82,7 +82,7 @@ function clearTerminalScreen() {
 # Return: 0:boolean or 1:boolean
 function checkConsistency() {
 	CHKSUM=$(grep -v "ORIGIN=" "$0" | head -202 | sha256sum | cut -d " " -f 1)
-	ORIGIN="51987c352058a60a467d122071d71bb028c1824e7894263504d9ad16b3117dee"
+	ORIGIN="33c8feaff76d8bc2930ac1ded78901683feadd145aba5e8467f7209c0f457567"
 
 	if [[ "$CHKSUM" == "$ORIGIN" ]]; then
 		return 0;
@@ -268,7 +268,10 @@ function migrateMultipleConfigFilesToOne() {
 }
 
 # Checks list of given software packages
+# Return: 0:boolean or 1:boolean
 function checkdeps() {
+	CHECKDEPS_FAILED=0;
+
 	for cmd; do
 		package_cmd=$(echo $cmd | cut -d ':' -f 1)
 		package=$(echo $cmd | cut -d ':' -f 2)
@@ -279,9 +282,15 @@ function checkdeps() {
 
 		command -v >&- "$package_cmd" || {
 			printf >&2 "$package is not found. Please install this package\n" >> SELF_TEST_STATUS.txt;
-			SELF_TEST_STATUS=1;
+			CHECKDEPS_FAILED=1;
 		}
 	done
+
+	if [[ "${CHECKDEPS_FAILED}" -eq 1 ]]; then
+		return 1;
+	fi
+
+	return 0;
 }
 
 # Writes BPA disable options to config file and displays BPA message, if allowed
@@ -439,7 +448,11 @@ function getLatestTSServerVersionByFile() {
 # Get latest beta TS3 server version
 # Return: ServerVersion:string or 1:boolean
 function getLatestBetaTS3ServerVersion() {
-	wget 'http://dl.4players.de/ts/releases/pre_releases/server/?C=M;O=D' -q -O - | grep -i dir | grep -Eo '<a href=\".*\/\">.*\/<\/a>' | grep -Eo '[0-9\.?]+-Beta-[0-9]+' | uniq | sort -V -r > BETA_RELEASES.txt
+	wget -t 3 -T 10 'http://dl.4players.de/ts/releases/pre_releases/server/?C=M;O=D' -q -O - | grep -i dir | grep -Eo '<a href=\".*\/\">.*\/<\/a>' | grep -Eo '[0-9\.?]+-Beta-[0-9]+' | uniq | sort -V -r > BETA_RELEASES.txt
+
+	if [[ $? -ne 0 ]]; then
+		return 1;
+	fi
 
 	while read release; do
 		RELEASE_NUMBER=$(echo "$release" | grep -Eo '^[0-9\.?]+')
@@ -469,7 +482,11 @@ function getLatestBetaTS3ServerVersion() {
 # Get latest stable TS3 server version
 # Return: ServerVersion:string or 1:boolean
 function getLatestStableTS3ServerVersion() {
-	wget 'http://dl.4players.de/ts/releases/?C=M;O=D' -q -O - | grep -i dir | grep -Eo '<a href=\".*\/\">.*\/<\/a>' | grep -Eo '[0-9\.?]+' | uniq | sort -V -r > STABLE_RELEASES.txt
+	wget -t 3 -T 10 'http://dl.4players.de/ts/releases/?C=M;O=D' -q -O - | grep -i dir | grep -Eo '<a href=\".*\/\">.*\/<\/a>' | grep -Eo '[0-9\.?]+' | uniq | sort -V -r > STABLE_RELEASES.txt
+
+	if [[ $? -ne 0 ]]; then
+		return 1;
+	fi
 
 	while read release; do
 		if [[ "${release}" =~ ^[3-9]+\.[0-9]+\.1[2-9]+\.?[0-9]*$ ]]; then
@@ -591,9 +608,11 @@ function checkServeradminPassword() {
 
 	if [ -f "${3}/.password-file" ]; then
 		SERVERADMIN_PASSWORD=$(cat "${3}/.password-file")
+		chown root:root "${3}/.password-file"
 	else
 		echo "verySecretServeradminPassword" > "${3}/.password-file";
 		chmod 0 "${3}/.password-file"
+		chown root:root "${3}/.password-file"
 		return 1;
 	fi
 
@@ -1420,10 +1439,17 @@ function getTemporaryServerPasswords() {
 # Set temporary server passwords
 # Par 1: ServerQueryIP:string
 # Par 2: ServerQueryPort:string
+# Par 3: TeamSpeakRootDirectory:string
 # Return: 0:boolean or 1:boolean
 function setTemporaryServerPasswords() {
 	SERVERADMIN_PASSWORD="$(cat ${INSTANCE_PATH}/.password-file)"
 	SERVER_QUERY_DISPLAYED_NAME="$(getServerQueryDisplayedNameEscaped)"
+	INSTANCE_LOG_FILE="$(find $(getTS3ServerInstanceLogPath ${3}) -name *_0.log | sort -nr | head -1)"
+
+	SERVERQUERY_UI_READY=0;
+	while [[ "${SERVERQUERY_UI_READY}" -eq 0 ]]; do
+		SERVERQUERY_UI_READY=$(grep -Eic "Query.*listening[[:space:]]+on" ${INSTANCE_LOG_FILE})
+	done
 
 	(
 		cat <<- LOGIN
@@ -2122,11 +2148,9 @@ function main() {
 		if ! checkdeps telnet expect; then
 			SELF_TEST_STATUS=1;
 		fi
-	elif [ "$PAR_CRONJOB_TASK" -eq 1 ] && [ "$PAR_INFORM_ONLINE_CLIENTS" -eq 1 ]; then
-		if ! checkdeps mail telnet expect; then
-			SELF_TEST_STATUS=1;
-		fi
-	elif [ "$PAR_CRONJOB_TASK" -eq 1 ]; then
+	fi
+
+	if [ "$PAR_CRONJOB_TASK" -eq 1 ]; then
 		if ! checkdeps mail; then
 			SELF_TEST_STATUS=1;
 		fi
@@ -2953,7 +2977,7 @@ function main() {
 																		# Wait a few seconds to be able to connect via telnet
 																		sleep 5s
 
-																		if setTemporaryServerPasswords "${SERVERQUERY_IP}" "${SERVERQUERY_PORT}"; then
+																		if setTemporaryServerPasswords "${SERVERQUERY_IP}" "${SERVERQUERY_PORT}" "${INSTANCE_PATH}"; then
 																			echo "${TXT_EXECUTION_MECHANISM_SET_TEMPORARY_SERVER_PASSWORDS_SUCCESSFUL}";
 																		else
 																			echo "${TXT_EXECUTION_MECHANISM_SET_TEMPORARY_SERVER_PASSWORDS_FAILED}";
@@ -3059,7 +3083,7 @@ function main() {
 																# Wait a few seconds to be able to connect via telnet
 																sleep 5s
 
-																if setTemporaryServerPasswords "${SERVERQUERY_IP}" "${SERVERQUERY_PORT}"; then
+																if setTemporaryServerPasswords "${SERVERQUERY_IP}" "${SERVERQUERY_PORT}" "${INSTANCE_PATH}"; then
 																	echo "${TXT_EXECUTION_MECHANISM_SET_TEMPORARY_SERVER_PASSWORDS_SUCCESSFUL}";
 																else
 																	echo "${TXT_EXECUTION_MECHANISM_SET_TEMPORARY_SERVER_PASSWORDS_FAILED}";
@@ -3097,7 +3121,7 @@ function main() {
 															# Wait a few seconds to be able to connect via telnet
 															sleep 5s
 
-															if setTemporaryServerPasswords "${SERVERQUERY_IP}" "${SERVERQUERY_PORT}"; then
+															if setTemporaryServerPasswords "${SERVERQUERY_IP}" "${SERVERQUERY_PORT}" "${INSTANCE_PATH}"; then
 																echo "${TXT_EXECUTION_MECHANISM_SET_TEMPORARY_SERVER_PASSWORDS_SUCCESSFUL}";
 															else
 																echo "${TXT_EXECUTION_MECHANISM_SET_TEMPORARY_SERVER_PASSWORDS_FAILED}";
@@ -3154,7 +3178,7 @@ function main() {
 														# Wait a few seconds to be able to connect via telnet
 														sleep 5s
 
-														if setTemporaryServerPasswords "${SERVERQUERY_IP}" "${SERVERQUERY_PORT}"; then
+														if setTemporaryServerPasswords "${SERVERQUERY_IP}" "${SERVERQUERY_PORT}" "${INSTANCE_PATH}"; then
 															echo "${TXT_EXECUTION_MECHANISM_SET_TEMPORARY_SERVER_PASSWORDS_SUCCESSFUL}";
 														else
 															echo "${TXT_EXECUTION_MECHANISM_SET_TEMPORARY_SERVER_PASSWORDS_FAILED}";
