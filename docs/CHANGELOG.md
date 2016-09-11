@@ -23,6 +23,10 @@ Hotfix | Important fix for one more issues, which causes a not (correct) working
 
 ## Releases
 
+### Version 5.3.0
+
+	* Reduced retries and timeouts of 'wget' command (GitHub issue [#54](https://github.com/TS3Tools/TS3UpdateScript/issues/54))
+
 ### Version 5.2.2
 
 	* Improved checking of required packages (GitHub issue [#52](https://github.com/TS3Tools/TS3UpdateScript/issues/52))

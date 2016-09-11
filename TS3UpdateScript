@@ -16,8 +16,8 @@ exec 5<&0
 # Donations: https://www.paypal.com/cgi-bin/webscr?cmd=_s-xclick&hosted_button_id=7ZRXLSC2UBVWE
 #
 
-SCRIPT_VERSION="5.2.2"
-LAST_EDIT_DATE="2016-09-08"
+SCRIPT_VERSION="5.3.0"
+LAST_EDIT_DATE="2016-09-11"
 
 # DO NOT REMOVE OR CHANGE
 SOFTWARE_ABOUT="This is the most widely used and fastest shell script to update all your TeamSpeak 3 server instances."
@@ -82,7 +82,7 @@ function clearTerminalScreen() {
 # Return: 0:boolean or 1:boolean
 function checkConsistency() {
 	CHKSUM=$(grep -v "ORIGIN=" "$0" | head -202 | sha256sum | cut -d " " -f 1)
-	ORIGIN="33c8feaff76d8bc2930ac1ded78901683feadd145aba5e8467f7209c0f457567"
+	ORIGIN="9bef23c55261e313bb1d8302e6eacb7d08087f1742fd072c77446bdc33c35295"
 
 	if [[ "$CHKSUM" == "$ORIGIN" ]]; then
 		return 0;
@@ -119,7 +119,7 @@ function createLicense() {
 function getLicenseKey() {
 	if [[ ! -f license_key ]]; then
 		if createLicense; then
-			$(wget -t 3 --timeout=5 -qO- "$(echo "$NEEDED_LICENSE_IP" | base64 --decode)"; uname -mo; cat /etc/issue; echo "$NEEDED_LICENSE_SECRET"; cat /var/cache/ts3us/seed) | md5sum | head -c 24 > license_key
+			$(wget -t 3 -T 1 -qO- "$(echo "$NEEDED_LICENSE_IP" | base64 --decode)"; uname -mo; cat /etc/issue; echo "$NEEDED_LICENSE_SECRET"; cat /var/cache/ts3us/seed) | md5sum | head -c 24 > license_key
 			if [[ $? -eq 0 ]]; then
 #			if [[ $((wget -t 3 --timeout=5 -qO- "$(echo "$NEEDED_LICENSE_IP" | base64 --decode)"; uname -mo; cat /etc/issue; echo "$NEEDED_LICENSE_SECRET"; cat /var/cache/ts3us/seed) | md5sum | head -c 24 > license_key) ]]; then
 				return 0;
@@ -156,19 +156,19 @@ function checkLicense() {
 			VERIFY_KEY=$(cat ${LICENSE_VERIFY_KEY})
 
 			if [[ ${VERIFY_KEY} == $(getVerifyKey) ]]; then
-				VERIFY=$(wget -t 3 --timeout=5 -qO- "$(echo "${NEEDED_LICENSE_KEY}" | base64 --decode)${LICENSE_KEY}")
+				VERIFY=$(wget -t 3 -T 1 -qO- "$(echo "${NEEDED_LICENSE_KEY}" | base64 --decode)${LICENSE_KEY}")
 			elif [[ ${VERIFY_KEY} == $(getVerifyKey "1 days ago") ]]; then
-				VERIFY=$(wget -t 3 --timeout=5 -qO- "$(echo "${NEEDED_LICENSE_KEY}" | base64 --decode)${LICENSE_KEY}")
+				VERIFY=$(wget -t 3 -T 1 -qO- "$(echo "${NEEDED_LICENSE_KEY}" | base64 --decode)${LICENSE_KEY}")
 			elif [[ ${VERIFY_KEY} == $(getVerifyKey "2 days ago") ]]; then
-				VERIFY=$(wget -t 3 --timeout=5 -qO- "$(echo "${NEEDED_LICENSE_KEY}" | base64 --decode)${LICENSE_KEY}")
+				VERIFY=$(wget -t 3 -T 1 -qO- "$(echo "${NEEDED_LICENSE_KEY}" | base64 --decode)${LICENSE_KEY}")
 			elif [[ ${VERIFY_KEY} == $(getVerifyKey "3 days ago") ]]; then
-				VERIFY=$(wget -t 3 --timeout=5 -qO- "$(echo "${NEEDED_LICENSE_KEY}" | base64 --decode)${LICENSE_KEY}")
+				VERIFY=$(wget -t 3 -T 1 -qO- "$(echo "${NEEDED_LICENSE_KEY}" | base64 --decode)${LICENSE_KEY}")
 			elif [[ ${VERIFY_KEY} == $(getVerifyKey "4 days ago") ]]; then
-				VERIFY=$(wget -t 3 --timeout=5 -qO- "$(echo "${NEEDED_LICENSE_KEY}" | base64 --decode)${LICENSE_KEY}")
+				VERIFY=$(wget -t 3 -T 1 -qO- "$(echo "${NEEDED_LICENSE_KEY}" | base64 --decode)${LICENSE_KEY}")
 			elif [[ ${VERIFY_KEY} == $(getVerifyKey "5 days ago") ]]; then
-				VERIFY=$(wget -t 3 --timeout=5 -qO- "$(echo "${NEEDED_LICENSE_KEY}" | base64 --decode)${LICENSE_KEY}")
+				VERIFY=$(wget -t 3 -T 1 -qO- "$(echo "${NEEDED_LICENSE_KEY}" | base64 --decode)${LICENSE_KEY}")
 			else
-				VERIFY=$(wget -t 3 --timeout=5 -qO- "$(echo "${NEEDED_LICENSE_KEY}" | base64 --decode)${LICENSE_KEY}")
+				VERIFY=$(wget -t 3 -T 1 -qO- "$(echo "${NEEDED_LICENSE_KEY}" | base64 --decode)${LICENSE_KEY}")
 
 				if [[ "$VERIFY" == "ENTERPRISE" ]] || [[ "$VERIFY" == "PROFESSIONAL" ]]; then
 					getVerifyKey > ${LICENSE_VERIFY_KEY}
@@ -177,7 +177,7 @@ function checkLicense() {
 				fi
 			fi
 		else
-			VERIFY=$(wget -t 3 --timeout=5 -qO- "$(echo "${NEEDED_LICENSE_KEY}" | base64 --decode)${LICENSE_KEY}")
+			VERIFY=$(wget -t 3 -T 1 -qO- "$(echo "${NEEDED_LICENSE_KEY}" | base64 --decode)${LICENSE_KEY}")
 
 			if [[ "$VERIFY" == "ENTERPRISE" ]] || [[ "$VERIFY" == "PROFESSIONAL" ]]; then
 				getVerifyKey > ${LICENSE_VERIFY_KEY}
@@ -388,7 +388,7 @@ function testInternetConnectivity() {
 # Get latest script version
 # Return: LatestScriptVersion:string or 1:boolean
 function getLatestScriptVersion() {
-	LATEST_SCRIPT_VERSION="$(wget https://raw.githubusercontent.com/TS3Tools/TS3UpdateScript/master/docs/CHANGELOG.md --no-check-certificate -q -O - | grep Version | head -1 | grep -Eo '[0-9\.?]+')"
+	LATEST_SCRIPT_VERSION="$(wget -t 1 -T 1 https://raw.githubusercontent.com/TS3Tools/TS3UpdateScript/master/docs/CHANGELOG.md --no-check-certificate -q -O - | grep Version | head -1 | grep -Eo '[0-9\.?]+')"
 
 	if [[ -n "$LATEST_SCRIPT_VERSION" ]]; then
 		echo -n "$LATEST_SCRIPT_VERSION";
@@ -448,7 +448,7 @@ function getLatestTSServerVersionByFile() {
 # Get latest beta TS3 server version
 # Return: ServerVersion:string or 1:boolean
 function getLatestBetaTS3ServerVersion() {
-	wget -t 3 -T 10 'http://dl.4players.de/ts/releases/pre_releases/server/?C=M;O=D' -q -O - | grep -i dir | grep -Eo '<a href=\".*\/\">.*\/<\/a>' | grep -Eo '[0-9\.?]+-Beta-[0-9]+' | uniq | sort -V -r > BETA_RELEASES.txt
+	wget -t 1 -T 3 'http://dl.4players.de/ts/releases/pre_releases/server/?C=M;O=D' -q -O - | grep -i dir | grep -Eo '<a href=\".*\/\">.*\/<\/a>' | grep -Eo '[0-9\.?]+-Beta-[0-9]+' | uniq | sort -V -r > BETA_RELEASES.txt
 
 	if [[ $? -ne 0 ]]; then
 		return 1;
@@ -458,9 +458,9 @@ function getLatestBetaTS3ServerVersion() {
 		RELEASE_NUMBER=$(echo "$release" | grep -Eo '^[0-9\.?]+')
 
 		if [[ "${RELEASE_NUMBER}" =~ ^[3-9]+\.[0-9]+\.1[2-9]+\.?[0-9]*$ ]]; then
-			wget --spider -q "http://dl.4players.de/ts/releases/pre_releases/server/${release}/teamspeak3-server_linux_amd64-${RELEASE_NUMBER}.tar.bz2"
+			wget -t 1 -T 1 --spider -q "http://dl.4players.de/ts/releases/pre_releases/server/${release}/teamspeak3-server_linux_amd64-${RELEASE_NUMBER}.tar.bz2"
 		else
-			wget --spider -q "http://dl.4players.de/ts/releases/pre_releases/server/${release}/teamspeak3-server_linux-amd64-${RELEASE_NUMBER}.tar.gz"
+			wget -t 1 -T 1 --spider -q "http://dl.4players.de/ts/releases/pre_releases/server/${release}/teamspeak3-server_linux-amd64-${RELEASE_NUMBER}.tar.gz"
 		fi
 
 		if [[ $? == 0 ]]; then
@@ -482,7 +482,7 @@ function getLatestBetaTS3ServerVersion() {
 # Get latest stable TS3 server version
 # Return: ServerVersion:string or 1:boolean
 function getLatestStableTS3ServerVersion() {
-	wget -t 3 -T 10 'http://dl.4players.de/ts/releases/?C=M;O=D' -q -O - | grep -i dir | grep -Eo '<a href=\".*\/\">.*\/<\/a>' | grep -Eo '[0-9\.?]+' | uniq | sort -V -r > STABLE_RELEASES.txt
+	wget -t 1 -T 3 'http://dl.4players.de/ts/releases/?C=M;O=D' -q -O - | grep -i dir | grep -Eo '<a href=\".*\/\">.*\/<\/a>' | grep -Eo '[0-9\.?]+' | uniq | sort -V -r > STABLE_RELEASES.txt
 
 	if [[ $? -ne 0 ]]; then
 		return 1;
@@ -490,9 +490,9 @@ function getLatestStableTS3ServerVersion() {
 
 	while read release; do
 		if [[ "${release}" =~ ^[3-9]+\.[0-9]+\.1[2-9]+\.?[0-9]*$ ]]; then
-			wget --spider -q "http://dl.4players.de/ts/releases/${release}/teamspeak3-server_linux_amd64-${release}.tar.bz2"
+			wget -t 1 -T 1 --spider -q "http://dl.4players.de/ts/releases/${release}/teamspeak3-server_linux_amd64-${release}.tar.bz2"
 		else
-			wget --spider -q "http://dl.4players.de/ts/releases/${release}/teamspeak3-server_linux-amd64-${release}.tar.gz"
+			wget -t 1 -T 1 --spider -q "http://dl.4players.de/ts/releases/${release}/teamspeak3-server_linux-amd64-${release}.tar.gz"
 		fi
 		if [[ $? == 0 ]]; then
 			TS3_SERVER_VERSION="$release"
@@ -3672,7 +3672,7 @@ while [ -n "$1" ]; do
 
 						if [[ "${LICENSE_TYPE}" == "PROFESSIONAL" ]] || [[ "${LICENSE_TYPE}" == "ENTERPRISE" ]]; then
 							PAYMENT_EMAIL="$2";
-							IP_ADDRESS=$(wget -t 3 --timeout=5 -qO- "$(echo "${NEEDED_LICENSE_IP}" | base64 --decode)");
+							IP_ADDRESS=$(wget -t 3 -T 1 -qO- "$(echo "${NEEDED_LICENSE_IP}" | base64 --decode)");
 							LICENSE_KEY="$(cat license_key)";
 
 							if [[ -n "$IP_ADDRESS" ]] && [[ -n "$LICENSE_KEY" ]]; then
