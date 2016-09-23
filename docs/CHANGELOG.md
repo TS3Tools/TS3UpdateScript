@@ -23,6 +23,19 @@ Hotfix | Important fix for one more issues, which causes a not (correct) working
 
 ## Releases
 
+### Version 5.4.0 (2016-09-23)
+
+	! Help us to improve the TS3UpdateScript by sending us your anonymous feedback: GitHub issue [#55](https://github.com/TS3Tools/TS3UpdateScript/issues/55) / [Survey Form](https://goo.gl/forms/D14KbPi4p5ll7Xhp2)
+	* Fixed licensing issue in cronjobs (GitHub issue [#53](https://github.com/TS3Tools/TS3UpdateScript/issues/53))
+	* Improved licensing at all
+	! Unfortunately, you will get a new license key. Customers with a bought license, just need to resend me their new license key. Sorry for this inconvenience.
+	+ Added parameter '--force-license-update'
+	+ Added more licensing information to the header of the TS3UpdateScript
+	* Renamed 'Free' licenses to 'Community'
+	- Removed parameter '--locale' as already mentioned in v5.2.0
+	! Set the variable 'DEFAULT_LANGUAGE' in your config/config.all instead.
+	* Updated installation part in [docs/INSTALL_USAGE_GUIDE.md](INSTALL_USAGE_GUIDE.md) with more details
+
 ### Version 5.3.0
 
 	* Reduced retries and timeouts of 'wget' command (GitHub issue [#54](https://github.com/TS3Tools/TS3UpdateScript/issues/54))

@@ -16,8 +16,8 @@ exec 5<&0
 # Donations: https://www.paypal.com/cgi-bin/webscr?cmd=_s-xclick&hosted_button_id=7ZRXLSC2UBVWE
 #
 
-SCRIPT_VERSION="5.3.0"
-LAST_EDIT_DATE="2016-09-11"
+SCRIPT_VERSION="5.4.0"
+LAST_EDIT_DATE="2016-09-23"
 
 # DO NOT REMOVE OR CHANGE
 SOFTWARE_ABOUT="This is the most widely used and fastest shell script to update all your TeamSpeak 3 server instances."
@@ -26,9 +26,8 @@ SOFTWARE_HOMEPAGE="www.ts3-tools.info"
 SOFTWARE_FACEBOOK="www.facebook.com/TS3Tools"
 SOFTWARE_LICENSE="GNU GPLv3"
 
-NEEDED_LICENSE_KEY='aHR0cHM6Ly93d3cudHMzLXRvb2xzLmluZm8vdHMzdXMvY2hlY2tsaWNlbnNlLnBocD9za2V5PQo='
-NEEDED_LICENSE_IP='aHR0cHM6Ly93d3cudHMzLXRvb2xzLmluZm8vdHMzdXMvY2hlY2tsaWNlbnNlLnBocAo='
-NEEDED_LICENSE_SECRET='7dc3d819fb42ed9006df79e2642d026c5faef1fb9959b29810718d034fc50a0556d868ae5e15cfe58159bcfcb7026b5852b1d8a2cc194d8e6ca35cf9a203f225'
+LICENSE_SIP='aHR0cHM6Ly93d3cudHMzLXRvb2xzLmluZm8vdHMzdXMvbGljZW5zaW5nLnBocD9wPXRzM3VzCg=='
+LICENSE_SEC='7dc3d819fb42ed9006df79e2642d026c5faef1fb9959b29810718d034fc50a0556d868ae5e15cfe58159bcfcb7026b5852b1d8a2cc194d8e6ca35cf9a203f225'
 
 # Code structure:
 #	1) COLOURS
@@ -82,7 +81,7 @@ function clearTerminalScreen() {
 # Return: 0:boolean or 1:boolean
 function checkConsistency() {
 	CHKSUM=$(grep -v "ORIGIN=" "$0" | head -202 | sha256sum | cut -d " " -f 1)
-	ORIGIN="9bef23c55261e313bb1d8302e6eacb7d08087f1742fd072c77446bdc33c35295"
+	ORIGIN="def0c70acbc40f2d914b783ffc8a8c1b410642bcf4a7c13b281a55857870b111"
 
 	if [[ "$CHKSUM" == "$ORIGIN" ]]; then
 		return 0;
@@ -91,117 +90,196 @@ function checkConsistency() {
 	fi
 }
 
-# Creates license code
+# Creates a unique license key
 # Return: 0:boolean or 1:boolean
-function createLicense() {
-	LICENSE_DIRECTORY="/var/cache/ts3us"
-	SEED_FILE="${LICENSE_DIRECTORY}/seed"
+function createUniqueLicenseKey() {
+        LDIR='L3Zhci9jYWNoZS90czN1cy8='
+        LSEED='c2VlZAo='
+        LKEY='LnRzM3VzX2xpY2Vuc2Vfa2V5Cg=='
 
-	if [[ ! -d "$LICENSE_DIRECTORY" ]]; then
-		if [[ $(mkdir -m 0755 $LICENSE_DIRECTORY) ]]; then
-			return 1;
-		fi
+	if [[ -f license_key ]]; then
+		rm license_key
 	fi
 
-	if [[ ! -f "$SEED_FILE" ]]; then
-		if [[ ! $(dd if=/dev/urandom bs=1k count=1 2>/dev/null | od -t x1 -v | cut -d " " -f 2- | grep -E "^([0-9a-f]{2} )+[0-9a-f]{2}$" > $SEED_FILE) ]]; then
-			return 0;
-		else
-			return 1;
-		fi
-	else
-		return 0;
-	fi
+        if [[ ! -d "$(echo "${LDIR}" | base64 --decode)" ]]; then
+                if [[ $(mkdir -m 0755 "$(echo "${LDIR}" | base64 --decode)") ]]; then
+                        return 1;
+                fi
+        fi
+
+        if [[ ! -f "$(echo "${LDIR}${LSEED}" | base64 --decode)" ]]; then
+                if [[ $(dd if=/dev/urandom bs=1k count=1 2>/dev/null | od -t x1 -v | cut -d " " -f 2- | grep -E "^([0-9a-f]{2} )+[0-9a-f]{2}$" > $(echo "${LDIR}${LSEED}" | base64 --decode)) ]]; then
+                        return 1;
+                fi
+        fi
+
+        IP=$(wget -t 3 -T 3 -qO- $(echo "${LICENSE_SIP}" | base64 --decode))
+        HNAME=$(hostname -f)
+        UNAME=$(uname -mo)
+        DISTID=$(cut -d ' ' -f 1 < /etc/issue | tr -d '[[:space:]]')
+        LSEED=$(cat $(echo "${LDIR}${LSEED}" | base64 --decode))
+
+        echo "${IP}${HNAME}${UNAME}${LICENSE_SEC}${DISTID}${LSEED}" | md5sum | head -c 24 > $(echo "${LKEY}" | base64 --decode)
+
+        if [[ $? -ne 0 ]]; then
+                return 1;
+        fi
+
+        return 0;
 }
 
-# Creates license key
+# Gets the license verify key from the licensing server
 # Return: 0:boolean or 1:boolean
-function getLicenseKey() {
-	if [[ ! -f license_key ]]; then
-		if createLicense; then
-			$(wget -t 3 -T 1 -qO- "$(echo "$NEEDED_LICENSE_IP" | base64 --decode)"; uname -mo; cat /etc/issue; echo "$NEEDED_LICENSE_SECRET"; cat /var/cache/ts3us/seed) | md5sum | head -c 24 > license_key
-			if [[ $? -eq 0 ]]; then
-#			if [[ $((wget -t 3 --timeout=5 -qO- "$(echo "$NEEDED_LICENSE_IP" | base64 --decode)"; uname -mo; cat /etc/issue; echo "$NEEDED_LICENSE_SECRET"; cat /var/cache/ts3us/seed) | md5sum | head -c 24 > license_key) ]]; then
-				return 0;
-			else
-				return 1;
-			fi
-		else
-			return 1;
-		fi
-	else
-		return 0;
-	fi
+function getLicenseVerifyKey() {
+        LDIR='L3Zhci9jYWNoZS90czN1cy8='
+        LKEY='LnRzM3VzX2xpY2Vuc2Vfa2V5Cg=='
+        LVKEY='dmVyaWZ5X2tleQo='
+        LCHKSUM='a2V5Cg=='
+
+        if ! createUniqueLicenseKey; then
+                return 1;
+        fi
+
+        LKEY=$(< $(echo "${LKEY}" | base64 --decode))
+        wget -t 3 -T 3 -qO- "$(echo "${LICENSE_SIP}" | base64 --decode)&lkey=${LKEY}&v=${SCRIPT_VERSION}" > $(echo "${LDIR}${LVKEY}" | base64 --decode)
+
+        if [[ $? -ne 0 ]]; then
+                return 1;
+        fi
+
+        LVKEY=$(< $(echo "${LDIR}${LVKEY}" | base64 --decode))
+
+        echo "${LKEY}${LVKEY}" | sha256sum | cut -d ' ' -f 1 > $(echo "${LDIR}${LCHKSUM}" | base64 --decode)
+
+        if [[ $? -ne 0 ]]; then
+                return 1;
+        fi
+
+        return 0;
 }
 
-# Get verify key for license key
-# Return: VerifyKey:string
-function getVerifyKey() {
-	if [[ -n "$1" ]]; then
-		echo -n $( (date +'%Y%m%d' --date="$1"; echo ${NEEDED_LICENSE_SECRET}; echo ${LICENSE_KEY}) | md5sum | cut -d " " -f 1 );
-	else
-		echo -n $( (date +'%Y%m%d' --date="today"; echo ${NEEDED_LICENSE_SECRET}; echo ${LICENSE_KEY}) | md5sum | cut -d " " -f 1 );
-	fi
-}
-
-# Get script license
-# Return: 0:boolean or 1:boolean
+# Checks the license every 7 days or immediately
+# Par 1: force:string
+# Return: license:string or 0:boolean (if force is set) or 1:boolean
 function checkLicense() {
-	if getLicenseKey; then
-		VERIFY="DENIED";
-		LICENSE_KEY=$(cat license_key)
-		LICENSE_VERIFY_KEY="/var/cache/ts3us/license"
+        LDIR='L3Zhci9jYWNoZS90czN1cy8='
+        LKEY='LnRzM3VzX2xpY2Vuc2Vfa2V5Cg=='
+        LVKEY='dmVyaWZ5X2tleQo='
+        LCHKSUM='a2V5Cg=='
 
-		if [[ -f ${LICENSE_VERIFY_KEY} ]]; then
-			VERIFY_KEY=$(cat ${LICENSE_VERIFY_KEY})
+        find $(echo "${LDIR}${LVKEY}" | base64 --decode) -mtime +7 -exec rm {} \;
 
-			if [[ ${VERIFY_KEY} == $(getVerifyKey) ]]; then
-				VERIFY=$(wget -t 3 -T 1 -qO- "$(echo "${NEEDED_LICENSE_KEY}" | base64 --decode)${LICENSE_KEY}")
-			elif [[ ${VERIFY_KEY} == $(getVerifyKey "1 days ago") ]]; then
-				VERIFY=$(wget -t 3 -T 1 -qO- "$(echo "${NEEDED_LICENSE_KEY}" | base64 --decode)${LICENSE_KEY}")
-			elif [[ ${VERIFY_KEY} == $(getVerifyKey "2 days ago") ]]; then
-				VERIFY=$(wget -t 3 -T 1 -qO- "$(echo "${NEEDED_LICENSE_KEY}" | base64 --decode)${LICENSE_KEY}")
-			elif [[ ${VERIFY_KEY} == $(getVerifyKey "3 days ago") ]]; then
-				VERIFY=$(wget -t 3 -T 1 -qO- "$(echo "${NEEDED_LICENSE_KEY}" | base64 --decode)${LICENSE_KEY}")
-			elif [[ ${VERIFY_KEY} == $(getVerifyKey "4 days ago") ]]; then
-				VERIFY=$(wget -t 3 -T 1 -qO- "$(echo "${NEEDED_LICENSE_KEY}" | base64 --decode)${LICENSE_KEY}")
-			elif [[ ${VERIFY_KEY} == $(getVerifyKey "5 days ago") ]]; then
-				VERIFY=$(wget -t 3 -T 1 -qO- "$(echo "${NEEDED_LICENSE_KEY}" | base64 --decode)${LICENSE_KEY}")
-			else
-				VERIFY=$(wget -t 3 -T 1 -qO- "$(echo "${NEEDED_LICENSE_KEY}" | base64 --decode)${LICENSE_KEY}")
+        if [[ -n "$1" ]]; then
+                if [[ "$1" == "force" ]]; then
+                        if [[ -f "$(echo "${LKEY}" | base64 --decode)" ]]; then
+                                rm "$(echo "${LKEY}" | base64 --decode)"
+                        fi
+                fi
+        fi
 
-				if [[ "$VERIFY" == "ENTERPRISE" ]] || [[ "$VERIFY" == "PROFESSIONAL" ]]; then
-					getVerifyKey > ${LICENSE_VERIFY_KEY}
-				else
-					rm -rf ${LICENSE_VERIFY_KEY} license_key
-				fi
-			fi
+        if [[ ! -f "$(echo "${LKEY}" | base64 --decode)" ]] || [[ ! -f "$(echo "${LDIR}${LVKEY}" | base64 --decode)" ]]; then
+                if ! getLicenseVerifyKey; then
+                        return 1;
 		else
-			VERIFY=$(wget -t 3 -T 1 -qO- "$(echo "${NEEDED_LICENSE_KEY}" | base64 --decode)${LICENSE_KEY}")
-
-			if [[ "$VERIFY" == "ENTERPRISE" ]] || [[ "$VERIFY" == "PROFESSIONAL" ]]; then
-				getVerifyKey > ${LICENSE_VERIFY_KEY}
-			else
-				rm -rf ${LICENSE_VERIFY_KEY}
+			if [[ "$1" == "force" ]]; then
+				return 0;
 			fi
-		fi
+                fi
+        fi
 
-		if [[ "$VERIFY" == "ENTERPRISE" ]]; then
-			echo -n "2";
-		elif [[ "$VERIFY" == "PROFESSIONAL" ]]; then
-			echo -n "1";
-		else
-			echo -n "0";
-		fi
-	else
-		echo -n "0";
-	fi
+        LDIR='L3Zhci9jYWNoZS90czN1cy8='
+        LKEY='LnRzM3VzX2xpY2Vuc2Vfa2V5Cg=='
+        LVKEY='dmVyaWZ5X2tleQo='
+        LCHKSUM='a2V5Cg=='
+
+        LKEY=$(< $(echo "${LKEY}" | base64 --decode))
+        VKEY=$(< $(echo "${LDIR}${LVKEY}" | base64 --decode))
+        CHKSUM=$(< $(echo "${LDIR}${LCHKSUM}" | base64 --decode))
+        SHASUM=$(echo "${LKEY}${VKEY}" | sha256sum | cut -d ' ' -f 1)
+
+        if [[ "${CHKSUM}" != "${SHASUM}" ]]; then
+                if ! getLicenseVerifyKey; then
+                        return 1;
+                fi
+        fi
+
+        LDEC=$(echo "${VKEY}" | base64 --decode | cut -d ':' -f 3-)
+
+        if [[ -n "${LDEC}" ]]; then
+                echo "${LDEC}";
+        fi
+
+        return 1;
+}
+
+# Returns license details
+# Par 1: force:string (optional)
+# Return: licenseDetails:string or 1:boolean
+function getLicenseDetails() {
+        LICENSE_DETAILS=""
+        if [[ "${1}" == "force" ]]; then
+                STR_LICENSE=$(checkLicense force)
+        else
+                STR_LICENSE=$(checkLicense)
+        fi
+        SCRIPT_LICENSE=$(echo $STR_LICENSE | cut -d ':' -f 1);
+        SCRIPT_LICENSE_START_TS=$(echo $STR_LICENSE | cut -d ':' -f 2);
+        SUPPORT_LICENSE=$(echo $STR_LICENSE | cut -d ':' -f 3);
+        SUPPORT_LICENSE_START_TS=$(echo $STR_LICENSE | cut -d ':' -f 4);
+
+        if [[ "${SCRIPT_LICENSE}" == "Community" ]] || [[ "${SCRIPT_LICENSE}" == "Professional" ]]; then
+                SCRIPT_LICENSE_END="No support bought"
+        else
+                SCRIPT_LICENSE_START=$(date +'%Y-%m-%d' --date="@${SCRIPT_LICENSE_START_TS}")
+                if [[ ${SCRIPT_LICENSE_START_TS} -lt 1472594400 ]]; then
+                        SCRIPT_LICENSE_END=$(date +'%Y-%m-%d' --date="@${SCRIPT_LICENSE_START_TS}" --date="+5 years")
+                else
+                        SCRIPT_LICENSE_END=$(date +'%Y-%m-%d' --date="@${SCRIPT_LICENSE_START_TS}" --date="+2 years")
+                fi
+        fi
+
+        if [[ "${SUPPORT_LICENSE}" == "Community" ]]; then
+                SUPPORT_LICENSE_END="No support bought"
+        else
+                SUPPORT_LICENSE_START=$(date +'%Y-%m-%d' --date="@${SUPPORT_LICENSE_START_TS}")
+
+                if [[ "${SUPPORT_LICENSE}" == "SLA-Basis" ]] || [[ "${SUPPORT_LICENSE}" == "SLA-Professional" ]]; then
+                        SUPPORT_LICENSE_END=$(date +'%Y-%m-%d' --date="@${SUPPORT_LICENSE_START_TS}" --date="+1 years")
+                elif [[ "${SUPPORT_LICENSE}" == "SLA-Enterprise" ]]; then
+                        SUPPORT_LICENSE_END=$(date +'%Y-%m-%d' --date="@${SUPPORT_LICENSE_START_TS}" --date="+3 years")
+                fi
+        fi
+
+        LICENSE_DETAILS="${SCRIPT_LICENSE}|${SCRIPT_LICENSE_START}|${SCRIPT_LICENSE_END}|${SUPPORT_LICENSE}|${SUPPORT_LICENSE_START}|${SUPPORT_LICENSE_END}"
+
+        if [[ -n "${LICENSE_DETAILS}" ]]; then
+                echo -n "${LICENSE_DETAILS}";
+        fi
+
+        return 1;
 }
 
 if [[ "$EUID" == 0 ]]; then
-	SCRIPT_LICENSE=$(checkLicense)
+	LICENSE_DETAILS=$(getLicenseDetails)
+	SCRIPT_LICENSE_TXT=$(echo ${LICENSE_DETAILS} | cut -d '|' -f 1)
+	SCRIPT_LICENSE_START=$(echo ${LICENSE_DETAILS} | cut -d '|' -f 2)
+	SCRIPT_LICENSE_END=$(echo ${LICENSE_DETAILS} | cut -d '|' -f 3)
+
+	if [[ "${SCRIPT_LICENSE_TXT}" == "Community" ]]; then
+		SCRIPT_LICENSE_TYPE=0;
+	elif [[ "${SCRIPT_LICENSE_TXT}" == "Professional" ]]; then
+		SCRIPT_LICENSE_TYPE=1;
+	elif [[ "${SCRIPT_LICENSE_TXT}" == "Enterprise" ]]; then
+		SCRIPT_LICENSE_TYPE=2;
+	fi
+
+	SUPPORT_LICENSE_TXT=$(echo ${LICENSE_DETAILS} | cut -d '|' -f 4)
+	SUPPORT_LICENSE_START=$(echo ${LICENSE_DETAILS} | cut -d '|' -f 5)
+	SUPPORT_LICENSE_END=$(echo ${LICENSE_DETAILS} | cut -d '|' -f 6)
 else
-	SCRIPT_LICENSE=0;
+	SCRIPT_LICENSE_TYPE=0;
+	SCRIPT_LICENSE_TXT="Community"
+	SUPPORT_LICENSE_TXT="Community"
 fi
 
 # Check, if bash-completion is installed
@@ -268,6 +346,7 @@ function migrateMultipleConfigFilesToOne() {
 }
 
 # Checks list of given software packages
+# Par X: package:string
 # Return: 0:boolean or 1:boolean
 function checkdeps() {
 	CHECKDEPS_FAILED=0;
@@ -388,7 +467,7 @@ function testInternetConnectivity() {
 # Get latest script version
 # Return: LatestScriptVersion:string or 1:boolean
 function getLatestScriptVersion() {
-	LATEST_SCRIPT_VERSION="$(wget -t 1 -T 1 https://raw.githubusercontent.com/TS3Tools/TS3UpdateScript/master/docs/CHANGELOG.md --no-check-certificate -q -O - | grep Version | head -1 | grep -Eo '[0-9\.?]+')"
+	LATEST_SCRIPT_VERSION="$(wget -t 1 -T 1 https://raw.githubusercontent.com/TS3Tools/TS3UpdateScript/master/docs/CHANGELOG.md --no-check-certificate -q -O - | grep Version | head -1 | cut -d ' ' -f 3 | tr -d '[[:space:]]')"
 
 	if [[ -n "$LATEST_SCRIPT_VERSION" ]]; then
 		echo -n "$LATEST_SCRIPT_VERSION";
@@ -946,7 +1025,7 @@ function getServerQueryIP() {
 		# Detect database type (SQLite, MySQL or MariaDB)
 		DATABASE_TYPE="$(getDatabaseType ${1})"
 
-		if [[ "${DATABASE_TYPE}" == SQLite ]] && checkdeps sqlite3; then
+		if [[ "${DATABASE_TYPE}" == "SQLite" ]] && checkdeps sqlite3; then
 			SERVER_QUERY_IP="$(sqlite3 ${1}/ts3server.sqlitedb 'SELECT ip FROM bindings WHERE type=2;')"
 		elif [[ "${DATABASE_TYPE}" == "MySQL" ]] || [[ "${DATABASE_TYPE}" == "MariaDB" ]]; then
 			DATABASE_INI_FILE="$(getDatabaseINIFile ${1})"
@@ -2693,10 +2772,6 @@ function main() {
 							echo -n "--beta-release" >> ${CROND_PATH_FILE};
 						fi
 
-						if [ "$PAR_LOCALE" != "languages/verified/en_US.conf" ]; then
-							echo -n "--locale ${ABSOLUTE_PATH}/verified/${PAR_LOCALE}" >> ${CROND_PATH_FILE};
-						fi
-
 						echo -e "\n" >> ${CROND_PATH_FILE};
 
 						if [ "$CRONJOB_MINUTE" == "50" ]; then
@@ -3377,7 +3452,11 @@ echo	"  | |  ___) |__) |_____| || (_) | (_) | \__ \_| | | | |  _| (_) |";
 echo -e "  |_| |____/____/       \__\___/ \___/|_|___(_)_|_| |_|_|  \___/\n";
 
 echo	"Script Version: $SCRIPT_VERSION ($LAST_EDIT_DATE)";
-echo -n "Script License: "; if [[ "$SCRIPT_LICENSE" == "2" ]]; then echo -e "Enterprise\n"; elif [[ "$SCRIPT_LICENSE" == "1" ]]; then echo -e "Professional\n"; else echo -n "Free (limited)"; if [[ "$EUID" != 0 ]]; then echo -e " (Just root can check your license!)\n"; else echo -e "\n"; fi fi
+if [[ "$EUID" != 0 ]]; then echo -e "${Red}HINT:${RCol} Only root can check your license!"; fi
+echo -n "Script License: ${SCRIPT_LICENSE_TXT}";
+if [[ "${SCRIPT_LICENSE_TYPE}" -eq 0 ]] || [[ "${SCRIPT_LICENSE_TXT}" == "Community" ]] || [[ "${SCRIPT_LICENSE_TXT}" == "Professional" ]]; then echo " (No support bought)"; else echo " (Support valid from ${SCRIPT_LICENSE_START} until ${SCRIPT_LICENSE_END})"; fi
+echo -n "Support License: ${SUPPORT_LICENSE_TXT}";
+if [[ "${SCRIPT_LICENSE_TYPE}" -eq 0 ]] || [[ "${SUPPORT_LICENSE_TXT}" == "Community" ]]; then echo -e " (No support plan bought)\n"; else echo -e " (Support valid from ${SUPPORT_LICENSE_START} until ${SUPPORT_LICENSE_END})\n"; fi
 
 echo -e "Donate and support this script: https://www.paypal.com/cgi-bin/webscr?cmd=_s-xclick&hosted_button_id=7ZRXLSC2UBVWE\n";
 
@@ -3427,10 +3506,10 @@ PAR_INSTALL_CRONJOB=0;
 PAR_DEINSTALL_CRONJOB=0;
 PAR_CRONJOB_TASK=0;
 if [ ! -t 0 ]; then
-	if [[ "$SCRIPT_LICENSE" == "1" ]] || [[ "$SCRIPT_LICENSE" == "2" ]]; then
+	if [[ "$SCRIPT_LICENSE_TYPE" == "1" ]] || [[ "$SCRIPT_LICENSE_TYPE" == "2" ]]; then
 		PAR_CRONJOB_TASK=1;
 	else
-		echo "Cronjobs are not possible under the Free license! You need to upgrade your license therefore. View README.md for more.";
+		echo "Cronjobs are not possible under the Community license! You need to upgrade your license therefore. View README.md for more.";
 		exit 1;
 	fi
 fi
@@ -3455,7 +3534,7 @@ while [ -n "$1" ]; do
 	PAR_COUNTER=`expr $PAR_COUNTER + 1`;
 	case $(echo "$1" | tr '[:upper:]' '[:lower:]') in
 		-h | --help)
-			echo -e "Usage: ./${SCRIPT_NAME} OPTION(S)\n";
+			echo -e "Usage: ./${SCRIPT_NAME} OPTION\(S\)\n";
 
 			echo	"Available multi usable options:";
 			echo -e "--check\t				Checks, if a newer version for your instance is available";
@@ -3469,7 +3548,6 @@ while [ -n "$1" ]; do
 			if [[ "$SCRIPT_LICENSE" == "2" ]]; then
 				echo	"--path PATH				Just check the server in this directory and do not search for directories on the whole server";
 			fi
-			echo	"--locale <LANGUAGE-CODE>		Change language of this script to some of the available under languages/verified/ directory. Default is en_US.";
 			echo	"--debug <DEBUG_FILENAME>		Enables debugging and writes output to file";
 			echo -e "--install-cronjob <HOUR> <MINUTE>	Installs weekly cronjob for monday at your specified time (default: 3 AM (= 03:00 O'clock))\n";
 
@@ -3480,6 +3558,7 @@ while [ -n "$1" ]; do
 			echo	"--test-inform-online-clients		Execute test poke with current settings";
 			echo -e "--update-script\t			Updates the TS3UpdateScript to the latest version";
 			echo	"--show-license-key			Displays TS3UpdateScript license key";
+			echo	"--force-license-update			Forces an update for the TS3UpdateScript license key";
 			echo	"--request-license <EMAIL> <professional|enterprise>	Sends license information to info@ts3-tools.com to get Professional or Enterprise license (view README.md section 'Script Licenses'!)";
 			echo	"--deinstall-cronjob			Deinstalls weekly cronjob";
 
@@ -3503,7 +3582,6 @@ while [ -n "$1" ]; do
 			fi
 			echo -e "(--deactivate-host-alive-check)\t	Deactivates the part of self-test, which checks if all needed hosts are reachable. It is highly NOT recommended to use this parameter!";
 			echo -e "(--deactivate-permissions-check)	Deactivates the part of detection, which checks if the server is running as another user as root";
-			echo    "--locale <LANGUAGE-CODE>		Change language of this script to some of the available under languages/verified/ directory. Default is en_US.";
 			echo    "--debug <DEBUG_FILENAME>		Enables debugging and writes output to file";
 			echo -e "--install-cronjob <HOUR> <MINUTE>	Installs weekly cronjob for monday at your specified time (default: 3 AM (= 03:00 O'clock))\n";
 
@@ -3515,6 +3593,7 @@ while [ -n "$1" ]; do
 			echo    "--test-inform-online-clients		Execute test poke with current settings";
 			echo -e "--update-script\t			Updates the TS3UpdateScript to the latest version";
 			echo -e "--show-license-key			Displays TS3UpdateScript license key";
+			echo	"--force-license-update			Forces an update for the TS3UpdateScript license key";
 			echo	"--request-license <EMAIL> <professional|enterprise>	Sends license information to info@ts3-tools.com to get Professional or Enterprise license (view README.md section 'Script Licenses'!)";
 			echo    "--deinstall-cronjob			Deinstalls weekly cronjob";
 			
@@ -3647,7 +3726,7 @@ while [ -n "$1" ]; do
 					fi
 				fi
 			else
-				echo "The parameter '--install-cronjob' is not available under the Free license! You need to upgrade your license therefore. View README.md for more.";
+				echo "The parameter '--install-cronjob' is not available under the Community license! You need to upgrade your license therefore. View README.md for more.";
 				exit 1;
 			fi
 
@@ -3655,13 +3734,18 @@ while [ -n "$1" ]; do
 		;;
 
 		--show-license-key)
-			if [ -f license_key ]; then
-				echo "Your license key is as follows: $(cat license_key | sed 's/\(.\{4\}\)/\1 /g')";
+			if [ -f .ts3us_license_key ]; then
+				echo "Your license key is as follows: $(cat .ts3us_license_key | sed 's/\(.\{4\}\)/\1 /g')";
 			else
 				echo "You need to execute the script once with root permissions to obtain a valid license.";
 			fi
 
 			exit 0;
+		;;
+
+		--force-license-update)
+			PAR_FORCE_LICENSE_UPDATE=1;
+			shift;
 		;;
 
 		--request-license)
@@ -3673,7 +3757,7 @@ while [ -n "$1" ]; do
 						if [[ "${LICENSE_TYPE}" == "PROFESSIONAL" ]] || [[ "${LICENSE_TYPE}" == "ENTERPRISE" ]]; then
 							PAYMENT_EMAIL="$2";
 							IP_ADDRESS=$(wget -t 3 -T 1 -qO- "$(echo "${NEEDED_LICENSE_IP}" | base64 --decode)");
-							LICENSE_KEY="$(cat license_key)";
+							LICENSE_KEY="$(cat .ts3us_license_key)";
 
 							if [[ -n "$IP_ADDRESS" ]] && [[ -n "$LICENSE_KEY" ]]; then
 								(echo "Payment eMail: ${PAYMENT_EMAIL}"; echo "IP: ${IP_ADDRESS}"; echo "License: ${LICENSE_TYPE}"; echo "License key: ${LICENSE_KEY}") | mail -s "TS3-Tools.info - TS3UpdateScript ${LICENSE_TYPE} License" info@ts3-tools.info,${PAYMENT_EMAIL}
@@ -3721,27 +3805,6 @@ while [ -n "$1" ]; do
 			shift;
 		;;
 
-		--locale)
-			if [[ -n "$2" ]]; then
-				if [[ -f "${ABSOLUTE_PATH}/languages/verified/${2}.conf" ]]; then
-					PAR_LOCALE="languages/verified/${2}.conf";
-					echo "This parameter is deprecated and will be removed soon! Set the variable 'DEFAULT_LANGUAGE' in your config/config.all instead.";
-				elif [[ -f "${ABSOLUTE_PATH}/languages/need_review/${2}.conf" ]]; then
-					echo "This language file has not been verified yet. Fallback to language en_US.";
-					PAR_LOCALE="languages/verified/en_US.conf";
-				else
-					echo "This language file does not exist! Please take a look in the languages/verified/ directory for available languages.";
-					exit 1;
-				fi
-			else
-				echo "Specify the language! For example: --locale de_DE";
-				exit 1;
-			fi
-
-			shift;
-			shift;
-		;;
-
 		--debug)
 			PAR_DEBUG=1;
 
@@ -3762,7 +3825,7 @@ while [ -n "$1" ]; do
 		;;
 
 		*)
-			echo "Unregonized option: $1"
+			echo "Unregonized option: $1";
 			echo -e "\nUsage: ./$SCRIPT_NAME OPTION(S)\n";
 			echo "Try './$SCRIPT_NAME --help' for more options.";
 
@@ -3773,7 +3836,7 @@ done
 
 # Given arguments allowed?
 if [[ "$PAR_COUNTER" -eq 1 ]]; then
-	if [[ "$PAR_CHECK" -eq 0 ]] && [[ "$PAR_UPDATE_SCRIPT" -eq 0 ]] && [[ "$PAR_DEINSTALL_CRONJOB" -eq 0 ]] && [[ "$PAR_TEST_INFORM_ONLINE_CLIENTS" -eq 0 ]] && [[ "$PAR_DISPLAY_SETTINGS" -eq 0 ]]; then
+	if [[ "$PAR_CHECK" -eq 0 ]] && [[ "$PAR_UPDATE_SCRIPT" -eq 0 ]] && [[ "$PAR_DEINSTALL_CRONJOB" -eq 0 ]] && [[ "$PAR_TEST_INFORM_ONLINE_CLIENTS" -eq 0 ]] && [[ "$PAR_DISPLAY_SETTINGS" -eq 0 ]] && [[ "$PAR_FORCE_LICENSE_UPDATE" -eq 0 ]]; then
 		echo "It is not allowed to use this parameter only!";
 		exit 1;
 	fi
@@ -3783,7 +3846,7 @@ elif [[ "$PAR_COUNTER" -eq 2 ]]; then
 		exit 1;
 	fi
 elif [[ "$PAR_COUNTER" -gt 2 ]]; then
-	if [[ "$PAR_HELP" -eq 1 ]] || [[ "$PAR_VERSION" -eq 1 ]] || [[ "$PAR_DEINSTALL_CRONJOB" -eq 1 ]] || [[ "$PAR_TEST_INFORM_ONLINE_CLIENTS" -eq 1 ]] || [[ "$PAR_DISPLAY_SETTINGS" -eq 1 ]]; then
+	if [[ "$PAR_HELP" -eq 1 ]] || [[ "$PAR_VERSION" -eq 1 ]] || [[ "$PAR_DEINSTALL_CRONJOB" -eq 1 ]] || [[ "$PAR_TEST_INFORM_ONLINE_CLIENTS" -eq 1 ]] || [[ "$PAR_DISPLAY_SETTINGS" -eq 1 ]] || [[ "$PAR_FORCE_LICENSE_UPDATE" -eq 0 ]]; then
 		echo "This type of combination is not permitted!";
 		exit 1;
 	elif [[ "$PAR_LATEST_RELEASE" -eq 1 ]] && [[ "$PAR_BETA_RELEASE" -eq 1 ]]; then
@@ -3805,11 +3868,21 @@ if [[ "$EUID" != 0 ]]; then
 	exit 0;
 fi
 
+if [[ "${PAR_FORCE_LICENSE_UPDATE}" -eq 1 ]]; then
+	if ! checkLicense force; then
+		echo "Your license could not be updated.";
+	else
+		echo "Your license was updated successful.";
+	fi
+
+	exit 0;
+fi
+
 # Execute main program
 if [ $PAR_DEBUG -eq 0 ]; then
 	main
 else
-	main 2>&1 | tee $PAR_DEBUG_FILENAME | grep -E -v '^\+ '
+	main 2>&1 | tee "${PAR_DEBUG_FILENAME}" | grep -E -v '^\+ '
 fi
 
 exit 0;

@@ -22,16 +22,21 @@ First of all, you have to meet the latest [requirements](../README.md#requiremen
 
 a) Download the latest TS3UpdateScript from GitHub.com: https://github.com/TS3Tools/TS3UpdateScript/
 
+  ``user@tux:~$ wget https://github.com/TS3Tools/TS3UpdateScript/archive/master.zip``
+
 b) Unzip the downloaded archive on your Linux server:
-   For example: unzip TS3UpdateScript.zip
+
+  ``user@tux:~$ unzip master.zip && rm master.zip``
+
+  ``user@tux:~$ mv TS3UpdateScript-master/ TS3UpdateScript && cd TS3UpdateScript``
 
    HINT: You can unzip and use the script from each directory of your server which you want to.
 
-c) Make the script executable:
+c) Make sure, that the script is executable:
 
-  ``user@tux:~$ chmod +x TS3UpdateScript``
+  ``user@tux:~/TS3UpdateScript$ chmod +x TS3UpdateScript``
 
-d) Set your configuration values in configs/config.all:
+d) Set your configuration values in ``configs/config.all``:
 - ``DEFAULT_LANGUAGE``
   Set/Change the default language. For example 'de_DE' for German. Default is always English.
 - ``ADMINISTRATOR_EMAILS``
@@ -56,7 +61,13 @@ If you want to be able to poke someone or improve the detection of your server d
 
 HINT: UPDATE_TEXT / CRON_UPDATE_TEXT has a limitation of 100 characters. The DISPLAYED_USERNAME has a limitation of 30 characters. The script checks at the start, if you are using a valid length. After editing the configuration), you should run the script once manually to check and see, if the length is ok.
 
-f) Finish! Read the USAGE below to see, how you can use it
+e) Install required Linux software packages (the following example is for Debian based systems with minimum required packages):
+
+  ``user@tux:~/TS3UpdateScript$ sudo apt-get install bash which rsync wget grep sed unzip bzip2 lsb-release gdb``
+
+f) Finish! Read the USAGE below to see, how you can use it or just run it check your instances without any special settings (parameters):
+
+  ``user@tux:~/TS3UpdateScript$ sudo ./TS3UpdateScript --check``
 
 ## Usage
 
