@@ -3846,7 +3846,7 @@ elif [[ "$PAR_COUNTER" -eq 2 ]]; then
 		exit 1;
 	fi
 elif [[ "$PAR_COUNTER" -gt 2 ]]; then
-	if [[ "$PAR_HELP" -eq 1 ]] || [[ "$PAR_VERSION" -eq 1 ]] || [[ "$PAR_DEINSTALL_CRONJOB" -eq 1 ]] || [[ "$PAR_TEST_INFORM_ONLINE_CLIENTS" -eq 1 ]] || [[ "$PAR_DISPLAY_SETTINGS" -eq 1 ]] || [[ "$PAR_FORCE_LICENSE_UPDATE" -eq 0 ]]; then
+	if [[ "$PAR_HELP" -eq 1 ]] || [[ "$PAR_VERSION" -eq 1 ]] || [[ "$PAR_DEINSTALL_CRONJOB" -eq 1 ]] || [[ "$PAR_TEST_INFORM_ONLINE_CLIENTS" -eq 1 ]] || [[ "$PAR_DISPLAY_SETTINGS" -eq 1 ]] || [[ "$PAR_FORCE_LICENSE_UPDATE" -eq 1 ]]; then
 		echo "This type of combination is not permitted!";
 		exit 1;
 	elif [[ "$PAR_LATEST_RELEASE" -eq 1 ]] && [[ "$PAR_BETA_RELEASE" -eq 1 ]]; then
