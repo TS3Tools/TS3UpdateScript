@@ -16,8 +16,8 @@ exec 5<&0
 # Donations: https://www.paypal.com/cgi-bin/webscr?cmd=_s-xclick&hosted_button_id=7ZRXLSC2UBVWE
 #
 
-SCRIPT_VERSION="5.4.0"
-LAST_EDIT_DATE="2016-09-23"
+SCRIPT_VERSION="5.4.1"
+LAST_EDIT_DATE="2016-09-28"
 
 # DO NOT REMOVE OR CHANGE
 SOFTWARE_ABOUT="This is the most widely used and fastest shell script to update all your TeamSpeak 3 server instances."
@@ -26,7 +26,7 @@ SOFTWARE_HOMEPAGE="www.ts3-tools.info"
 SOFTWARE_FACEBOOK="www.facebook.com/TS3Tools"
 SOFTWARE_LICENSE="GNU GPLv3"
 
-LICENSE_SIP='aHR0cHM6Ly93d3cudHMzLXRvb2xzLmluZm8vdHMzdXMvbGljZW5zaW5nLnBocD9wPXRzM3VzCg=='
+LICENSE_SIP='aHR0cHM6Ly93d3cudHMzLXRvb2xzLmluZm8vdHMzdG9vbHMvbGljZW5zaW5nLnBocD9wPXRzM3VzCg=='
 LICENSE_SEC='7dc3d819fb42ed9006df79e2642d026c5faef1fb9959b29810718d034fc50a0556d868ae5e15cfe58159bcfcb7026b5852b1d8a2cc194d8e6ca35cf9a203f225'
 
 # Code structure:
@@ -81,7 +81,7 @@ function clearTerminalScreen() {
 # Return: 0:boolean or 1:boolean
 function checkConsistency() {
 	CHKSUM=$(grep -v "ORIGIN=" "$0" | head -202 | sha256sum | cut -d " " -f 1)
-	ORIGIN="def0c70acbc40f2d914b783ffc8a8c1b410642bcf4a7c13b281a55857870b111"
+	ORIGIN="e9131872faff443c4efa7d06ae351a9092f1c0c8406228275b765b49ca644e13"
 
 	if [[ "$CHKSUM" == "$ORIGIN" ]]; then
 		return 0;
@@ -627,7 +627,7 @@ function getLatestTSServerVersion() {
 # Find all TeamSpeak 3 server instances
 # Return: 0:boolean or 1:boolean
 function findTS3ServerInstances() {
-	if [[ "$SCRIPT_LICENSE" == "2" ]]; then
+	if [[ "$SCRIPT_LICENSE_TYPE" == "2" ]]; then
 		if [[ "$PAR_PATH_DIRECTORY" == "/" ]]; then
 			find / -name 'ts3server_startscript.sh' 2> /dev/null | grep -Eiv "/tmp/TS3Tools/TS3UpdateScript|/var/backups/TS3Tools/TS3UpdateScript" | sort > TS3InstancePaths.txt
 		else
@@ -2399,7 +2399,7 @@ function main() {
 						fi
 
 						# Check for lines with 'The system locale is set to'
-						if [[ "$SCRIPT_LICENSE" == "1" ]] || [[ "$SCRIPT_LICENSE" == "2" ]]; then
+						if [[ "$SCRIPT_LICENSE_TYPE" == "1" ]] || [[ "$SCRIPT_LICENSE_TYPE" == "2" ]]; then
 							if ! checkSystemLocale ${INSTANCE_PATH}; then
 								displayBPAText "${TXT_COLLECTING_INFORMATION_SYSTEM_LOCALE}"
 							fi
@@ -2423,7 +2423,7 @@ function main() {
 									COLLECTING_INFORMATION_STATUS=1;
 								fi
 
-								if [[ "$SCRIPT_LICENSE" == "1" ]] || [[ "$SCRIPT_LICENSE" == "2" ]]; then
+								if [[ "$SCRIPT_LICENSE_TYPE" == "1" ]] || [[ "$SCRIPT_LICENSE_TYPE" == "2" ]]; then
 									if [[ "$OWNER" == "root" ]]; then
 										displayBPAText "${TXT_COLLECTING_INFORMATION_OWNER_ROOT_PERMISSIONS_INFO}"
 									fi
@@ -2441,7 +2441,7 @@ function main() {
 						fi
 
 						# Check shell and display warning, if a valid shell is in use
-						if [[ "$SCRIPT_LICENSE" == "1" ]] || [[ "$SCRIPT_LICENSE" == "2" ]]; then
+						if [[ "$SCRIPT_LICENSE_TYPE" == "1" ]] || [[ "$SCRIPT_LICENSE_TYPE" == "2" ]]; then
 							if isShellOfOwnerValid ${OWNER}; then
 								displayBPAText "${TXT_COLLECTING_INFORMATION_IS_SHELL_VALID_FAILED}"
 							fi
@@ -2457,7 +2457,7 @@ function main() {
 									COLLECTING_INFORMATION_STATUS=1;
 								fi
 
-								if [[ "$SCRIPT_LICENSE" == "1" ]] || [[ "$SCRIPT_LICENSE" == "2" ]]; then
+								if [[ "$SCRIPT_LICENSE_TYPE" == "1" ]] || [[ "$SCRIPT_LICENSE_TYPE" == "2" ]]; then
 									if [[ "$GROUP" == "root" ]]; then
 										displayBPAText "${TXT_COLLECTING_INFORMATION_GROUP_ROOT_PERMISSIONS_INFO}"
 									fi
@@ -2475,7 +2475,7 @@ function main() {
 						fi
 
 						# Check files/ storage and display warning, if a non-external storage is in use
-						if [[ "$SCRIPT_LICENSE" == "1" ]] || [[ "$SCRIPT_LICENSE" == "2" ]]; then
+						if [[ "$SCRIPT_LICENSE_TYPE" == "1" ]] || [[ "$SCRIPT_LICENSE_TYPE" == "2" ]]; then
 							if isFilesStorageExternal ${INSTANCE_PATH}; then
 								displayBPAText "${TXT_COLLECTING_INFORMATION_IS_FILES_STORAGE_EXTERNAL_FAILED}"
 							fi
@@ -2740,7 +2740,7 @@ function main() {
 					if [[ -n "$INSTANCE_PATH" ]]; then
 						echo -n "  ${CRONJOB_MINUTE} ${CRONJOB_HOUR} * * 1  root ${ABSOLUTE_PATH}/${SCRIPT_NAME} " >> ${CROND_PATH_FILE};
 
-						if [[ "$SCRIPT_LICENSE" == "2" ]]; then
+						if [[ "$SCRIPT_LICENSE_TYPE" == "2" ]]; then
 							echo -n "--path ${INSTANCE_PATH} " >> ${CROND_PATH_FILE};
 						fi
 
@@ -3440,9 +3440,7 @@ if [ -t 0 ]; then
 fi
 
 echo -e "\nAbout: ${SOFTWARE_ABOUT}";
-echo    "Author: ${SOFTWARE_AUTHOR}";
-echo    "Website: ${SOFTWARE_HOMEPAGE}";
-echo    "facebook: ${SOFTWARE_FACEBOOK}";
+echo    "Author: ${SOFTWARE_AUTHOR} | Website: ${SOFTWARE_HOMEPAGE} | facebook: ${SOFTWARE_FACEBOOK}";
 echo -e "License: ${SOFTWARE_LICENSE}\n";
 
 echo	" _____ ____ _____       _              _       _        __";
@@ -3545,7 +3543,7 @@ while [ -n "$1" ]; do
 			echo	"--disable-temporary-password-backup	Disable feature to backup temporary passwords";
 			echo	"--set-release				Do not use the official latest release. Use instead the set release from the configuration file configs/config.all";
 			echo	"--beta-release				With this parameter you are able to detect and update your TeamSpeak server to the latest beta release";
-			if [[ "$SCRIPT_LICENSE" == "2" ]]; then
+			if [[ "$SCRIPT_LICENSE_TYPE" == "2" ]]; then
 				echo	"--path PATH				Just check the server in this directory and do not search for directories on the whole server";
 			fi
 			echo	"--debug <DEBUG_FILENAME>		Enables debugging and writes output to file";
@@ -3577,7 +3575,7 @@ while [ -n "$1" ]; do
 			echo	"--disable-temporary-password-backup	Disable feature to backup temporary passwords";
 			echo    "--set-release				Do not use the official latest release. Use instead the set release from the configuration file configs/config.all";
 			echo    "--beta-release				With this parameter you are able to detect and update your TeamSpeak server to the latest beta release";
-			if [[ "$SCRIPT_LICENSE" == "2" ]]; then
+			if [[ "$SCRIPT_LICENSE_TYPE" == "2" ]]; then
 				echo    "--path PATH				Just check the server in this directory and do not search for directories on the whole server";
 			fi
 			echo -e "(--deactivate-host-alive-check)\t	Deactivates the part of self-test, which checks if all needed hosts are reachable. It is highly NOT recommended to use this parameter!";
@@ -3671,7 +3669,7 @@ while [ -n "$1" ]; do
 			if [[ -n "$2" ]]; then
 				if [[ -d "$2" ]]; then
 					if [[ -f "${2}/ts3server_startscript.sh" ]]; then
-						if [[ "$SCRIPT_LICENSE" == "2" ]]; then
+						if [[ "$SCRIPT_LICENSE_TYPE" == "2" ]]; then
 							PAR_PATH_DIRECTORY="$2";
 						else
 							echo "The parameter '--path' is only available under the Enterprise license! You need to upgrade your license therefore. View README.md for more.";
@@ -3705,7 +3703,7 @@ while [ -n "$1" ]; do
 		;;
 
 		--install-cronjob)
-			if [[ "$SCRIPT_LICENSE" == "1" ]] || [[ "$SCRIPT_LICENSE" == "2" ]]; then
+			if [[ "$SCRIPT_LICENSE_TYPE" == "1" ]] || [[ "$SCRIPT_LICENSE_TYPE" == "2" ]]; then
 				PAR_INSTALL_CRONJOB=1;
 				if [[ -n "$2" ]] && [[ "$2" =~ [0-9]{1,2} ]]; then
 					if [[ "$2" -ge 0 ]] && [[ "$2" -le 23 ]]; then
@@ -3760,7 +3758,7 @@ while [ -n "$1" ]; do
 							LICENSE_KEY="$(cat .ts3us_license_key)";
 
 							if [[ -n "$IP_ADDRESS" ]] && [[ -n "$LICENSE_KEY" ]]; then
-								(echo "Payment eMail: ${PAYMENT_EMAIL}"; echo "IP: ${IP_ADDRESS}"; echo "License: ${LICENSE_TYPE}"; echo "License key: ${LICENSE_KEY}") | mail -s "TS3-Tools.info - TS3UpdateScript ${LICENSE_TYPE} License" info@ts3-tools.info,${PAYMENT_EMAIL}
+								(echo "Payment eMail: ${PAYMENT_EMAIL}"; echo "IP: ${IP_ADDRESS}"; echo "Product: TS3UpdateScript"; echo "License: ${LICENSE_TYPE}"; echo "License key: ${LICENSE_KEY}") | mail -s "TS3-Tools.info - TS3UpdateScript ${LICENSE_TYPE} License" info@ts3-tools.info,${PAYMENT_EMAIL}
 								if [[ $? -eq 0 ]]; then
 									echo "Email should be sent successful to info@ts3-tools.info and ${PAYMENT_EMAIL}. If you do not receive this email within the next minutes, you server is may not able to send emails through the internet.";
 									exit 0;

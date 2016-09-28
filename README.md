@@ -253,6 +253,7 @@ Parameter | Description
 --test-inform-online-clients | Execute test poke with current settings
 --update-script | Updates the TS3UpdateScript to the latest version
 --show-license-key | Displays TS3UpdateScript license key
+--force-license-update | Forces an update for the TS3UpdateScript license key
 --request-license [EMAIL] [professional | enterprise] | Sends license information to info@ts3-tools.com to get professional/enterprise license ([see Script Licenses](#script-licenses)!)
 --deinstall-cronjob | Deinstalls weekly cronjob
 

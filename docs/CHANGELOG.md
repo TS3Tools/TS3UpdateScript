@@ -23,6 +23,14 @@ Hotfix | Important fix for one more issues, which causes a not (correct) working
 
 ## Releases
 
+### Version 5.4.1 (2016-09-28)
+
+	+ Added '--force-license-update' to README.md
+	* Changed licensing server
+	* Author, Website and facebook will be displayed in a single line now
+	* Added 'Product: TS3UpdateScript' to the email text by executing '--request-license'
+	* Some variables for the licensing were not updated and caused an issue like 'The parameter '--install-cronjob' is not available under the Community license!'
+
 ### Version 5.4.0 (2016-09-23)
 
 	! Help us to improve the TS3UpdateScript by sending us your anonymous feedback: GitHub issue [#55](https://github.com/TS3Tools/TS3UpdateScript/issues/55) / [Survey Form](https://goo.gl/forms/D14KbPi4p5ll7Xhp2)
