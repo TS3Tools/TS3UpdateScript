@@ -23,6 +23,10 @@ Hotfix | Important fix for one more issues, which causes a not (correct) working
 
 ## Releases
 
+### Version 5.4.2 (2016-09-30)
+
+	* Some variables for the licensing were not updated and caused an issue like 'Could not detect your IP address or your license key. Please try again.'
+
 ### Version 5.4.1 (2016-09-28)
 
 	+ Added '--force-license-update' to README.md
