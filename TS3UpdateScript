@@ -16,8 +16,8 @@ exec 5<&0
 # Donations: https://www.paypal.com/cgi-bin/webscr?cmd=_s-xclick&hosted_button_id=7ZRXLSC2UBVWE
 #
 
-SCRIPT_VERSION="5.4.2"
-LAST_EDIT_DATE="2016-09-30"
+SCRIPT_VERSION="5.4.3"
+LAST_EDIT_DATE="2016-10-08"
 
 # DO NOT REMOVE OR CHANGE
 SOFTWARE_ABOUT="This is the most widely used and fastest shell script to update all your TeamSpeak 3 server instances."
@@ -81,7 +81,7 @@ function clearTerminalScreen() {
 # Return: 0:boolean or 1:boolean
 function checkConsistency() {
 	CHKSUM=$(grep -v "ORIGIN=" "$0" | head -202 | sha256sum | cut -d " " -f 1)
-	ORIGIN="d75c862df05d1c3468ea7fa729e35b6b26420e6470abe4397f1ba38d31bd42a8"
+	ORIGIN="f46af35b49e15f2923ba2722b4da538d56768e2518851b990946cd4f1a6bcf3f"
 
 	if [[ "$CHKSUM" == "$ORIGIN" ]]; then
 		return 0;
@@ -366,7 +366,7 @@ function checkdeps() {
 	done
 
 	if [[ "${CHECKDEPS_FAILED}" -eq 1 ]]; then
-		return 1;
+		echo -n "1";
 	fi
 
 	return 0;
@@ -1025,8 +1025,8 @@ function getServerQueryIP() {
 		# Detect database type (SQLite, MySQL or MariaDB)
 		DATABASE_TYPE="$(getDatabaseType ${1})"
 
-		if [[ "${DATABASE_TYPE}" == "SQLite" ]] && checkdeps sqlite3; then
-			SERVER_QUERY_IP="$(sqlite3 ${1}/ts3server.sqlitedb 'SELECT ip FROM bindings WHERE type=2;')"
+		if [[ "${DATABASE_TYPE}" == "SQLite" ]] && [[ $(checkdeps sqlite3) -eq 0 ]]; then
+			SERVER_QUERY_IP="$(sqlite3 ${1}/ts3server.sqlitedb 'SELECT ip FROM bindings WHERE type=2;' | tail -1)"
 		elif [[ "${DATABASE_TYPE}" == "MySQL" ]] || [[ "${DATABASE_TYPE}" == "MariaDB" ]]; then
 			DATABASE_INI_FILE="$(getDatabaseINIFile ${1})"
 
@@ -1037,8 +1037,6 @@ function getServerQueryIP() {
 			DB_PORT=$(grep -Ei '^port=.+$' ${1}${DATABASE_INI_FILE} | cut -d '=' -f 2 | sed -e "s/^'//" -e 's/^"//' -e "s/'$//" -e 's/"$//')
 
 			SERVER_QUERY_IP="$(echo 'SELECT ip FROM bindings WHERE type=2;' | mysql --user=${DB_USERNAME} --password=${DB_PASSWORD} ${DB_NAME} --host=${DB_HOST} --port=${DB_PORT} | tail -1)"
-		else
-			echo -n "127.0.0.1";
 		fi
 	fi
 
@@ -2026,7 +2024,7 @@ function createDebugReport() {
 		echo	"Type Of Files Storage: Shared network storage" >> ${DEBUG_REPORT_FILE};
 	fi
 
-	if [[ "$PAR_INFORM_ONLINE_CLIENTS" -eq 1 ]] || checkdeps telnet expect; then
+	if [[ "$PAR_INFORM_ONLINE_CLIENTS" -eq 1 ]] || [[ $(checkdeps telnet expect) -eq 0 ]]; then
 		echo	"ServerQuery IP: ${SERVER_QUERY_IP}" >> ${DEBUG_REPORT_FILE};
 		echo	"ServerQuery Port: ${SERVER_QUERY_PORT}" >> ${DEBUG_REPORT_FILE};
 	fi
@@ -2202,35 +2200,35 @@ function main() {
 	fi
 
 	# Execute software checks
-	if ! checkdeps bash which rsync wget grep sed unzip bzip2 gdb; then
+	if [[ $(checkdeps bash which rsync wget grep sed unzip bzip2 gdb) -eq 1 ]]; then
 		SELF_TEST_STATUS=1;
 	fi
 
 	# Debian specific packages
 	if [ -f /etc/debian_version ]; then
-		if ! checkdeps lsb_release; then
+		if [[ $(checkdeps lsb_release) -eq 1 ]]; then
 			SELF_TEST_STATUS=1;
 		fi
 	# RedHat/CentOS specific
 	elif [ -f /etc/redhat-release ]; then
-		if ! checkdeps "lsb_release:redhat-lsb"; then
+		if [[ $(checkdeps "lsb_release:redhat-lsb") -eq 1 ]]; then
 			SELF_TEST_STATUS=1;
 		fi
 	else
-		if ! checkdeps lsb_release; then
+		if [[ $(checkdeps lsb_release) -eq 1 ]]; then
 			SELF_TEST_STATUS=1;
 		fi
 	fi
 
 	# Task/Parameter specific
 	if [ "$PAR_INFORM_ONLINE_CLIENTS" -eq 1 ]; then
-		if ! checkdeps telnet expect; then
+		if [[ $(checkdeps telnet expect) -eq 1 ]]; then
 			SELF_TEST_STATUS=1;
 		fi
 	fi
 
 	if [ "$PAR_CRONJOB_TASK" -eq 1 ]; then
-		if ! checkdeps mail; then
+		if [[ $(checkdeps mail) -eq 1 ]]; then
 			SELF_TEST_STATUS=1;
 		fi
 	fi
@@ -2263,7 +2261,9 @@ function main() {
 		fi
 
 		# Show failed self-tests
-		cat SELF_TEST_STATUS.txt;
+		if [[ -f SELF_TEST_STATUS.txt ]]; then
+			cat SELF_TEST_STATUS.txt;
+		fi
 
 		echo "${TXT_SELF_TEST_FAILED}";
 	else
@@ -2324,7 +2324,7 @@ function main() {
 							COLLECTING_INFORMATION_STATUS=1;
 						fi
 
-						if [[ "$PAR_INFORM_ONLINE_CLIENTS" -eq 1 ]] || checkdeps telnet expect; then
+						if [[ "$PAR_INFORM_ONLINE_CLIENTS" -eq 1 ]] || [[ $(checkdeps telnet expect) -eq 0 ]]; then
 							# Detect ServerQuery IP
 							SERVER_QUERY_IP="$(getServerQueryIP ${INSTANCE_PATH})";
 
@@ -2344,7 +2344,7 @@ function main() {
 
 						# Detect version
 						if ts3server ${INSTANCE_PATH} status; then
-							if [[ "$PAR_INFORM_ONLINE_CLIENTS" -eq 1 ]] || checkdeps telnet expect; then
+							if [[ "$PAR_INFORM_ONLINE_CLIENTS" -eq 1 ]] || [[ $(checkdeps telnet expect) -eq 0 ]]; then
 								INSTALLED_TS3_SERVER_VERSION="$(getVersionOfInstalledTS3Server ${SERVER_QUERY_IP} ${SERVER_QUERY_PORT})";
 							else
 								INSTALLED_TS3_SERVER_VERSION="$(getVersionOfInstalledTS3Server ${INSTANCE_PATH})";
@@ -2360,7 +2360,7 @@ function main() {
 
 						# Detect build
 						if ts3server ${INSTANCE_PATH} status; then
-							if [[ "$PAR_INFORM_ONLINE_CLIENTS" -eq 1 ]] || checkdeps telnet expect; then
+							if [[ "$PAR_INFORM_ONLINE_CLIENTS" -eq 1 ]] || [[ $(checkdeps telnet expect) -eq 0 ]]; then
 								INSTALLED_TS3_SERVER_BUILD="$(getBuildOfInstalledTS3Server ${SERVER_QUERY_IP} ${SERVER_QUERY_PORT})";
 							else
 								INSTALLED_TS3_SERVER_BUILD="$(getBuildOfInstalledTS3Server)";
@@ -2376,7 +2376,7 @@ function main() {
 
 						# Detect platform
 						if ts3server ${INSTANCE_PATH} status; then
-							if [[ "$PAR_INFORM_ONLINE_CLIENTS" -eq 1 ]] || checkdeps telnet expect; then
+							if [[ "$PAR_INFORM_ONLINE_CLIENTS" -eq 1 ]] || [[ $(checkdeps telnet expect) -eq 0 ]]; then
 								INSTALLED_TS3_SERVER_PLATFORM="$(getPlatformOfInstalledTS3Server ${SERVER_QUERY_IP} ${SERVER_QUERY_PORT})";
 							else
 								INSTALLED_TS3_SERVER_PLATFORM="$(getPlatformOfInstalledTS3Server ${INSTANCE_PATH})";
@@ -2575,7 +2575,7 @@ function main() {
 					fi
 
 					# Check serveradmin password
-					if [[ "$PAR_INFORM_ONLINE_CLIENTS" -eq 1 ]] || checkdeps telnet expect; then
+					if [[ "$PAR_INFORM_ONLINE_CLIENTS" -eq 1 ]] || [[ $(checkdeps telnet expect) -eq 0 ]]; then
 						if ts3server ${INSTANCE_PATH} status; then
 							if ! checkServeradminPassword ${SERVERQUERY_IP} ${SERVERQUERY_PORT} ${INSTANCE_PATH}; then
 								echo "${TXT_VALIDATION_WRONG_PASSWORD}: ${INSTANCE_PATH}/.password-file" >> VALIDATION_STATUS.txt;
@@ -2926,7 +2926,7 @@ function main() {
 								echo	"	${TXT_EXECUTION_MECHANISM_OWNER_DETAILS}: ${OWNER} (${TXT_EXECUTION_MECHANISM_UID_DETAILS}: ${OWNER_ID})";
 								echo -e "	${TXT_EXECUTION_MECHANISM_GROUP_DETAILS}: ${GROUP} (${TXT_EXECUTION_MECHANISM_GID_DETAILS}: ${GROUP_ID})\n";
 
-								if [[ "$PAR_INFORM_ONLINE_CLIENTS" -eq 1 ]] || checkdeps telnet expect; then
+								if [[ "$PAR_INFORM_ONLINE_CLIENTS" -eq 1 ]] || [[ $(checkdeps telnet expect) -eq 0 ]]; then
 									echo	"	${TXT_EXECUTION_MECHANISM_SERVERQUERY_IP}: ${SERVERQUERY_IP}";
 									echo -e "	${TXT_EXECUTION_MECHANISM_SERVERQUERY_PORT}: ${SERVERQUERY_PORT}\n";
 								fi
@@ -2994,7 +2994,7 @@ function main() {
 									fi
 
 									## Backup temporary passwords
-									if [[ "$PAR_DISABLE_TEMPORARY_PASSWORD_BACKUP" -eq 0 ]] && checkdeps telnet expect; then
+									if [[ "$PAR_DISABLE_TEMPORARY_PASSWORD_BACKUP" -eq 0 ]] && [[ $(checkdeps telnet expect) -eq 0 ]]; then
 										echo "${TXT_EXECUTION_MECHANISM_GET_TEMPORARY_SERVER_PASSWORDS_INFO}";
 
 										if getTemporaryServerPasswords "${SERVERQUERY_IP}" "${SERVERQUERY_PORT}"; then

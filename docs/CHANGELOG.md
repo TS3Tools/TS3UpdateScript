@@ -23,6 +23,10 @@ Hotfix | Important fix for one more issues, which causes a not (correct) working
 
 ## Releases
 
+### Version 5.4.3 (2016-10-08)
+
+	* Fixed issue with 'Wrong serveradmin password. Please set the correct one here: /home/teamspeak/.password-file'
+
 ### Version 5.4.2 (2016-09-30)
 
 	* Some variables for the licensing were not updated and caused an issue like 'Could not detect your IP address or your license key. Please try again.'
