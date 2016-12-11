@@ -16,8 +16,8 @@ exec 5<&0
 # Donations: https://www.paypal.com/cgi-bin/webscr?cmd=_s-xclick&hosted_button_id=7ZRXLSC2UBVWE
 #
 
-SCRIPT_VERSION="5.4.3"
-LAST_EDIT_DATE="2016-10-08"
+SCRIPT_VERSION="5.5.0"
+LAST_EDIT_DATE="2016-12-11"
 
 # DO NOT REMOVE OR CHANGE
 SOFTWARE_ABOUT="This is the most widely used and fastest shell script to update all your TeamSpeak 3 server instances."
@@ -81,7 +81,7 @@ function clearTerminalScreen() {
 # Return: 0:boolean or 1:boolean
 function checkConsistency() {
 	CHKSUM=$(grep -v "ORIGIN=" "$0" | head -202 | sha256sum | cut -d " " -f 1)
-	ORIGIN="f46af35b49e15f2923ba2722b4da538d56768e2518851b990946cd4f1a6bcf3f"
+	ORIGIN="744578a2edfff6743ec15d90aa9c7afac0e3539714b7a539c96cc5d31a16647a"
 
 	if [[ "$CHKSUM" == "$ORIGIN" ]]; then
 		return 0;
@@ -1447,6 +1447,8 @@ function getTemporaryServerPasswords() {
 	SERVERADMIN_PASSWORD="$(cat ${INSTANCE_PATH}/.password-file)"
 
 	if getListOfVirtualServer ${1} ${2}; then
+		# Time measurement backuping temporary server passwords START
+		TIME_MEASUREMENT_GET_TEMPORARY_SERVER_PASSWORDS_START=$(date +%s)
 		(
 			cat <<- LOGIN
 				spawn telnet "$1" "$2"
@@ -1475,10 +1477,15 @@ function getTemporaryServerPasswords() {
 				send "quit\r"
 			LOGOUT
 		) | expect | grep -E "use sid|nickname=" | grep -v "clientupdate" | tr "|" "\n" > TEMP_SERVERTEMPPASSWORDLIST.txt
+
+		# Time measurement backuping temporary server passwords END
+		TIME_MEASUREMENT_GET_TEMPORARY_SERVER_PASSWORDS_END=$(date +%s)
 	else
 		return 1;
 	fi
 
+	# Time measurement formatting temporary server passwords START
+	TIME_MEASUREMENT_FORMAT_TEMPORARY_SERVER_PASSWORDS_START=$(date +%s)
 	cat TEMP_SERVERTEMPPASSWORDLIST.txt | tr -d '^M' | while read -r temppass_line; do
 		SID=$(echo ${temppass_line} | grep -Eo 'sid=[0-9]+' | cut -d '=' -f 2)
 		TCID=$(echo ${temppass_line} | grep -Eo 'tcid=[0-9]+' | cut -d '=' -f 2)
@@ -1503,6 +1510,8 @@ function getTemporaryServerPasswords() {
 			echo "SID=${SERVER_ID}|${TCID}|${TSPW}|${TCPW}|${DURATION}|${DESC}" >> SERVERTEMPPASSWORDLIST.txt;
 		fi
 	done
+	# Time measurement formatting temporary server passwords END
+	TIME_MEASUREMENT_FORMAT_TEMPORARY_SERVER_PASSWORDS_END=$(date +%s)
 
 	rm TEMP_SERVERTEMPPASSWORDLIST.txt
 
@@ -3407,6 +3416,12 @@ function main() {
 		fi
 		if [[ "$COLLECTING_INFORMATION_STATUS" -eq 0 ]] && [[ "$VALIDATION_STATUS" -eq 0 ]]; then
 			echo -n "${TXT_STATISTICS_EXECUTION_MECHANISM}: "; getTimeDifference $TIME_MEASUREMENT_EXECUTION_MECHANISM_START $TIME_MEASUREMENT_EXECUTION_MECHANISM_END; echo "s";
+
+			if [[ "$PAR_DISABLE_TEMPORARY_PASSWORD_BACKUP" -eq 0 ]] && [[ -n "$TIME_MEASUREMENT_GET_TEMPORARY_SERVER_PASSWORDS_START" ]]; then
+				echo -n "${TXT_STATISTICS_GET_TEMPORARY_SERVER_PASSWORDS_MECHANISM}: "; getTimeDifference $TIME_MEASUREMENT_GET_TEMPORARY_SERVER_PASSWORDS_START $TIME_MEASUREMENT_GET_TEMPORARY_SERVER_PASSWORDS_END; echo "s";
+				echo -n "${TXT_STATISTICS_FORMAT_TEMPORARY_SERVER_PASSWORDS_MECHANISM}: "; getTimeDifference $TIME_MEASUREMENT_FORMAT_TEMPORARY_SERVER_PASSWORDS_START $TIME_MEASUREMENT_FORMAT_TEMPORARY_SERVER_PASSWORDS_END; echo "s";
+			fi
+
 			if [[ "$PAR_INFORM_ONLINE_CLIENTS" -eq 1 ]] || [[ "$PAR_TEST_INFORM_ONLINE_CLIENTS" -eq 1 ]]; then
 				if [[ -n "$TIME_MEASUREMENT_POKE_CLIENTS_START" ]]; then
 					echo -n "${TXT_STATISTICS_POKE}: "; getTimeDifference $TIME_MEASUREMENT_POKE_CLIENTS_START $TIME_MEASUREMENT_POKE_CLIENTS_END; echo "s";
