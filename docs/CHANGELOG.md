@@ -23,6 +23,11 @@ Hotfix | Important fix for one more issues, which causes a not (correct) working
 
 ## Releases
 
+### Version 5.5.1 (2017-01-08)
+
+	* Fixed issue with non-detected TS3 server information [GitHub issue 59](https://github.com/TS3Tools/TS3UpdateScript/issues/59)
+	* Some information were missing in the debug report
+
 ### Version 5.5.0 (2016-12-11)
 
 	+ Added time measurement for backuping temporary server passwords

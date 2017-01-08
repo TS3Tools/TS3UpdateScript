@@ -16,8 +16,8 @@ exec 5<&0
 # Donations: https://www.paypal.com/cgi-bin/webscr?cmd=_s-xclick&hosted_button_id=7ZRXLSC2UBVWE
 #
 
-SCRIPT_VERSION="5.5.0"
-LAST_EDIT_DATE="2016-12-11"
+SCRIPT_VERSION="5.5.1"
+LAST_EDIT_DATE="2017-01-08"
 
 # DO NOT REMOVE OR CHANGE
 SOFTWARE_ABOUT="This is the most widely used and fastest shell script to update all your TeamSpeak 3 server instances."
@@ -81,7 +81,7 @@ function clearTerminalScreen() {
 # Return: 0:boolean or 1:boolean
 function checkConsistency() {
 	CHKSUM=$(grep -v "ORIGIN=" "$0" | head -202 | sha256sum | cut -d " " -f 1)
-	ORIGIN="744578a2edfff6743ec15d90aa9c7afac0e3539714b7a539c96cc5d31a16647a"
+	ORIGIN="528bf322bf266e6a844da942d3ef0e136ce0b6dc9948a2709cb65bef571f530d"
 
 	if [[ "$CHKSUM" == "$ORIGIN" ]]; then
 		return 0;
@@ -1853,7 +1853,7 @@ function backup() {
 # Return: 0:boolean or 1:boolean
 function updateTeamSpeakInstance() {
 	UPDATE_STATUS_FLAG=0;
-	TS3_INSTANCE_ROOT_DIRECTORY=$(findRealTS3RootDirectory ${1})
+	TS3_INSTANCE_ROOT_DIRECTORY=$(findRealTS3RootDirectory ${1} | sed 's/\/$//')
 	
 	if [ -n "${TS3_INSTANCE_ROOT_DIRECTORY}" ] && [ -d "${TS3_INSTANCE_ROOT_DIRECTORY}" ]; then
 		LATEST_RELEASE="$(getLatestTSServerVersion)"
@@ -2026,8 +2026,8 @@ function createDebugReport() {
 
 	echo -e "## TS3 Update Details\n" >> ${DEBUG_REPORT_FILE};
 	echo	"Update path: ${INSTALLED_TS3_SERVER_VERSION} -> ${LATEST_TS3_SERVER_VERSION}" >> ${DEBUG_REPORT_FILE};
-	echo	"Instance path: ${INSTANCE_PATH}" >> ${DEBUG_REPORT_FILE};
-	if isFilesStorageExternal ${INSTANCE_PATH}; then
+	echo	"Instance path: ${TEAMSPEAK_ROOT_DIRECTORY}" >> ${DEBUG_REPORT_FILE};
+	if isFilesStorageExternal ${TEAMSPEAK_ROOT_DIRECTORY}; then
 		echo	"Type Of Files Storage: Local disk" >> ${DEBUG_REPORT_FILE};
 	else
 		echo	"Type Of Files Storage: Shared network storage" >> ${DEBUG_REPORT_FILE};
