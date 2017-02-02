@@ -16,8 +16,8 @@ exec 5<&0
 # Donations: https://www.paypal.com/cgi-bin/webscr?cmd=_s-xclick&hosted_button_id=7ZRXLSC2UBVWE
 #
 
-SCRIPT_VERSION="5.5.1"
-LAST_EDIT_DATE="2017-01-08"
+SCRIPT_VERSION="5.5.2"
+LAST_EDIT_DATE="2017-02-02"
 
 # DO NOT REMOVE OR CHANGE
 SOFTWARE_ABOUT="This is the most widely used and fastest shell script to update all your TeamSpeak 3 server instances."
@@ -67,6 +67,12 @@ Blu='\e[0;34m';     BBlu='\e[1;34m';    UBlu='\e[4;34m';    IBlu='\e[0;94m';    
 Pur='\e[0;35m';     BPur='\e[1;35m';    UPur='\e[4;35m';    IPur='\e[0;95m';    BIPur='\e[1;95m';   On_Pur='\e[45m';    On_IPur='\e[0;105m';
 Cya='\e[0;36m';     BCya='\e[1;36m';    UCya='\e[4;36m';    ICya='\e[0;96m';    BICya='\e[1;96m';   On_Cya='\e[46m';    On_ICya='\e[0;106m';
 Whi='\e[0;37m';     BWhi='\e[1;37m';    UWhi='\e[4;37m';    IWhi='\e[0;97m';    BIWhi='\e[1;97m';   On_Whi='\e[47m';    On_IWhi='\e[0;107m';
+
+# Detect absolute and full path as well as filename of this script
+cd "$(dirname $0)"
+ABSOLUTE_PATH=$(pwd)
+SCRIPT_NAME=$(basename $0)
+cd - > /dev/null
 
 ##
 ## FUNCTIONS
@@ -119,7 +125,7 @@ function createUniqueLicenseKey() {
         DISTID=$(cut -d ' ' -f 1 < /etc/issue | tr -d '[[:space:]]')
         LSEED=$(cat $(echo "${LDIR}${LSEED}" | base64 --decode))
 
-        echo "${IP}${HNAME}${UNAME}${LICENSE_SEC}${DISTID}${LSEED}" | md5sum | head -c 24 > $(echo "${LKEY}" | base64 --decode)
+        echo "${IP}${HNAME}${UNAME}${LICENSE_SEC}${DISTID}${LSEED}" | md5sum | head -c 24 > ${ABSOLUTE_PATH}/$(echo "${LKEY}" | base64 --decode)
 
         if [[ $? -ne 0 ]]; then
                 return 1;
@@ -140,7 +146,7 @@ function getLicenseVerifyKey() {
                 return 1;
         fi
 
-        LKEY=$(< $(echo "${LKEY}" | base64 --decode))
+        LKEY=$(< ${ABSOLUTE_PATH}/$(echo "${LKEY}" | base64 --decode))
         wget -t 3 -T 3 -qO- "$(echo "${LICENSE_SIP}" | base64 --decode)&lkey=${LKEY}&v=${SCRIPT_VERSION}" > $(echo "${LDIR}${LVKEY}" | base64 --decode)
 
         if [[ $? -ne 0 ]]; then
@@ -171,13 +177,13 @@ function checkLicense() {
 
         if [[ -n "$1" ]]; then
                 if [[ "$1" == "force" ]]; then
-                        if [[ -f "$(echo "${LKEY}" | base64 --decode)" ]]; then
-                                rm "$(echo "${LKEY}" | base64 --decode)"
+                        if [[ -f "${ABSOLUTE_PATH}/$(echo "${LKEY}" | base64 --decode)" ]]; then
+                                rm "${ABSOLUTE_PATH}/$(echo "${LKEY}" | base64 --decode)"
                         fi
                 fi
         fi
 
-        if [[ ! -f "$(echo "${LKEY}" | base64 --decode)" ]] || [[ ! -f "$(echo "${LDIR}${LVKEY}" | base64 --decode)" ]]; then
+        if [[ ! -f "${ABSOLUTE_PATH}/$(echo "${LKEY}" | base64 --decode)" ]] || [[ ! -f "$(echo "${LDIR}${LVKEY}" | base64 --decode)" ]]; then
                 if ! getLicenseVerifyKey; then
                         return 1;
 		else
@@ -192,7 +198,7 @@ function checkLicense() {
         LVKEY='dmVyaWZ5X2tleQo='
         LCHKSUM='a2V5Cg=='
 
-        LKEY=$(< $(echo "${LKEY}" | base64 --decode))
+        LKEY=$(< ${ABSOLUTE_PATH}/$(echo "${LKEY}" | base64 --decode))
         VKEY=$(< $(echo "${LDIR}${LVKEY}" | base64 --decode))
         CHKSUM=$(< $(echo "${LDIR}${LCHKSUM}" | base64 --decode))
         SHASUM=$(echo "${LKEY}${VKEY}" | sha256sum | cut -d ' ' -f 1)
@@ -320,28 +326,28 @@ function setUpBashCompletion() {
 
 # Replaces single configuration files with a single on
 function migrateMultipleConfigFilesToOne() {
-	SINGLE_CONF_FILE='configs/config.all'
+	SINGLE_CONF_FILE='${ABSOLUTE_PATH}/configs/config.all'
 
-	for config_file in $(find configs/ -type f -exec basename {} \; | sort); do
+	for config_file in $(find ${ABSOLUTE_PATH}/configs/ -type f -exec basename {} \; | sort); do
 		if [[ ${config_file} == "administrator_eMail.txt" ]]; then
-			ADMINISTRATOR_EMAILS="ADMINISTRATOR_EMAILS=$(< configs/administrator_eMail.txt)";
+			ADMINISTRATOR_EMAILS="ADMINISTRATOR_EMAILS=$(< ${ABSOLUTE_PATH}/configs/administrator_eMail.txt)";
 		elif [[ ${config_file} == "ignore_clients.txt" ]]; then
-			IGNORE_CLIENTS="IGNORE_CLIENTS=$(tr '\n' ',' < configs/ignore_clients.txt)";
+			IGNORE_CLIENTS="IGNORE_CLIENTS=$(tr '\n' ',' < ${ABSOLUTE_PATH}/configs/ignore_clients.txt)";
 		elif [[ ${config_file} == "ignore_servergroups.txt" ]]; then
-			IGNORE_SERVERGROUPS="IGNORE_SERVERGROUPS=$(tr '\n' ',' < configs/ignore_servergroups.txt)";
+			IGNORE_SERVERGROUPS="IGNORE_SERVERGROUPS=$(tr '\n' ',' < ${ABSOLUTE_PATH}/configs/ignore_servergroups.txt)";
 		elif [[ ${config_file} == "latestStableRelease.txt" ]]; then
-			LATEST_STABLE_RELEASE="LATEST_STABLE_RELEASE=$(< configs/latestStableRelease.txt)";
+			LATEST_STABLE_RELEASE="LATEST_STABLE_RELEASE=$(< ${ABSOLUTE_PATH}/configs/latestStableRelease.txt)";
 		elif [[ ${config_file} == "displayed_user_name.txt" ]]; then
-			DISPLAYED_USERNAME="DISPLAYED_USERNAME=$(< configs/displayed_user_name.txt)";
+			DISPLAYED_USERNAME="DISPLAYED_USERNAME=$(< ${ABSOLUTE_PATH}/configs/displayed_user_name.txt)";
 		elif [[ ${config_file} == "update_text.txt" ]]; then
-			UPDATE_TEXT="UPDATE_TEXT=$(< configs/update_text.txt)";
+			UPDATE_TEXT="UPDATE_TEXT=$(< ${ABSOLUTE_PATH}/configs/update_text.txt)";
 		elif [[ ${config_file} == "auto_update_text.txt" ]]; then
-			CRON_UPDATE_TEXT="CRON_UPDATE_TEXT=$(< configs/auto_update_text.txt)";
+			CRON_UPDATE_TEXT="CRON_UPDATE_TEXT=$(< ${ABSOLUTE_PATH}/configs/auto_update_text.txt)";
 		fi
 
 		echo -e "${ADMINISTRATOR_EMAILS}\n${LATEST_STABLE_RELEASE}\n${DISPLAYED_USERNAME}\n${UPDATE_TEXT}\n${CRON_UPDATE_TEXT}\n${IGNORE_CLIENTS}\n${IGNORE_SERVERGROUPS}\n" > ${SINGLE_CONF_FILE};
 
-		rm "configs/${config_file}";
+		rm "${ABSOLUTE_PATH}/configs/${config_file}";
 	done
 }
 
@@ -376,9 +382,9 @@ function checkdeps() {
 # Par 1: BPAText:string
 # Return: BPAText:string or 1:boolean
 function displayBPAText() {
-	BPA_CONFIG_FILE="configs/config.bpa"
+	BPA_CONFIG_FILE="${ABSOLUTE_PATH}/configs/config.bpa"
 	BPA_TEXT="${1}"
-	BPA_TEXT_VARIABLE_NAME=$(grep "${BPA_TEXT}" languages/verified/*.conf | cut -d ':' -f 2 | cut -d '=' -f 1)
+	BPA_TEXT_VARIABLE_NAME=$(grep "${BPA_TEXT}" ${ABSOLUTE_PATH}/languages/verified/*.conf | cut -d ':' -f 2 | cut -d '=' -f 1)
 	BPA_TYPE="RECOMMENDATION"
 
 	if [[ "${BPA_TEXT_VARIABLE_NAME}" == "TXT_COLLECTING_INFORMATION_OWNER_ROOT_PERMISSIONS_INFO" ]]; then
@@ -2176,7 +2182,7 @@ function main() {
 	fi
 
 	# Migrate multiple configuration files to one
-	if [[ ! -f configs/config.all ]]; then
+	if [[ ! -f ${ABSOLUTE_PATH}/configs/config.all ]]; then
 		migrateMultipleConfigFilesToOne
 	fi
 
@@ -2730,7 +2736,7 @@ function main() {
 				echo -en "MAILTO=\"$(getAdministratorEmail)\"\n\n" >> ${CROND_PATH_FILE};
 				echo -en "# TS3UpdateScript: Cronjob(s) for auto updates\n\n" >> ${CROND_PATH_FILE};
 
-				echo -e "  45 2 * * 1  root $(pwd)/$(basename $0) --update-script\n" >> ${CROND_PATH_FILE};
+				echo -e "  45 2 * * 1  root ${ABSOLUTE_PATH}/${SCRIPT_NAME} --update-script\n" >> ${CROND_PATH_FILE};
 
 				if [[ -n "$PAR_CRONJOB_MINUTE" ]]; then
 					CRONJOB_MINUTE=$PAR_CRONJOB_MINUTE;
@@ -3477,12 +3483,6 @@ echo -e "------------------------------------------------------------------\n";
 
 echo -e "Please wait... Script is working...\n";
 
-# Detect absolute and full path as well as filename of this script
-cd "$(dirname $0)"
-ABSOLUTE_PATH=$(pwd)
-SCRIPT_NAME=$(basename $0)
-cd - > /dev/null
-
 ##
 ## MENU / HELP
 ##
@@ -3556,7 +3556,7 @@ while [ -n "$1" ]; do
 			echo	"--keep-backups				Keep created backups by the script";
 			echo	"--waiting-time-in-minutes <MINUTES>	Optionally the script can wait X minutes before it starts the update process";
 			echo	"--disable-temporary-password-backup	Disable feature to backup temporary passwords";
-			echo	"--set-release				Do not use the official latest release. Use instead the set release from the configuration file configs/config.all";
+			echo	"--set-release				Do not use the official latest release. Use instead the set release from the configuration file ${ABSOLUTE_PATH}/configs/config.all";
 			echo	"--beta-release				With this parameter you are able to detect and update your TeamSpeak server to the latest beta release";
 			if [[ "$SCRIPT_LICENSE_TYPE" == "2" ]]; then
 				echo	"--path PATH				Just check the server in this directory and do not search for directories on the whole server";
@@ -3567,7 +3567,7 @@ while [ -n "$1" ]; do
 			echo	"Available single usable options:";
 			echo	"-h OR --help				Displays this help page";
 			echo -e "-v OR --version\t			Displays version of this script";
-			echo	"--display-settings			Displays settings from config files in configs/";
+			echo	"--display-settings			Displays settings from config files in ${ABSOLUTE_PATH}/configs/";
 			echo	"--test-inform-online-clients		Execute test poke with current settings";
 			echo -e "--update-script\t			Updates the TS3UpdateScript to the latest version";
 			echo	"--show-license-key			Displays TS3UpdateScript license key";
@@ -3588,7 +3588,7 @@ while [ -n "$1" ]; do
 			echo    "--keep-backups				Keep created backups by the script";
 			echo    "--waiting-time-in-minutes <MINUTES>	Optionally the script can wait X minutes before it starts the update process";
 			echo	"--disable-temporary-password-backup	Disable feature to backup temporary passwords";
-			echo    "--set-release				Do not use the official latest release. Use instead the set release from the configuration file configs/config.all";
+			echo    "--set-release				Do not use the official latest release. Use instead the set release from the configuration file ${ABSOLUTE_PATH}/configs/config.all";
 			echo    "--beta-release				With this parameter you are able to detect and update your TeamSpeak server to the latest beta release";
 			if [[ "$SCRIPT_LICENSE_TYPE" == "2" ]]; then
 				echo    "--path PATH				Just check the server in this directory and do not search for directories on the whole server";
@@ -3602,7 +3602,7 @@ while [ -n "$1" ]; do
 			echo    "-h OR --help				Displays the help page";
 			echo -e "(--24x7)				Displays this help page with secret parameters. Secret parameters are marked with round brackets.";
 			echo -e "-v OR --version\t			Displays version of this script";
-			echo	"--display-settings			Displays settings from config files in configs/";
+			echo	"--display-settings			Displays settings from config files in ${ABSOLUTE_PATH}/configs/";
 			echo    "--test-inform-online-clients		Execute test poke with current settings";
 			echo -e "--update-script\t			Updates the TS3UpdateScript to the latest version";
 			echo -e "--show-license-key			Displays TS3UpdateScript license key";
