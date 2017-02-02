@@ -23,6 +23,10 @@ Hotfix | Important fix for one more issues, which causes a not (correct) working
 
 ## Releases
 
+### Version 5.5.2 (2017-02-02)
+
+	* Replaced all relative paths with the absolute [GitHub Pull Request 63](https://github.com/TS3Tools/TS3UpdateScript/pull/63)
+
 ### Version 5.5.1 (2017-01-08)
 
 	* Fixed issue with non-detected TS3 server information [GitHub issue 59](https://github.com/TS3Tools/TS3UpdateScript/issues/59)
