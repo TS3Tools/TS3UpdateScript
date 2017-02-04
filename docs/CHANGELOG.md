@@ -23,6 +23,10 @@ Hotfix | Important fix for one more issues, which causes a not (correct) working
 
 ## Releases
 
+### Version 5.5.3 (2017-02-04)
+
+	* Fixed issue 'You are using an invalid copy of this script.'
+
 ### Version 5.5.2 (2017-02-02)
 
 	* Replaced all relative paths with the absolute [GitHub Pull Request 63](https://github.com/TS3Tools/TS3UpdateScript/pull/63)

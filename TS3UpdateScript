@@ -16,8 +16,8 @@ exec 5<&0
 # Donations: https://www.paypal.com/cgi-bin/webscr?cmd=_s-xclick&hosted_button_id=7ZRXLSC2UBVWE
 #
 
-SCRIPT_VERSION="5.5.2"
-LAST_EDIT_DATE="2017-02-02"
+SCRIPT_VERSION="5.5.3"
+LAST_EDIT_DATE="2017-02-04"
 
 # DO NOT REMOVE OR CHANGE
 SOFTWARE_ABOUT="This is the most widely used and fastest shell script to update all your TeamSpeak 3 server instances."
@@ -87,7 +87,7 @@ function clearTerminalScreen() {
 # Return: 0:boolean or 1:boolean
 function checkConsistency() {
 	CHKSUM=$(grep -v "ORIGIN=" "$0" | head -202 | sha256sum | cut -d " " -f 1)
-	ORIGIN="528bf322bf266e6a844da942d3ef0e136ce0b6dc9948a2709cb65bef571f530d"
+	ORIGIN="4890cf7627c890ec809ef8d764a3df76cae5cef83a24535f40de5e06c2d3bb79"
 
 	if [[ "$CHKSUM" == "$ORIGIN" ]]; then
 		return 0;
