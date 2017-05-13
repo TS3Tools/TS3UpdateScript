@@ -16,8 +16,8 @@ exec 5<&0
 # Donations: https://www.paypal.com/cgi-bin/webscr?cmd=_s-xclick&hosted_button_id=7ZRXLSC2UBVWE
 #
 
-SCRIPT_VERSION="5.5.3"
-LAST_EDIT_DATE="2017-02-04"
+SCRIPT_VERSION="5.6.0"
+LAST_EDIT_DATE="2017-05-13"
 
 # DO NOT REMOVE OR CHANGE
 SOFTWARE_ABOUT="This is the most widely used and fastest shell script to update all your TeamSpeak 3 server instances."
@@ -87,7 +87,7 @@ function clearTerminalScreen() {
 # Return: 0:boolean or 1:boolean
 function checkConsistency() {
 	CHKSUM=$(grep -v "ORIGIN=" "$0" | head -202 | sha256sum | cut -d " " -f 1)
-	ORIGIN="4890cf7627c890ec809ef8d764a3df76cae5cef83a24535f40de5e06c2d3bb79"
+	ORIGIN="6ce8c5644360cfe824e6c5d69fe1784fa806ccbd3b0065f22efb8a457f9bcb7f"
 
 	if [[ "$CHKSUM" == "$ORIGIN" ]]; then
 		return 0;
@@ -567,29 +567,31 @@ function getLatestBetaTS3ServerVersion() {
 # Get latest stable TS3 server version
 # Return: ServerVersion:string or 1:boolean
 function getLatestStableTS3ServerVersion() {
-	wget -t 1 -T 3 'http://dl.4players.de/ts/releases/?C=M;O=D' -q -O - | grep -i dir | grep -Eo '<a href=\".*\/\">.*\/<\/a>' | grep -Eo '[0-9\.?]+' | uniq | sort -V -r > STABLE_RELEASES.txt
-
-	if [[ $? -ne 0 ]]; then
-		return 1;
-	fi
-
-	while read release; do
-		if [[ "${release}" =~ ^[3-9]+\.[0-9]+\.1[2-9]+\.?[0-9]*$ ]]; then
-			wget -t 1 -T 1 --spider -q "http://dl.4players.de/ts/releases/${release}/teamspeak3-server_linux_amd64-${release}.tar.bz2"
-		else
-			wget -t 1 -T 1 --spider -q "http://dl.4players.de/ts/releases/${release}/teamspeak3-server_linux-amd64-${release}.tar.gz"
-		fi
-		if [[ $? == 0 ]]; then
-			TS3_SERVER_VERSION="$release"
-			# Break while-loop, if the latest release could be found
-			break
-		fi
-	done < STABLE_RELEASES.txt
-
-	rm STABLE_RELEASES.txt
+	TS3_SERVER_VERSION=$(wget -t 1 -T 3 https://www.teamspeak.com/versions/server.json -q -O - | jshon -e linux -e x86_64 -e version | tr -d '"')
 
 	if [[ -n "$TS3_SERVER_VERSION" ]]; then
 		echo -n "$TS3_SERVER_VERSION";
+	else
+		return 1;
+	fi
+}
+
+# Get TS3 server mirror links for download
+# Par 1: platform:string
+# Par 2: architecture:string
+# Return: downloadMirrorLinks:string or 1:boolean (mirror1|mirror2)
+function getDownloadMirrorLink() {
+	if [[ "${2}" == "amd64" ]]; then
+		ARCHITECTURE="x86_64";
+	else
+		ARCHITECTURE="x86";
+	fi
+
+	FOURNETPLAYERS_MIRROR_LINK=$(wget -t 1 -T 3 https://www.teamspeak.com/versions/server.json -q -O - | jshon -e ${1} -e ${ARCHITECTURE} -e mirrors -e "4Netplayers.de" | tr -d '"' | tr -d '\\')
+	GAMED_MIRROR_LINK=$(wget -t 1 -T 3 https://www.teamspeak.com/versions/server.json -q -O - | jshon -e ${1} -e ${ARCHITECTURE} -e mirrors -e "gamed!de" | tr -d '"' | tr -d '\\')
+
+	if [[ -n "$FOURNETPLAYERS_MIRROR_LINK" ]] && [[ -n "$GAMED_MIRROR_LINK" ]]; then
+		echo -n "${FOURNETPLAYERS_MIRROR_LINK}|${GAMED_MIRROR_LINK}";
 	else
 		return 1;
 	fi
@@ -1888,7 +1890,18 @@ function updateTeamSpeakInstance() {
 			if [[ "$PAR_BETA_RELEASE" -eq 1 ]]; then
 				TS3_SERVER_DOWNLOAD_LINK="http://dl.4players.de/ts/releases/pre_releases/server/${LATEST_RELEASE}/teamspeak3-server_${INSTALLED_TS3_SERVER_PLATFORM}_${TS3SERVER_ARCHITECTURE}-${RELEASE_NUMBER}.tar.bz2"
 			else
-				TS3_SERVER_DOWNLOAD_LINK="http://dl.4players.de/ts/releases/${LATEST_RELEASE}/teamspeak3-server_${INSTALLED_TS3_SERVER_PLATFORM}_${TS3SERVER_ARCHITECTURE}-${RELEASE_NUMBER}.tar.bz2"
+				TS3_SERVER_DOWNLOAD_MIRROR_LINKS=$(getDownloadMirrorLink ${INSTALLED_TS3_SERVER_PLATFORM} ${TS3SERVER_ARCHITECTURE})
+				FOURNETPLAYERS_MIRROR_LINK=$(echo ${TS3_SERVER_DOWNLOAD_MIRROR_LINKS} | cut -d "|" -f 1)
+				GAMED_MIRROR_LINK=$(echo ${TS3_SERVER_DOWNLOAD_MIRROR_LINKS} | cut -d "|" -f 2)
+
+				wget -t 1 -T 3 --spider -q ${FOURNETPLAYERS_MIRROR_LINK}
+				if [[ $? == 0 ]]; then
+					TS3_SERVER_DOWNLOAD_LINK="${FOURNETPLAYERS_MIRROR_LINK}"
+				else
+					TS3_SERVER_DOWNLOAD_LINK="${GAMED_MIRROR_LINK}"
+				fi
+
+				#TS3_SERVER_DOWNLOAD_LINK="http://dl.4players.de/ts/releases/${LATEST_RELEASE}/teamspeak3-server_${INSTALLED_TS3_SERVER_PLATFORM}_${TS3SERVER_ARCHITECTURE}-${RELEASE_NUMBER}.tar.bz2"
 			fi
 
 			wget ${TS3_SERVER_DOWNLOAD_LINK} -q -O teamspeak3-server.tar.bz2
@@ -2215,7 +2228,7 @@ function main() {
 	fi
 
 	# Execute software checks
-	if [[ $(checkdeps bash which rsync wget grep sed unzip bzip2 gdb) -eq 1 ]]; then
+	if [[ $(checkdeps bash which rsync wget jshon grep sed unzip bzip2 gdb) -eq 1 ]]; then
 		SELF_TEST_STATUS=1;
 	fi
 
@@ -2765,6 +2778,10 @@ function main() {
 
 						if [ "$PAR_DELETE_OLD_LOGS" -eq 1 ]; then
 							echo -n "--delete-old-logs " >> ${CROND_PATH_FILE};
+						fi
+
+						if [ "$PAR_DISABLE_TEMPORARY_PASSWORD_BACKUP" -eq 1 ]; then
+							echo -n "--disable-temporary-password-backup " >> ${CROND_PATH_FILE};
 						fi
 
 						if [ "$PAR_INFORM_ONLINE_CLIENTS" -eq 1 ]; then

@@ -23,6 +23,16 @@ Hotfix | Important fix for one more issues, which causes a not (correct) working
 
 ## Releases
 
+### Version 5.6.0 (2017-05-13)
+
+	* '--install-cronjob' will now also set the parameter '--disable-temporary-password-backup'
+	* Fixed broken README layout
+	* Improved detection of stable server release version using JSON-file of TeamSpeak (GitHub issue [#65](https://github.com/TS3Tools/TS3UpdateScript/issues/65))
+	+ Added 'jshon' to required packages
+	+ Added 'www.teamspeak.com' and 'teamspeak.gameserver.gamed.de' to used ressources in README.md
+	* The script downloads the TeamSpeak 3 server files from 4players.de by default. If it is not possible, it tries to download from gamed.de (GitHub issue [64](https://github.com/TS3Tools/TS3UpdateScript/issues/64))
+	* Removed colon from variable 'TXT_SELF_TEST_TS3UPDATESCRIPT_RELEASED'
+
 ### Version 5.5.3 (2017-02-04)
 
 	* Fixed issue 'You are using an invalid copy of this script.'

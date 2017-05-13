@@ -107,6 +107,7 @@ It checks, if a newer version for your TeamSpeak 3 server instance is available 
     - which
     - rsync (fast, versatile, remote (and local) file-copying tool)
     - wget (retrieves files from the web)
+    - jshon (Read / Decode JSON format)
     - grep (GNU grep, egrep and fgrep)
     - sed (The GNU sed stream editor)
     - unzip (De-archiver for .zip files)
@@ -184,7 +185,7 @@ If you only have bought a Professional license or just require more support, you
 Below are the available subscription plans including their SLA:
 
 Name | Included support | SLA Respond time | Costs
-:------------- | :------------- | :------------- | :------------- | :-------------
+:------------- | :------------- | :------------- | :-------------
 Community | Lifetime | As soon as possible | 0.00 EUR
 Basis SLA | 1 year | Within a week | 14.99 EUR
 Professional SLA | 1 year | Within 48 hours | 49.99 EUR
@@ -305,9 +306,11 @@ The files/ directory will not be touched by the script - also not backuped!
 Protocol | Host/IP  | Used for | How often?
 :------------- | :------------- | :------------- | :-------------
 https | www.ts3-tools.info | Licensing server | Every 7 days or when your force an update of your license
+https | www.teamspeak.com | For detection of latest stable server release version | Each execution of the TS3UpdateScript
 http | dl.4players.de | Download server for TeamSpeak 3 server files | Each execution of the TS3UpdateScript
+http | teamspeak.gameserver.gamed.de | Download server for TeamSpeak 3 server files | Each execution of the TS3UpdateScript and only, when dl.4players.de is not reachable/useable
 https | raw.githubusercontent.com | Server for checking latest TS3UpdateScript version | Each execution of the TS3UpdateScript
-https | github.com | Download server for TS3UpdateScript files | Just if you update the TS3UpdateScript
+https | github.com | Download server for TS3UpdateScript files | Only if you update the TS3UpdateScript
 
 ## Directory Structure - Where can I find which file?
 
