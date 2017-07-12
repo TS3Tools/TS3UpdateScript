@@ -23,6 +23,11 @@ Hotfix | Important fix for one more issues, which causes a not (correct) working
 
 ## Releases
 
+### Version 5.6.1 (2017-07-12)
+
+	* Parameter --set-release was not working (GitHub issue [#69](https://github.com/TS3Tools/TS3UpdateScript/issues/69))
+	* 'lsb_release' package is called 'lsb-release' in Debian (GitHub issue [#68](https://github.com/TS3Tools/TS3UpdateScript/issues/68))
+
 ### Version 5.6.0 (2017-05-13)
 
 	* '--install-cronjob' will now also set the parameter '--disable-temporary-password-backup'

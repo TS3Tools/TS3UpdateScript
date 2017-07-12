@@ -16,8 +16,8 @@ exec 5<&0
 # Donations: https://www.paypal.com/cgi-bin/webscr?cmd=_s-xclick&hosted_button_id=7ZRXLSC2UBVWE
 #
 
-SCRIPT_VERSION="5.6.0"
-LAST_EDIT_DATE="2017-05-13"
+SCRIPT_VERSION="5.6.1"
+LAST_EDIT_DATE="2017-07-12"
 
 # DO NOT REMOVE OR CHANGE
 SOFTWARE_ABOUT="This is the most widely used and fastest shell script to update all your TeamSpeak 3 server instances."
@@ -87,7 +87,7 @@ function clearTerminalScreen() {
 # Return: 0:boolean or 1:boolean
 function checkConsistency() {
 	CHKSUM=$(grep -v "ORIGIN=" "$0" | head -202 | sha256sum | cut -d " " -f 1)
-	ORIGIN="6ce8c5644360cfe824e6c5d69fe1784fa806ccbd3b0065f22efb8a457f9bcb7f"
+	ORIGIN="00d123e4b505be067d993539130d00c65c03ee0a5ba16d7b1c7b49bba14c118a"
 
 	if [[ "$CHKSUM" == "$ORIGIN" ]]; then
 		return 0;
@@ -579,6 +579,7 @@ function getLatestStableTS3ServerVersion() {
 # Get TS3 server mirror links for download
 # Par 1: platform:string
 # Par 2: architecture:string
+# Par 3: LatestTS3ServerVersion:string
 # Return: downloadMirrorLinks:string or 1:boolean (mirror1|mirror2)
 function getDownloadMirrorLink() {
 	if [[ "${2}" == "amd64" ]]; then
@@ -589,6 +590,10 @@ function getDownloadMirrorLink() {
 
 	FOURNETPLAYERS_MIRROR_LINK=$(wget -t 1 -T 3 https://www.teamspeak.com/versions/server.json -q -O - | jshon -e ${1} -e ${ARCHITECTURE} -e mirrors -e "4Netplayers.de" | tr -d '"' | tr -d '\\')
 	GAMED_MIRROR_LINK=$(wget -t 1 -T 3 https://www.teamspeak.com/versions/server.json -q -O - | jshon -e ${1} -e ${ARCHITECTURE} -e mirrors -e "gamed!de" | tr -d '"' | tr -d '\\')
+
+	# Set specific version
+	FOURNETPLAYERS_MIRROR_LINK=$(echo -n "$FOURNETPLAYERS_MIRROR_LINK" | sed -E 's/([\/\-])[0-9\.?]+([\/\.])/\1'${3}'\2/g')
+	GAMED_MIRROR_LINK=$(echo -n "$GAMED_MIRROR_LINK" | sed -E 's/([\/\-])[0-9\.?]+([\/\.])/\1'${3}'\2/g')
 
 	if [[ -n "$FOURNETPLAYERS_MIRROR_LINK" ]] && [[ -n "$GAMED_MIRROR_LINK" ]]; then
 		echo -n "${FOURNETPLAYERS_MIRROR_LINK}|${GAMED_MIRROR_LINK}";
@@ -602,7 +607,7 @@ function getDownloadMirrorLink() {
 function getLatestTSServerVersion() {
 	TS3_SERVER_VERSION=0;
 
-	if [[ "$PAR_LATEST_RELEASE" -eq 1 ]]; then
+	if [[ "$PAR_SET_RELEASE" -eq 1 ]]; then
 		# Release by file
 		TS3_SERVER_VERSION="$(getLatestTSServerVersionByFile)";
 
@@ -1864,7 +1869,7 @@ function updateTeamSpeakInstance() {
 	TS3_INSTANCE_ROOT_DIRECTORY=$(findRealTS3RootDirectory ${1} | sed 's/\/$//')
 	
 	if [ -n "${TS3_INSTANCE_ROOT_DIRECTORY}" ] && [ -d "${TS3_INSTANCE_ROOT_DIRECTORY}" ]; then
-		LATEST_RELEASE="$(getLatestTSServerVersion)"
+		LATEST_RELEASE="${2}"
 		RELEASE_NUMBER="$(echo $LATEST_RELEASE | grep -Eo '^[0-9\.?]+')"
 		TS3_INSTANCE_ROOT_DIRECTORY_MD5SUM=$(echo -n "${TS3_INSTANCE_ROOT_DIRECTORY}" | md5sum | cut -d " " -f 1)
 
@@ -1890,7 +1895,7 @@ function updateTeamSpeakInstance() {
 			if [[ "$PAR_BETA_RELEASE" -eq 1 ]]; then
 				TS3_SERVER_DOWNLOAD_LINK="http://dl.4players.de/ts/releases/pre_releases/server/${LATEST_RELEASE}/teamspeak3-server_${INSTALLED_TS3_SERVER_PLATFORM}_${TS3SERVER_ARCHITECTURE}-${RELEASE_NUMBER}.tar.bz2"
 			else
-				TS3_SERVER_DOWNLOAD_MIRROR_LINKS=$(getDownloadMirrorLink ${INSTALLED_TS3_SERVER_PLATFORM} ${TS3SERVER_ARCHITECTURE})
+				TS3_SERVER_DOWNLOAD_MIRROR_LINKS=$(getDownloadMirrorLink ${INSTALLED_TS3_SERVER_PLATFORM} ${TS3SERVER_ARCHITECTURE} ${LATEST_RELEASE})
 				FOURNETPLAYERS_MIRROR_LINK=$(echo ${TS3_SERVER_DOWNLOAD_MIRROR_LINKS} | cut -d "|" -f 1)
 				GAMED_MIRROR_LINK=$(echo ${TS3_SERVER_DOWNLOAD_MIRROR_LINKS} | cut -d "|" -f 2)
 
@@ -1900,8 +1905,6 @@ function updateTeamSpeakInstance() {
 				else
 					TS3_SERVER_DOWNLOAD_LINK="${GAMED_MIRROR_LINK}"
 				fi
-
-				#TS3_SERVER_DOWNLOAD_LINK="http://dl.4players.de/ts/releases/${LATEST_RELEASE}/teamspeak3-server_${INSTALLED_TS3_SERVER_PLATFORM}_${TS3SERVER_ARCHITECTURE}-${RELEASE_NUMBER}.tar.bz2"
 			fi
 
 			wget ${TS3_SERVER_DOWNLOAD_LINK} -q -O teamspeak3-server.tar.bz2
@@ -2234,7 +2237,7 @@ function main() {
 
 	# Debian specific packages
 	if [ -f /etc/debian_version ]; then
-		if [[ $(checkdeps lsb_release) -eq 1 ]]; then
+		if [[ $(checkdeps "lsb_release:lsb-release") -eq 1 ]]; then
 			SELF_TEST_STATUS=1;
 		fi
 	# RedHat/CentOS specific
@@ -2796,8 +2799,8 @@ function main() {
 							echo -n "--keep-backups " >> ${CROND_PATH_FILE};
 						fi
 
-						if [ "$PAR_LATEST_RELEASE" -eq 1 ]; then
-							echo -n "--latest-release" >> ${CROND_PATH_FILE};
+						if [ "$PAR_SET_RELEASE" -eq 1 ]; then
+							echo -n "--set-release" >> ${CROND_PATH_FILE};
 						fi
 
 						if [ "$PAR_BETA_RELEASE" -eq 1 ]; then
@@ -3069,7 +3072,7 @@ function main() {
 														echo "${TXT_EXECUTION_MECHANISM_BACKUP_CREATED}";
 
 														# Update instance
-														if updateTeamSpeakInstance ${INSTANCE_PATH}; then
+														if updateTeamSpeakInstance ${INSTANCE_PATH} ${LATEST_TS3_SERVER_VERSION}; then
 															echo "${TXT_EXECUTION_MECHANISM_UPDATE_SUCCESSFUL}";
 
 															# Start TSDNS
@@ -3179,7 +3182,7 @@ function main() {
 													echo "${TXT_EXECUTION_MECHANISM_BACKUP_CREATED}";
 
 													# Update instance
-													if updateTeamSpeakInstance ${INSTANCE_PATH}; then
+													if updateTeamSpeakInstance ${INSTANCE_PATH} ${LATEST_TS3_SERVER_VERSION}; then
 														echo "${TXT_EXECUTION_MECHANISM_UPDATE_SUCCESSFUL}";
 
 														# Start TeamSpeak 3 server
@@ -3507,7 +3510,7 @@ echo -e "Please wait... Script is working...\n";
 # If no option is set, show the usage message
 if [ "$1" == "" ]; then
 	echo "$SCRIPT_NAME: missing option";
-	echo -e "\nMultiple option usage: ./${SCRIPT_NAME} [--check] [--delete-old-logs] [--inform-online-clients] [--latest-release | --beta-release] [--install-cronjob]";
+	echo -e "\nMultiple option usage: ./${SCRIPT_NAME} [--check] [--delete-old-logs] [--inform-online-clients] [--set-release | --beta-release] [--install-cronjob]";
 	echo -e "\nSingle option usage: ./${SCRIPT_NAME} [--test-inform-online-clients] | [--update-script] | [--deinstall-cronjob]";
 
 	echo -e "\nTry './$SCRIPT_NAME --help' for more options.\n";
@@ -3528,7 +3531,7 @@ PAR_KEEP_BACKUPS=0;
 PAR_UPDATE_SCRIPT=0;
 PAR_PATH=0;
 PAR_PATH_DIRECTORY="/";
-PAR_LATEST_RELEASE=0;
+PAR_SET_RELEASE=0;
 PAR_BETA_RELEASE=0;
 PAR_DEACTIVATE_HOST_ALIVE_CHECK=0;
 PAR_DEACTIVATE_PERMISSIONS_CHECK=0;
@@ -3724,8 +3727,8 @@ while [ -n "$1" ]; do
 			shift;
 		;;
 
-		--latest-release)
-			PAR_LATEST_RELEASE=1;
+		--set-release)
+			PAR_SET_RELEASE=1;
 			shift;
 		;;
 
@@ -3879,8 +3882,8 @@ elif [[ "$PAR_COUNTER" -gt 2 ]]; then
 	if [[ "$PAR_HELP" -eq 1 ]] || [[ "$PAR_VERSION" -eq 1 ]] || [[ "$PAR_DEINSTALL_CRONJOB" -eq 1 ]] || [[ "$PAR_TEST_INFORM_ONLINE_CLIENTS" -eq 1 ]] || [[ "$PAR_DISPLAY_SETTINGS" -eq 1 ]] || [[ "$PAR_FORCE_LICENSE_UPDATE" -eq 1 ]]; then
 		echo "This type of combination is not permitted!";
 		exit 1;
-	elif [[ "$PAR_LATEST_RELEASE" -eq 1 ]] && [[ "$PAR_BETA_RELEASE" -eq 1 ]]; then
-		echo "You can not use the parameter '--latest-release' and '--beta-release' at the same time!";
+	elif [[ "$PAR_SET_RELEASE" -eq 1 ]] && [[ "$PAR_BETA_RELEASE" -eq 1 ]]; then
+		echo "You can not use the parameter '--set-release' and '--beta-release' at the same time!";
 		exit 1;
 	elif [[ "$PAR_CHECK" -eq 0 ]]; then
 		echo "If you want to check/update your TeamSpeak 3 server instances, you should use '--check'.";
