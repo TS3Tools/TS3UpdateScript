@@ -105,6 +105,7 @@ It checks, if a newer version for your TeamSpeak 3 server instance is available 
   - Required
     - bash (GNU Bourne Again SHell)
     - which
+    - ca-certificates (for SSL connections)
     - rsync (fast, versatile, remote (and local) file-copying tool)
     - wget (retrieves files from the web)
     - jshon (Read / Decode JSON format)

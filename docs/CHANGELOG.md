@@ -23,6 +23,11 @@ Hotfix | Important fix for one more issues, which causes a not (correct) working
 
 ## Releases
 
+### Version 5.6.2 (2018-02-19)
+
+	+ Added Linux software package 'ca-certificates' to requirements (GitHub issue [#70](https://github.com/TS3Tools/TS3UpdateScript/issues/70))
+	+ Added support for TeamSpeak server version 3.1.0 (license needs to be accepted; the script will create the required file: .ts3server_license_accepted)
+
 ### Version 5.6.1 (2017-07-12)
 
 	* Parameter --set-release was not working (GitHub issue [#69](https://github.com/TS3Tools/TS3UpdateScript/issues/69))

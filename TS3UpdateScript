@@ -16,8 +16,8 @@ exec 5<&0
 # Donations: https://www.paypal.com/cgi-bin/webscr?cmd=_s-xclick&hosted_button_id=7ZRXLSC2UBVWE
 #
 
-SCRIPT_VERSION="5.6.1"
-LAST_EDIT_DATE="2017-07-12"
+SCRIPT_VERSION="5.6.2"
+LAST_EDIT_DATE="2018-02-19"
 
 # DO NOT REMOVE OR CHANGE
 SOFTWARE_ABOUT="This is the most widely used and fastest shell script to update all your TeamSpeak 3 server instances."
@@ -87,7 +87,7 @@ function clearTerminalScreen() {
 # Return: 0:boolean or 1:boolean
 function checkConsistency() {
 	CHKSUM=$(grep -v "ORIGIN=" "$0" | head -202 | sha256sum | cut -d " " -f 1)
-	ORIGIN="00d123e4b505be067d993539130d00c65c03ee0a5ba16d7b1c7b49bba14c118a"
+	ORIGIN="99d6590cc27be9c854c7dd4cffd3362d9ff4dec5614e4b117b1612264c683a89"
 
 	if [[ "$CHKSUM" == "$ORIGIN" ]]; then
 		return 0;
@@ -1891,7 +1891,7 @@ function updateTeamSpeakInstance() {
 
 		cd ${INSTANCE_PATH}
 
-		if [[ ${RELEASE_NUMBER}  =~ ^[3-9]+\.[0-9]+\.1[2-9]+\.?[0-9]*$ ]]; then
+		if [[ ${RELEASE_NUMBER}  =~ ^[3-9]+\.[0-9]+\.1[2-9]+\.?[0-9]*$ ]] || [[ ${RELEASE_NUMBER}  =~ ^[3-9]+\.1[2-9]*\.[0-9]+\.?[0-9]*$ ]]; then
 			if [[ "$PAR_BETA_RELEASE" -eq 1 ]]; then
 				TS3_SERVER_DOWNLOAD_LINK="http://dl.4players.de/ts/releases/pre_releases/server/${LATEST_RELEASE}/teamspeak3-server_${INSTALLED_TS3_SERVER_PLATFORM}_${TS3SERVER_ARCHITECTURE}-${RELEASE_NUMBER}.tar.bz2"
 			else
@@ -1991,6 +1991,14 @@ function updateTeamSpeakInstance() {
 		
 		if [ -f ${INSTANCE_PATH}/ts3server_startscript.sh ]; then
 			chmod 0755 ${INSTANCE_PATH}/ts3server_startscript.sh
+		fi
+
+		# Accept TeamSpeak server license agreement
+		# Required since TeamSpeak server version 3.1.0
+		if [[ ${RELEASE_NUMBER}  =~ ^[3-9]+\.1[2-9]*\.[0-9]+\.?[0-9]*$ ]]; then
+			if [[ ! -f ${INSTANCE_PATH}/.ts3server_license_accepted ]]; then
+				touch ${INSTANCE_PATH}/.ts3server_license_accepted
+			fi
 		fi
 		
 		# Change owner and group of files
