@@ -23,6 +23,10 @@ Hotfix | Important fix for one more issues, which causes a not (correct) working
 
 ## Releases
 
+### Version 5.6.3 (2018-02-25)
+
+	* Fixed issue 'bash: ./tsdnsserver_linux_amd64: No such file or directory'
+
 ### Version 5.6.2 (2018-02-19)
 
 	+ Added Linux software package 'ca-certificates' to requirements (GitHub issue [#70](https://github.com/TS3Tools/TS3UpdateScript/issues/70))
