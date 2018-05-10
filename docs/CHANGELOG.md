@@ -23,6 +23,11 @@ Hotfix | Important fix for one more issues, which causes a not (correct) working
 
 ## Releases
 
+### Version 5.6.4 (2018-05-10)
+
+	* Fixed issue with undetectable architecture
+	! Without the architecture, the script always failed to update any TeamSpeak server instance
+
 ### Version 5.6.3 (2018-02-25)
 
 	* Fixed issue 'bash: ./tsdnsserver_linux_amd64: No such file or directory'

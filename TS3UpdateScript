@@ -16,8 +16,8 @@ exec 5<&0
 # Donations: https://www.paypal.com/cgi-bin/webscr?cmd=_s-xclick&hosted_button_id=7ZRXLSC2UBVWE
 #
 
-SCRIPT_VERSION="5.6.3"
-LAST_EDIT_DATE="2018-02-25"
+SCRIPT_VERSION="5.6.4"
+LAST_EDIT_DATE="2018-05-10"
 
 # DO NOT REMOVE OR CHANGE
 SOFTWARE_ABOUT="This is the most widely used and fastest shell script to update all your TeamSpeak 3 server instances."
@@ -87,7 +87,7 @@ function clearTerminalScreen() {
 # Return: 0:boolean or 1:boolean
 function checkConsistency() {
 	CHKSUM=$(grep -v "ORIGIN=" "$0" | head -202 | sha256sum | cut -d " " -f 1)
-	ORIGIN="9814140068953344f4a3f0c84629a8fa4b46177e2851062e466b1ac963bea35b"
+	ORIGIN="ad0f293d4e85884414eea9749407172089f39df394a3f6ee651ecd40096ba775"
 
 	if [[ "$CHKSUM" == "$ORIGIN" ]]; then
 		return 0;
@@ -847,17 +847,13 @@ function getPlatformOfInstalledTS3Server() {
 # Par 1: TS3ServerRootDirectory:string
 # Return: Architecture:string or 1:boolean
 function getArchitectureOfInstalledTS3Server() {
-	if [[ $(getVersionOfInstalledTS3Server ${1})  =~ ^[3-9]+\.[0-9]+\.1[2-9]+\.?[0-9]*$ ]]; then
-		INSTANCE_LOG_FILE="$(find $(getTS3ServerInstanceLogPath ${1}) -name *_0.log | sort -nr | head -1)"
-		SYSTEM_TYPE="$(grep -Eo 'Binary: (64bit|32bit)' $INSTANCE_LOG_FILE | cut -d " " -f 2)"
+	INSTANCE_LOG_FILE="$(find $(getTS3ServerInstanceLogPath ${1}) -name *_0.log | sort -nr | head -1)"
+	SYSTEM_TYPE="$(grep -Eo 'Binary: (64bit|32bit)' $INSTANCE_LOG_FILE | cut -d " " -f 2)"
 
-		if [[ "${SYSTEM_TYPE}" == "64bit" ]]; then
-			ARCHITECTURE="amd64"
-		else
-			ARCHITECTURE="x86"
-		fi
+	if [[ "${SYSTEM_TYPE}" == "64bit" ]]; then
+		ARCHITECTURE="amd64"
 	else
-		ARCHITECTURE="$(ls $(find ${1} -name 'ts3server_*_*' 2> /dev/null | grep -v 'ts3server_minimal_runscript.sh' | sort | tail -1) | grep -Eo  '(amd64|x86)' | tail -1)"
+		ARCHITECTURE="x86"
 	fi
 
 	if [[ -n "$ARCHITECTURE" ]]; then
