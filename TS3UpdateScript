@@ -16,8 +16,8 @@ exec 5<&0
 # Donations: https://www.paypal.com/cgi-bin/webscr?cmd=_s-xclick&hosted_button_id=7ZRXLSC2UBVWE
 #
 
-SCRIPT_VERSION="5.6.4"
-LAST_EDIT_DATE="2018-05-10"
+SCRIPT_VERSION="5.6.5"
+LAST_EDIT_DATE="2018-05-15"
 
 # DO NOT REMOVE OR CHANGE
 SOFTWARE_ABOUT="This is the most widely used and fastest shell script to update all your TeamSpeak 3 server instances."
@@ -87,7 +87,7 @@ function clearTerminalScreen() {
 # Return: 0:boolean or 1:boolean
 function checkConsistency() {
 	CHKSUM=$(grep -v "ORIGIN=" "$0" | head -202 | sha256sum | cut -d " " -f 1)
-	ORIGIN="ad0f293d4e85884414eea9749407172089f39df394a3f6ee651ecd40096ba775"
+	ORIGIN="feef60e88099b7b9cf1a296395218210b697fba6694a209b66cf112cd38d8792"
 
 	if [[ "$CHKSUM" == "$ORIGIN" ]]; then
 		return 0;
@@ -1887,64 +1887,41 @@ function updateTeamSpeakInstance() {
 
 		cd ${INSTANCE_PATH}
 
-		if [[ ${RELEASE_NUMBER}  =~ ^[3-9]+\.[0-9]+\.1[2-9]+\.?[0-9]*$ ]] || [[ ${RELEASE_NUMBER}  =~ ^[3-9]+\.1[2-9]*\.[0-9]+\.?[0-9]*$ ]]; then
-			if [[ "$PAR_BETA_RELEASE" -eq 1 ]]; then
-				TS3_SERVER_DOWNLOAD_LINK="http://dl.4players.de/ts/releases/pre_releases/server/${LATEST_RELEASE}/teamspeak3-server_${INSTALLED_TS3_SERVER_PLATFORM}_${TS3SERVER_ARCHITECTURE}-${RELEASE_NUMBER}.tar.bz2"
-			else
-				TS3_SERVER_DOWNLOAD_MIRROR_LINKS=$(getDownloadMirrorLink ${INSTALLED_TS3_SERVER_PLATFORM} ${TS3SERVER_ARCHITECTURE} ${LATEST_RELEASE})
-				FOURNETPLAYERS_MIRROR_LINK=$(echo ${TS3_SERVER_DOWNLOAD_MIRROR_LINKS} | cut -d "|" -f 1)
-				GAMED_MIRROR_LINK=$(echo ${TS3_SERVER_DOWNLOAD_MIRROR_LINKS} | cut -d "|" -f 2)
-
-				wget -t 1 -T 3 --spider -q ${FOURNETPLAYERS_MIRROR_LINK}
-				if [[ $? == 0 ]]; then
-					TS3_SERVER_DOWNLOAD_LINK="${FOURNETPLAYERS_MIRROR_LINK}"
-				else
-					TS3_SERVER_DOWNLOAD_LINK="${GAMED_MIRROR_LINK}"
-				fi
-			fi
-
-			wget ${TS3_SERVER_DOWNLOAD_LINK} -q -O teamspeak3-server.tar.bz2
-
-			if [[ -f ${INSTANCE_PATH}/tsdns/tsdnsserver_${INSTALLED_TS3_SERVER_PLATFORM}_${TS3SERVER_ARCHITECTURE} ]]; then
-				rm -rf ${INSTANCE_PATH}/tsdns/tsdnsserver_${INSTALLED_TS3_SERVER_PLATFORM}_${TS3SERVER_ARCHITECTURE}
-			fi
-
-			if [[ -f ${INSTANCE_PATH}/ts3server_${INSTALLED_TS3_SERVER_PLATFORM}_${TS3SERVER_ARCHITECTURE} ]]; then
-				rm -rf ${INSTANCE_PATH}/ts3server_${INSTALLED_TS3_SERVER_PLATFORM}_${TS3SERVER_ARCHITECTURE}
-			fi
+		if [[ "$PAR_BETA_RELEASE" -eq 1 ]]; then
+			TS3_SERVER_DOWNLOAD_LINK="http://dl.4players.de/ts/releases/pre_releases/server/${LATEST_RELEASE}/teamspeak3-server_${INSTALLED_TS3_SERVER_PLATFORM}_${TS3SERVER_ARCHITECTURE}-${RELEASE_NUMBER}.tar.bz2"
 		else
-			if [[ "$PAR_BETA_RELEASE" -eq 1 ]]; then
-				TS3_SERVER_DOWNLOAD_LINK="http://dl.4players.de/ts/releases/pre_releases/server/${LATEST_RELEASE}/teamspeak3-server_${INSTALLED_TS3_SERVER_PLATFORM}-${TS3SERVER_ARCHITECTURE}-${RELEASE_NUMBER}.tar.bz2"
-			else
-				TS3_SERVER_DOWNLOAD_LINK="http://dl.4players.de/ts/releases/${LATEST_RELEASE}/teamspeak3-server_${INSTALLED_TS3_SERVER_PLATFORM}-${TS3SERVER_ARCHITECTURE}-${RELEASE_NUMBER}.tar.gz"
-			fi
+			TS3_SERVER_DOWNLOAD_MIRROR_LINKS=$(getDownloadMirrorLink ${INSTALLED_TS3_SERVER_PLATFORM} ${TS3SERVER_ARCHITECTURE} ${LATEST_RELEASE})
+			FOURNETPLAYERS_MIRROR_LINK=$(echo ${TS3_SERVER_DOWNLOAD_MIRROR_LINKS} | cut -d "|" -f 1)
+			GAMED_MIRROR_LINK=$(echo ${TS3_SERVER_DOWNLOAD_MIRROR_LINKS} | cut -d "|" -f 2)
 
-			wget ${TS3_SERVER_DOWNLOAD_LINK} -q -O teamspeak3-server.tar.gz
+			wget -t 1 -T 3 --spider -q ${FOURNETPLAYERS_MIRROR_LINK}
+			if [[ $? == 0 ]]; then
+				TS3_SERVER_DOWNLOAD_LINK="${FOURNETPLAYERS_MIRROR_LINK}"
+			else
+				TS3_SERVER_DOWNLOAD_LINK="${GAMED_MIRROR_LINK}"
+			fi
+		fi
+
+		wget ${TS3_SERVER_DOWNLOAD_LINK} -q -O teamspeak3-server.tar.bz2
+
+		if [[ -f ${INSTANCE_PATH}/tsdns/tsdnsserver_${INSTALLED_TS3_SERVER_PLATFORM}_${TS3SERVER_ARCHITECTURE} ]]; then
+			rm -rf ${INSTANCE_PATH}/tsdns/tsdnsserver_${INSTALLED_TS3_SERVER_PLATFORM}_${TS3SERVER_ARCHITECTURE}
+		fi
+
+		if [[ -f ${INSTANCE_PATH}/ts3server_${INSTALLED_TS3_SERVER_PLATFORM}_${TS3SERVER_ARCHITECTURE} ]]; then
+			rm -rf ${INSTANCE_PATH}/ts3server_${INSTALLED_TS3_SERVER_PLATFORM}_${TS3SERVER_ARCHITECTURE}
 		fi
 		
-		if [ -f teamspeak3-server.tar.bz2 ]; then
-			bzip2 -d teamspeak3-server.tar.bz2 && tar xopf teamspeak3-server.tar
-			if [[ $? -ne 0 ]]; then
-				UPDATE_STATUS_FLAG=1;
-			fi
-			cp -R teamspeak3-server_${INSTALLED_TS3_SERVER_PLATFORM}_${TS3SERVER_ARCHITECTURE}/* .
-			if [[ $? -ne 0 ]]; then
-				UPDATE_STATUS_FLAG=1;
-			fi
-			rm -rf teamspeak3-server_${INSTALLED_TS3_SERVER_PLATFORM}_${TS3SERVER_ARCHITECTURE}/
-			rm teamspeak3-server.tar
-		elif [ -f teamspeak3-server.tar.gz ]; then
-			tar xf teamspeak3-server.tar.gz
-			if [[ $? -ne 0 ]]; then
-				UPDATE_STATUS_FLAG=1;
-			fi
-			cp -R teamspeak3-server_${INSTALLED_TS3_SERVER_PLATFORM}-${TS3SERVER_ARCHITECTURE}/* .
-			if [[ $? -ne 0 ]]; then
-				UPDATE_STATUS_FLAG=1;
-			fi
-			rm -rf teamspeak3-server_${INSTALLED_TS3_SERVER_PLATFORM}-${TS3SERVER_ARCHITECTURE}/
-			rm teamspeak3-server.tar.gz
+		bzip2 -d teamspeak3-server.tar.bz2 && tar xopf teamspeak3-server.tar
+		if [[ $? -ne 0 ]]; then
+			UPDATE_STATUS_FLAG=1;
 		fi
+		cp -R teamspeak3-server_${INSTALLED_TS3_SERVER_PLATFORM}_${TS3SERVER_ARCHITECTURE}/* .
+		if [[ $? -ne 0 ]]; then
+			UPDATE_STATUS_FLAG=1;
+		fi
+		rm -rf teamspeak3-server_${INSTALLED_TS3_SERVER_PLATFORM}_${TS3SERVER_ARCHITECTURE}/
+		rm teamspeak3-server.tar
 		
 		# If database MySQL was used, update database to MariaDB
 		# Installed Build 1388593719 is latest version 3.0.10.3 with MySQL support
@@ -2235,7 +2212,7 @@ function main() {
 	fi
 
 	# Execute software checks
-	if [[ $(checkdeps bash which rsync wget jshon grep sed unzip bzip2 gdb) -eq 1 ]]; then
+	if [[ $(checkdeps bash which rsync wget jshon grep sed bzip2 gdb) -eq 1 ]]; then
 		SELF_TEST_STATUS=1;
 	fi
 

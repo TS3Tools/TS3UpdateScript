@@ -111,7 +111,6 @@ It checks, if a newer version for your TeamSpeak 3 server instance is available 
     - jshon (Read / Decode JSON format)
     - grep (GNU grep, egrep and fgrep)
     - sed (The GNU sed stream editor)
-    - unzip (De-archiver for .zip files)
     - bzip2 (high-quality block-sorting file compressor - utilities)
     - lsb-release / redhat-lsb (Linux Standard Base version reporting utility)
     - gdb (GNU Debugger)
@@ -133,7 +132,6 @@ It checks, if a newer version for your TeamSpeak 3 server instance is available 
 - TSDNS
 - Temporary virtual server passwords
 - ExaGear environments (Further information: http://eltechs.com/)
-- [TS3Monitor](https://github.com/TS3Tools/TS3Monitor/)
 
 ## Available Languages
 

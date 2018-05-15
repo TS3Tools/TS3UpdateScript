@@ -23,6 +23,12 @@ Hotfix | Important fix for one more issues, which causes a not (correct) working
 
 ## Releases
 
+### Version 5.6.5 (2018-05-15)
+
+	* Fixed issue with updates to TeamSpeak server version 3.2.0
+	- Removed package 'unzip' from requirements
+	! The script does now only support *.tar.bzip2 TeamSpeak server packages from now on
+
 ### Version 5.6.4 (2018-05-10)
 
 	* Fixed issue with undetectable architecture
