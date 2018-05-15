@@ -101,6 +101,7 @@ It checks, if a newer version for your TeamSpeak 3 server instance is available 
   - Fedora 21
   - IPFire 2
 - One or more installed TeamSpeak 3 server instances on a Root server/VPS/virtual machine
+  - Minimum required version: 3.1.x
 - Software packages
   - Required
     - bash (GNU Bourne Again SHell)
