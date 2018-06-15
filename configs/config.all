@@ -1,6 +1,6 @@
 DEFAULT_LANGUAGE=en_EN
 ADMINISTRATOR_EMAILS=root@localhost
-LATEST_STABLE_RELEASE=3.0.12.4
+LATEST_STABLE_RELEASE=3.2.0
 DISPLAYED_USERNAME=TS3 UpdateScript
 UPDATE_TEXT=The server will be updated to the version $VERSION right now.
 CRON_UPDATE_TEXT=The server will be updated to version $VERSION in 5 minutes.
