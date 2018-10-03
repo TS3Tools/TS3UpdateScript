@@ -23,6 +23,13 @@ Hotfix | Important fix for one more issues, which causes a not (correct) working
 
 ## Releases
 
+### Version 5.6.6 (2018-10-03)
+
+	* Fixed issue with non-detectable beta version
+	* Implemented fallback for the case, if the server.json is not available / reachable
+	* Made jshon package optional (GitHub issue [#75](https://github.com/TS3Tools/TS3UpdateScript/issues/75))
+	* Updated `LATEST_STABLE_RELEASE` variable to 3.4.0
+
 ### Version 5.6.5 (2018-05-15)
 
 	* Fixed issue with updates to TeamSpeak server version 3.2.0

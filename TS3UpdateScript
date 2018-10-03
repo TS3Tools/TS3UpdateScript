@@ -16,8 +16,8 @@ exec 5<&0
 # Donations: https://www.paypal.com/cgi-bin/webscr?cmd=_s-xclick&hosted_button_id=7ZRXLSC2UBVWE
 #
 
-SCRIPT_VERSION="5.6.5"
-LAST_EDIT_DATE="2018-05-15"
+SCRIPT_VERSION="5.6.6"
+LAST_EDIT_DATE="2018-10-03"
 
 # DO NOT REMOVE OR CHANGE
 SOFTWARE_ABOUT="This is the most widely used and fastest shell script to update all your TeamSpeak 3 server instances."
@@ -87,7 +87,7 @@ function clearTerminalScreen() {
 # Return: 0:boolean or 1:boolean
 function checkConsistency() {
 	CHKSUM=$(grep -v "ORIGIN=" "$0" | head -202 | sha256sum | cut -d " " -f 1)
-	ORIGIN="feef60e88099b7b9cf1a296395218210b697fba6694a209b66cf112cd38d8792"
+	ORIGIN="591c201dc73df393416937025fc8d33444df07411a127d76759f5850d316db98"
 
 	if [[ "$CHKSUM" == "$ORIGIN" ]]; then
 		return 0;
@@ -542,11 +542,7 @@ function getLatestBetaTS3ServerVersion() {
 	while read release; do
 		RELEASE_NUMBER=$(echo "$release" | grep -Eo '^[0-9\.?]+')
 
-		if [[ "${RELEASE_NUMBER}" =~ ^[3-9]+\.[0-9]+\.1[2-9]+\.?[0-9]*$ ]]; then
-			wget -t 1 -T 1 --spider -q "http://dl.4players.de/ts/releases/pre_releases/server/${release}/teamspeak3-server_linux_amd64-${RELEASE_NUMBER}.tar.bz2"
-		else
-			wget -t 1 -T 1 --spider -q "http://dl.4players.de/ts/releases/pre_releases/server/${release}/teamspeak3-server_linux-amd64-${RELEASE_NUMBER}.tar.gz"
-		fi
+		wget -t 1 -T 1 --spider -q "http://dl.4players.de/ts/releases/pre_releases/server/${release}/teamspeak3-server_linux_amd64-${RELEASE_NUMBER}.tar.bz2"
 
 		if [[ $? == 0 ]]; then
 			TS3_SERVER_VERSION="$release"
@@ -567,7 +563,37 @@ function getLatestBetaTS3ServerVersion() {
 # Get latest stable TS3 server version
 # Return: ServerVersion:string or 1:boolean
 function getLatestStableTS3ServerVersion() {
-	TS3_SERVER_VERSION=$(wget -t 1 -T 3 https://www.teamspeak.com/versions/server.json -q -O - | jshon -e linux -e x86_64 -e version | tr -d '"')
+	TS3_SERVER_VERSION="";
+
+	if [[ $(checkdeps jshon) -eq 0 ]]; then
+		wget -t 1 -T 1 --spider -q "https://www.teamspeak.com/versions/server.json"
+
+		if [[ $? == 0 ]]; then
+			TS3_SERVER_VERSION=$(wget -t 1 -T 3 https://www.teamspeak.com/versions/server.json -q -O - | jshon -e linux -e x86_64 -e version | tr -d '"')
+		fi
+	fi
+
+	if [[ $(checkdeps jshon) -eq 1 ]] || [[ -z "${TS3_SERVER_VERSION}" ]]; then
+		wget -t 1 -T 3 'http://dl.4players.de/ts/releases/?C=M;O=D' -q -O - | grep -i dir | grep -Eo '<a href=\".*\/\">.*\/<\/a>' | grep -Eo '[0-9\.?]+' | uniq | sort -V -r > STABLE_RELEASES.txt
+
+		if [[ $? -ne 0 ]]; then
+			return 1;
+		fi
+
+		while read release; do
+			RELEASE_NUMBER=$(echo "$release" | grep -Eo '^[0-9\.?]+')
+
+			wget -t 1 -T 1 --spider -q "http://dl.4players.de/ts/releases/${release}/teamspeak3-server_linux_amd64-${RELEASE_NUMBER}.tar.bz2"
+
+			if [[ $? == 0 ]]; then
+				TS3_SERVER_VERSION="$release"
+				# Break while-loop, if the latest release could be found
+				break
+			fi
+		done < STABLE_RELEASES.txt
+
+		rm STABLE_RELEASES.txt
+	fi
 
 	if [[ -n "$TS3_SERVER_VERSION" ]]; then
 		echo -n "$TS3_SERVER_VERSION";
@@ -582,18 +608,39 @@ function getLatestStableTS3ServerVersion() {
 # Par 3: LatestTS3ServerVersion:string
 # Return: downloadMirrorLinks:string or 1:boolean (mirror1|mirror2)
 function getDownloadMirrorLink() {
+	PLATFORM="${1}"
 	if [[ "${2}" == "amd64" ]]; then
 		ARCHITECTURE="x86_64";
 	else
 		ARCHITECTURE="x86";
 	fi
+	RELEASE_VERSION="${3}"
 
-	FOURNETPLAYERS_MIRROR_LINK=$(wget -t 1 -T 3 https://www.teamspeak.com/versions/server.json -q -O - | jshon -e ${1} -e ${ARCHITECTURE} -e mirrors -e "4Netplayers.de" | tr -d '"' | tr -d '\\')
-	GAMED_MIRROR_LINK=$(wget -t 1 -T 3 https://www.teamspeak.com/versions/server.json -q -O - | jshon -e ${1} -e ${ARCHITECTURE} -e mirrors -e "gamed!de" | tr -d '"' | tr -d '\\')
+	FOURNETPLAYERS_MIRROR_LINK="";
+	GAMED_MIRROR_LINK="";
 
-	# Set specific version
-	FOURNETPLAYERS_MIRROR_LINK=$(echo -n "$FOURNETPLAYERS_MIRROR_LINK" | sed -E 's/([\/\-])[0-9\.?]+([\/\.])/\1'${3}'\2/g')
-	GAMED_MIRROR_LINK=$(echo -n "$GAMED_MIRROR_LINK" | sed -E 's/([\/\-])[0-9\.?]+([\/\.])/\1'${3}'\2/g')
+	if [[ $(checkdeps jshon) -eq 0 ]]; then
+		wget -t 1 -T 1 --spider -q "https://www.teamspeak.com/versions/server.json"
+
+		if [[ $? == 0 ]]; then
+			FOURNETPLAYERS_MIRROR_LINK=$(wget -t 1 -T 3 https://www.teamspeak.com/versions/server.json -q -O - | jshon -e ${PLATFORM} -e ${ARCHITECTURE} -e mirrors -e "4Netplayers.de" | tr -d '"' | tr -d '\\')
+			GAMED_MIRROR_LINK=$(wget -t 1 -T 3 https://www.teamspeak.com/versions/server.json -q -O - | jshon -e ${PLATFORM} -e ${ARCHITECTURE} -e mirrors -e "gamed!de" | tr -d '"' | tr -d '\\')
+
+			# Set specific version
+			FOURNETPLAYERS_MIRROR_LINK=$(echo -n "$FOURNETPLAYERS_MIRROR_LINK" | sed -E 's/([\/\-])[0-9\.?]+([\/\.])/\1'${3}'\2/g')
+			GAMED_MIRROR_LINK=$(echo -n "$GAMED_MIRROR_LINK" | sed -E 's/([\/\-])[0-9\.?]+([\/\.])/\1'${3}'\2/g')
+		fi
+	fi
+
+	if [[ $(checkdeps jshon) -eq 1 ]] || [[ -z "${FOURNETPLAYERS_MIRROR_LINK}" ]] || [[ -z "${GAMED_MIRROR_LINK}" ]]; then
+		if [[ "${ARCHITECTURE}" == "x86" ]]; then
+			FOURNETPLAYERS_MIRROR_LINK="http://dl.4players.de/ts/releases/${RELEASE_VERSION}/teamspeak3-server_${PLATFORM}_x86-${RELEASE_VERSION}.tar.bz2"
+			GAMED_MIRROR_LINK="http://teamspeak.gameserver.gamed.de/ts3/releases/${RELEASE_VERSION}/teamspeak3-server_${PLATFORM}_x86-${RELEASE_VERSION}.tar.bz2"
+		else
+			FOURNETPLAYERS_MIRROR_LINK="http://dl.4players.de/ts/releases/${RELEASE_VERSION}/teamspeak3-server_${PLATFORM}_amd64-${RELEASE_VERSION}.tar.bz2"
+			GAMED_MIRROR_LINK="http://teamspeak.gameserver.gamed.de/ts3/releases/${RELEASE_VERSION}/teamspeak3-server_${PLATFORM}_amd64-${RELEASE_VERSION}.tar.bz2"
+		fi
+	fi
 
 	if [[ -n "$FOURNETPLAYERS_MIRROR_LINK" ]] && [[ -n "$GAMED_MIRROR_LINK" ]]; then
 		echo -n "${FOURNETPLAYERS_MIRROR_LINK}|${GAMED_MIRROR_LINK}";
@@ -610,30 +657,18 @@ function getLatestTSServerVersion() {
 	if [[ "$PAR_SET_RELEASE" -eq 1 ]]; then
 		# Release by file
 		TS3_SERVER_VERSION="$(getLatestTSServerVersionByFile)";
-
-		if [[ "$TS3_SERVER_VERSION" != "0" ]]; then
-			echo -n "$TS3_SERVER_VERSION";
-		else
-			return 1;
-		fi
 	elif [[ "$PAR_BETA_RELEASE" -eq 1 ]]; then
 		# Beta release
 		TS3_SERVER_VERSION="$(getLatestBetaTS3ServerVersion)";
-
-		if [[ "$TS3_SERVER_VERSION" != "0" ]]; then
-			echo -n "$TS3_SERVER_VERSION";
-		else
-			return 1;
-		fi
 	else
 		# Stable release
 		TS3_SERVER_VERSION="$(getLatestStableTS3ServerVersion)";
+	fi
 
-		if [[ "$TS3_SERVER_VERSION" != "0" ]]; then
-			echo -n "$TS3_SERVER_VERSION";
-		else
-			return 1;
-		fi
+	if [[ -n "$TS3_SERVER_VERSION" ]] && [[ "$TS3_SERVER_VERSION" != "0" ]]; then
+		echo -n "$TS3_SERVER_VERSION";
+	else
+		return 1;
 	fi
 }
 
@@ -2212,7 +2247,7 @@ function main() {
 	fi
 
 	# Execute software checks
-	if [[ $(checkdeps bash which rsync wget jshon grep sed bzip2 gdb) -eq 1 ]]; then
+	if [[ $(checkdeps bash which rsync wget grep sed bzip2 gdb) -eq 1 ]]; then
 		SELF_TEST_STATUS=1;
 	fi
 
