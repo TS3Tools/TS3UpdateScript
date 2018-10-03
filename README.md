@@ -109,7 +109,6 @@ It checks, if a newer version for your TeamSpeak 3 server instance is available 
     - ca-certificates (for SSL connections)
     - rsync (fast, versatile, remote (and local) file-copying tool)
     - wget (retrieves files from the web)
-    - jshon (Read / Decode JSON format)
     - grep (GNU grep, egrep and fgrep)
     - sed (The GNU sed stream editor)
     - bzip2 (high-quality block-sorting file compressor - utilities)
@@ -120,6 +119,7 @@ It checks, if a newer version for your TeamSpeak 3 server instance is available 
     - any MTA like postfix or exim (for receiving cronjob mails)
     - expect (Automates interactive applications) (if you want to inform online clients about updates and get a higher detection rate of properties/settings)
     - telnet (The telnet client) (if you want to inform online clients about updates)
+    - jshon (Read / Decode JSON format)
 - root user access on your Linux system (below a list of some reasons, why the script needs root permissions)
   - Automated detection of one or more TeamSpeak 3 server instances
   - Detecting and changing/adjusting file/directory permissions after update process
