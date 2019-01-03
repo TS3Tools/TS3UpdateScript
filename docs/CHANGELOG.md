@@ -23,6 +23,12 @@ Hotfix | Important fix for one more issues, which causes a not (correct) working
 
 ## Releases
 
+### Version 5.6.7 (2019-01-03)
+
+        * Removed support for outdated TSDNS server with architecture in the name (eg. tsdnsserver_linux_x86)
+        ! Latest TSDNS server is still supported (file is called 'tsdnsserver')
+        ! Note: TeamSpeak will remove the support for TSDNS, so you may consider already today to switch from TSDNS to SRV Records (see [TeamSpeak FAQ](https://support.teamspeakusa.com/index.php?/Knowledgebase/Article/View/293/0/does-teamspeak-3-support-dns-srv-records))
+
 ### Version 5.6.6 (2018-10-03)
 
 	* Fixed issue with non-detectable beta version

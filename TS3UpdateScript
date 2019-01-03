@@ -16,8 +16,8 @@ exec 5<&0
 # Donations: https://www.paypal.com/cgi-bin/webscr?cmd=_s-xclick&hosted_button_id=7ZRXLSC2UBVWE
 #
 
-SCRIPT_VERSION="5.6.6"
-LAST_EDIT_DATE="2018-10-03"
+SCRIPT_VERSION="5.6.7"
+LAST_EDIT_DATE="2019-01-03"
 
 # DO NOT REMOVE OR CHANGE
 SOFTWARE_ABOUT="This is the most widely used and fastest shell script to update all your TeamSpeak 3 server instances."
@@ -87,7 +87,7 @@ function clearTerminalScreen() {
 # Return: 0:boolean or 1:boolean
 function checkConsistency() {
 	CHKSUM=$(grep -v "ORIGIN=" "$0" | head -202 | sha256sum | cut -d " " -f 1)
-	ORIGIN="591c201dc73df393416937025fc8d33444df07411a127d76759f5850d316db98"
+	ORIGIN="8c5535b34e703eb0d0b70fa3e009bbc1b14e0fcffcb4179bd768504c94b10817"
 
 	if [[ "$CHKSUM" == "$ORIGIN" ]]; then
 		return 0;
@@ -1701,17 +1701,8 @@ function tsdns() {
 		fi
 	done < TS3InstanceInfos.txt
 
-	if [[ $(getVersionOfInstalledTS3Server ${DIRECTORY}) =~ ^[3-9]+\.[0-9]+\.1[2-9]+\.?[0-9]*$ ]] || [[ $(getVersionOfInstalledTS3Server ${INSTANCE_PATH})  =~ ^[3-9]+\.1[2-9]*\.[0-9]+\.?[0-9]*$ ]]; then
-		TSDNS_BINARY="tsdnsserver"
-	else
-		TSDNS_BINARY="$(echo tsdnsserver_${INSTALLED_TS3_SERVER_PLATFORM}_${TS3SERVER_ARCHITECTURE} | tr '[:upper:]' '[:lower:]')"
-	fi
-
-	if [[ $(getLatestTSServerVersion) =~ ^[3-9]+\.[0-9]+\.1[2-9]+\.?[0-9]*$ ]] || [[ $(getLatestTSServerVersion ${INSTANCE_PATH})  =~ ^[3-9]+\.1[2-9]*\.[0-9]+\.?[0-9]*$ ]]; then
-		LATEST_TSDNS_BINARY="tsdnsserver"
-	else
-		LATEST_TSDNS_BINARY="$(echo tsdnsserver_${INSTALLED_TS3_SERVER_PLATFORM}_${TS3SERVER_ARCHITECTURE} | tr '[:upper:]' '[:lower:]')"
-	fi
+	TSDNS_BINARY="tsdnsserver"
+	LATEST_TSDNS_BINARY="tsdnsserver"
 
 	if [ $(ps opid= -C ${TSDNS_BINARY}) ]; then
 		TSDNS_PID=$(ps opid= -C ${TSDNS_BINARY} | tr -d '[:space:]')
@@ -2946,11 +2937,7 @@ function main() {
 					SERVERQUERY_PORT=$(echo "$instanceInfo" | grep -Ev "^#" | cut -d "|" -f 13)
 					DATABASE_TYPE=$(echo "$instanceInfo" | grep -Ev "^#" | cut -d "|" -f 14)
 
-					if [[ $(getVersionOfInstalledTS3Server ${INSTANCE_PATH})  =~ ^[3-9]+\.[0-9]+\.1[2-9]+\.?[0-9]*$ ]] || [[ $(getVersionOfInstalledTS3Server ${INSTANCE_PATH})  =~ ^[3-9]+\.1[2-9]*\.[0-9]+\.?[0-9]*$ ]]; then
-						TSDNS_BINARY="tsdnsserver"
-					else
-						TSDNS_BINARY="$(echo tsdnsserver_${INSTALLED_TS3_SERVER_PLATFORM}_${TS3SERVER_ARCHITECTURE} | tr '[:upper:]' '[:lower:]')"
-					fi
+					TSDNS_BINARY="tsdnsserver"
 
 					if [[ -n "$INSTANCE_PATH" ]]; then
 						if [[ "$INSTALLED_TS3_SERVER_VERSION" != "$LATEST_TS3_SERVER_VERSION" ]]; then
