@@ -16,8 +16,8 @@ exec 5<&0
 # Donations: https://www.paypal.com/cgi-bin/webscr?cmd=_s-xclick&hosted_button_id=7ZRXLSC2UBVWE
 #
 
-SCRIPT_VERSION="5.6.7"
-LAST_EDIT_DATE="2019-01-03"
+SCRIPT_VERSION="5.6.8"
+LAST_EDIT_DATE="2019-03-25"
 
 # DO NOT REMOVE OR CHANGE
 SOFTWARE_ABOUT="This is the most widely used and fastest shell script to update all your TeamSpeak 3 server instances."
@@ -87,7 +87,7 @@ function clearTerminalScreen() {
 # Return: 0:boolean or 1:boolean
 function checkConsistency() {
 	CHKSUM=$(grep -v "ORIGIN=" "$0" | head -202 | sha256sum | cut -d " " -f 1)
-	ORIGIN="8c5535b34e703eb0d0b70fa3e009bbc1b14e0fcffcb4179bd768504c94b10817"
+	ORIGIN="5c210b7fc0182c2238c2dac6fe1341c3b38d8f7cfbb7d7e8d99961eaa02fbacf"
 
 	if [[ "$CHKSUM" == "$ORIGIN" ]]; then
 		return 0;
@@ -533,7 +533,7 @@ function getLatestTSServerVersionByFile() {
 # Get latest beta TS3 server version
 # Return: ServerVersion:string or 1:boolean
 function getLatestBetaTS3ServerVersion() {
-	wget -t 1 -T 3 'http://dl.4players.de/ts/releases/pre_releases/server/?C=M;O=D' -q -O - | grep -i dir | grep -Eo '<a href=\".*\/\">.*\/<\/a>' | grep -Eo '[0-9\.?]+-Beta-[0-9]+' | uniq | sort -V -r > BETA_RELEASES.txt
+	wget -t 1 -T 3 'http://dl.4players.de/ts/releases/pre_releases/server/?C=M;O=D' -q -O - | grep -i dir | grep -Eo '<a href=\".*\/\">.*\/<\/a>' | grep -Eo '[0-9\.?]+-(B|b)eta\-?[0-9]+' | uniq | sort -V -r > BETA_RELEASES.txt
 
 	if [[ $? -ne 0 ]]; then
 		return 1;

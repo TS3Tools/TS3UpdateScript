@@ -23,6 +23,10 @@ Hotfix | Important fix for one more issues, which causes a not (correct) working
 
 ## Releases
 
+### Version 5.6.8 (2019-03-25)
+
+        * Bugfix: TeamSpeak changed the naming of their beta versions and due due this, the newer versions 3.7.0+ were not detected
+
 ### Version 5.6.7 (2019-01-03)
 
         * Removed support for outdated TSDNS server with architecture in the name (eg. tsdnsserver_linux_x86)
