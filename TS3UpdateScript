@@ -540,6 +540,14 @@ function getLatestBetaTS3ServerVersion() {
 	fi
 
 	while read release; do
+		wget -t 1 -T 1 --spider -q "http://dl.4players.de/ts/releases/pre_releases/server/${release}/teamspeak3-server_linux_amd64-${release}.tar.bz2"
+
+		if [[ $? == 0 ]]; then
+			TS3_SERVER_VERSION="$release"
+			# Break while-loop, if the latest release could be found
+			break
+		fi
+
 		RELEASE_NUMBER=$(echo "$release" | grep -Eo '^[0-9\.?]+')
 
 		wget -t 1 -T 1 --spider -q "http://dl.4players.de/ts/releases/pre_releases/server/${release}/teamspeak3-server_linux_amd64-${RELEASE_NUMBER}.tar.bz2"
