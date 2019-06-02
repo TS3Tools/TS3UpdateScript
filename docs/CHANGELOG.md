@@ -23,6 +23,12 @@ Hotfix | Important fix for one more issues, which causes a not (correct) working
 
 ## Releases
 
+### Version 5.6.9 (2019-06-02)
+
+	* Updated latest stable version in config file to current latest version 3.8.0
+	+ Added support for new download server files.teamspeak-services.com [#97](https://github.com/TS3Tools/TS3UpdateScript/issues/97)
+	* Improved mirror links to avoid links, which do not exist [#97](https://github.com/TS3Tools/TS3UpdateScript/issues/97)
+
 ### Version 5.6.8 (2019-03-25)
 
         * Bugfix: TeamSpeak changed the naming of their beta versions and due due this, the newer versions 3.7.0+ were not detected
