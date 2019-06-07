@@ -308,8 +308,6 @@ Protocol | Host/IP  | Used for | How often?
 https | www.ts3-tools.info | Licensing server | Every 7 days or when your force an update of your license
 https | www.teamspeak.com | For detection of latest stable server release version | Each execution of the TS3UpdateScript
 https | files.teamspeak-services.com | Download server for TeamSpeak 3 server files | Each execution of the TS3UpdateScript
-http | dl.4players.de | Download server for TeamSpeak 3 server files | Each execution of the TS3UpdateScript
-http | teamspeak.gameserver.gamed.de | Download server for TeamSpeak 3 server files | Each execution of the TS3UpdateScript and only, when dl.4players.de is not reachable/useable
 https | raw.githubusercontent.com | Server for checking latest TS3UpdateScript version | Each execution of the TS3UpdateScript
 https | github.com | Download server for TS3UpdateScript files | Only if you update the TS3UpdateScript
 

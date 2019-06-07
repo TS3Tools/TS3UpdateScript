@@ -16,8 +16,8 @@ exec 5<&0
 # Donations: https://www.paypal.com/cgi-bin/webscr?cmd=_s-xclick&hosted_button_id=7ZRXLSC2UBVWE
 #
 
-SCRIPT_VERSION="5.6.9"
-LAST_EDIT_DATE="2019-06-02"
+SCRIPT_VERSION="5.7.0"
+LAST_EDIT_DATE="2019-06-07"
 
 # DO NOT REMOVE OR CHANGE
 SOFTWARE_ABOUT="This is the most widely used and fastest shell script to update all your TeamSpeak 3 server instances."
@@ -87,7 +87,7 @@ function clearTerminalScreen() {
 # Return: 0:boolean or 1:boolean
 function checkConsistency() {
 	CHKSUM=$(grep -v "ORIGIN=" "$0" | head -202 | sha256sum | cut -d " " -f 1)
-	ORIGIN="96bf31ad5d1ea7837e51f48b72f3a67a3f25bc7e2f1ad59234579abb42da5fe8"
+	ORIGIN="9cb3db549f748dd062c2f1d9b7be4ef15c6e23b968eea3998972d7c6733cedef"
 
 	if [[ "$CHKSUM" == "$ORIGIN" ]]; then
 		return 0;
@@ -623,33 +623,21 @@ function getDownloadMirrorLink() {
 	RELEASE_VERSION="${3}"
 
 	TEAMSPEAK_MIRROR_LINK="";
-	FOURNETPLAYERS_MIRROR_LINK="";
-	GAMED_MIRROR_LINK="";
 
 	if [[ $(checkdeps jshon) -eq 0 ]]; then
 		wget -t 1 -T 1 --spider -q "https://www.teamspeak.com/versions/server.json"
 
 		if [[ $? == 0 ]]; then
-			TEAMSPEAK_MIRROR_LINK=$(wget -t 1 -T 3 https://www.teamspeak.com/versions/server.json -q -O - | jshon -e ${PLATFORM} -e ${ARCHITECTURE} -e mirrors -e "4Netplayers.de" | tr -d '"' | tr -d '\\')
-			FOURNETPLAYERS_MIRROR_LINK=$(wget -t 1 -T 3 https://www.teamspeak.com/versions/server.json -q -O - | jshon -e ${PLATFORM} -e ${ARCHITECTURE} -e mirrors -e "4Netplayers.de" | tr -d '"' | tr -d '\\')
-			GAMED_MIRROR_LINK=$(wget -t 1 -T 3 https://www.teamspeak.com/versions/server.json -q -O - | jshon -e ${PLATFORM} -e ${ARCHITECTURE} -e mirrors -e "gamed!de" | tr -d '"' | tr -d '\\')
+			TEAMSPEAK_MIRROR_LINK=$(wget -t 1 -T 3 https://www.teamspeak.com/versions/server.json -q -O - | jshon -e ${PLATFORM} -e ${ARCHITECTURE} -e mirrors -e "teamspeak.com" | tr -d '"' | tr -d '\\')
 
 			# Set specific version
 			TEAMSPEAK_MIRROR_LINK=$(echo -n "$TEAMSPEAK_MIRROR_LINK" | sed -E 's/([\/\-])[0-9\.?]+([\/\.])/\1'${3}'\2/g')
-			FOURNETPLAYERS_MIRROR_LINK=$(echo -n "$FOURNETPLAYERS_MIRROR_LINK" | sed -E 's/([\/\-])[0-9\.?]+([\/\.])/\1'${3}'\2/g')
-			GAMED_MIRROR_LINK=$(echo -n "$GAMED_MIRROR_LINK" | sed -E 's/([\/\-])[0-9\.?]+([\/\.])/\1'${3}'\2/g')
 		fi
-	fi
-
-	if [[ $(checkdeps jshon) -eq 1 ]] || [[ -z "${FOURNETPLAYERS_MIRROR_LINK}" ]] || [[ -z "${GAMED_MIRROR_LINK}" ]]; then
+	else
 		if [[ "${ARCHITECTURE}" == "x86" ]]; then
 			TEAMSPEAK_MIRROR_LINK="https://files.teamspeak-services.com/releases/server/${RELEASE_VERSION}/teamspeak3-server_${PLATFORM}_x86-${RELEASE_VERSION}.tar.bz2"
-			FOURNETPLAYERS_MIRROR_LINK="http://dl.4players.de/ts/releases/${RELEASE_VERSION}/teamspeak3-server_${PLATFORM}_x86-${RELEASE_VERSION}.tar.bz2"
-			GAMED_MIRROR_LINK="http://teamspeak.gameserver.gamed.de/ts3/releases/${RELEASE_VERSION}/teamspeak3-server_${PLATFORM}_x86-${RELEASE_VERSION}.tar.bz2"
 		else
 			TEAMSPEAK_MIRROR_LINK="https://files.teamspeak-services.com/releases/server/${RELEASE_VERSION}/teamspeak3-server_${PLATFORM}_amd64-${RELEASE_VERSION}.tar.bz2"
-			FOURNETPLAYERS_MIRROR_LINK="http://dl.4players.de/ts/releases/${RELEASE_VERSION}/teamspeak3-server_${PLATFORM}_amd64-${RELEASE_VERSION}.tar.bz2"
-			GAMED_MIRROR_LINK="http://teamspeak.gameserver.gamed.de/ts3/releases/${RELEASE_VERSION}/teamspeak3-server_${PLATFORM}_amd64-${RELEASE_VERSION}.tar.bz2"
 		fi
 	fi
 
@@ -659,17 +647,9 @@ function getDownloadMirrorLink() {
 	if [[ $? == 0 ]]; then
 		MIRROR_LIST="${TEAMSPEAK_MIRROR_LINK}";
 	fi
-	wget -t 1 -T 1 --spider -q "${FOURNETPLAYERS_MIRROR_LINK}"
-	if [[ $? == 0 ]]; then
-		MIRROR_LIST="${MIRROR_LIST}|${FOURNETPLAYERS_MIRROR_LINK}";
-	fi
-	wget -t 1 -T 1 --spider -q "${GAMED_MIRROR_LINK}"
-	if [[ $? == 0 ]]; then
-		MIRROR_LIST="${MIRROR_LIST}|${GAMED_MIRROR_LINK}";
-	fi
 
 	if [[ -n "$MIRROR_LIST" ]]; then
-		echo -n "${MIRROR_LIST}" | tee /tmp/mirrors.log
+		echo -n "${MIRROR_LIST}";
 	else
 		return 1;
 	fi
