@@ -23,6 +23,11 @@ Hotfix | Important fix for one more issues, which causes a not (correct) working
 
 ## Releases
 
+### Version 5.7.0 (2019-06-07)
+
+	* Removed deprecated mirrors (download servers) for TeamSpeak 3 server files (GitHub issue [#99](https://github.com/TS3Tools/TS3UpdateScript/issues/99))
+	! This change also fixes the following issue: `parse error: type 'object' has no elements to extract (arg 8)`
+
 ### Version 5.6.9 (2019-06-02)
 
 	* Updated latest stable version in config file to current latest version 3.8.0
