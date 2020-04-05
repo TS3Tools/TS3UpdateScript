@@ -63,7 +63,7 @@ HINT: UPDATE_TEXT / CRON_UPDATE_TEXT has a limitation of 100 characters. The DIS
 
 e) Install required Linux software packages (the following example is for Debian based systems with minimum required packages):
 
-  ``user@tux:~/TS3UpdateScript$ sudo apt-get install bash which rsync wget grep sed unzip bzip2 lsb-release gdb``
+  ``user@tux:~/TS3UpdateScript$ sudo apt-get install bash which rsync wget grep sed unzip bzip2 lsb-release gdb sudo``
 
 f) Finish! Read the USAGE below to see, how you can use it or just run it check your instances without any special settings (parameters):
 
