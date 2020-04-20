@@ -1,6 +1,8 @@
 DEFAULT_LANGUAGE=en_EN
 ADMINISTRATOR_EMAILS=root@localhost
-LATEST_STABLE_RELEASE=3.8.0
+LATEST_STABLE_RELEASE=3.12.1
+TEMP_BACKUP_DIR=/tmp
+PERSISTENT_BACKUP_DIR=/var/backups
 DISPLAYED_USERNAME=TS3 UpdateScript
 UPDATE_TEXT=The server will be updated to the version $VERSION right now.
 CRON_UPDATE_TEXT=The server will be updated to version $VERSION in 5 minutes.

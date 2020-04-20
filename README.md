@@ -16,6 +16,7 @@ It checks, if a newer version for your TeamSpeak 3 server instance is available 
 - [Stay tuned!](#stay-tuned)
 - [Requirements](#requirements)
 - [Supports](#supports)
+- [Hint: systemd](#hint-systemd)
 - [Available Languages](#available-languages)
 	- [Help us](#help-us)
 - [Script licenses](#script-licenses)
@@ -129,10 +130,43 @@ It checks, if a newer version for your TeamSpeak 3 server instance is available 
 ## Supports
 
 - Linux and FreeBSD binary
+- systemd
 - SQLite and MySQL as well as MariaDB database setups
 - TSDNS
 - Temporary virtual server passwords
 - ExaGear environments (Further information: http://eltechs.com/)
+
+## Hint: systemd
+
+If you are using systemd to ensure, that your TeamSpeak server instance is running, you should add a condition to your systemd script to avoid automated restarts while the TS3UpdateScript is performing an update.
+
+The TS3UpdateScript creates a temporary file called `.ts3updatescript.lock` in the root directory (where you also can find the `ts3server_startscript.sh` script) of the TeamSpeak server instance, when it starts updating the instance. As soon as it finished the update, it deletes this lock file again.
+
+You can use this lock file to tell systemd to avoid automated restarts while the TS3UpdateScript is performing an update. Simply add a condition to systemd: `ConditionPathExists=!/home/teamspeak/.ts3updatescript.lock`
+
+Here is a full example:
+
+```
+[Unit]
+Description=TeamSpeak Server
+After=network.target
+ConditionPathExists=!/home/teamspeak/.ts3updatescript.lock
+
+[Install]
+WantedBy=multi-user.target
+Alias=teamspeak-server.service
+
+[Service]
+User=teamspeak
+Group=teamspeak
+WorkingDirectory=/home/teamspeak/
+ExecStart=/home/teamspeak/ts3server_startscript.sh start
+ExecStop=/home/teamspeak/ts3server_startscript.sh stop
+ExecReload=/home/teamspeak/ts3server_startscript.sh restart
+PIDFile=/home/teamspeak/ts3server.pid
+Restart=always
+Type=forking
+```
 
 ## Available Languages
 

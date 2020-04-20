@@ -23,6 +23,14 @@ Hotfix | Important fix for one more issues, which causes a not (correct) working
 
 ## Releases
 
+### Version 5.8.0 (2020-04-20)
+
+	* Added information regarding `.ts3updatescript.lock` file (GitHub issue [#107](https://github.com/TS3Tools/TS3UpdateScript/issues/107))
+	* Improved deletion of old log files by replacing `rm` with `find` (`rm` can only handle a specific length of arguments)
+	* Fixed detection of version, platform and system type when `appendlog` was enabled (GitHub issue [#93](https://github.com/TS3Tools/TS3UpdateScript/issues/93))
+	* Updated config variable `LATEST_STABLE_RELEASE` to current latest TeamSpeak 3 server release
+	* Made backup directories configureable in `configs/config.all` (GitHub issue [#102](https://github.com/TS3Tools/TS3UpdateScript/issues/102))
+
 ### Version 5.7.0 (2019-06-07)
 
 	* Removed deprecated mirrors (download servers) for TeamSpeak 3 server files (GitHub issue [#99](https://github.com/TS3Tools/TS3UpdateScript/issues/99))

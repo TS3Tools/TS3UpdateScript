@@ -16,8 +16,8 @@ exec 5<&0
 # Donations: https://www.paypal.com/cgi-bin/webscr?cmd=_s-xclick&hosted_button_id=7ZRXLSC2UBVWE
 #
 
-SCRIPT_VERSION="5.7.0"
-LAST_EDIT_DATE="2019-06-07"
+SCRIPT_VERSION="5.8.0"
+LAST_EDIT_DATE="2020-04-20"
 
 # DO NOT REMOVE OR CHANGE
 SOFTWARE_ABOUT="This is the most widely used and fastest shell script to update all your TeamSpeak 3 server instances."
@@ -86,8 +86,8 @@ function clearTerminalScreen() {
 # Checks consistency of script
 # Return: 0:boolean or 1:boolean
 function checkConsistency() {
-	CHKSUM=$(grep -v "ORIGIN=" "$0" | head -202 | sha256sum | cut -d " " -f 1)
-	ORIGIN="9cb3db549f748dd062c2f1d9b7be4ef15c6e23b968eea3998972d7c6733cedef"
+	CHKSUM=$(grep -v "ORIGIN=" "$0" | sha256sum | cut -d " " -f 1)
+	ORIGIN="59e85b0ee11a8f4209aa16abd6f7ae306f7911d2942428e3a7e863350c8a846d"
 
 	if [[ "$CHKSUM" == "$ORIGIN" ]]; then
 		return 0;
@@ -681,14 +681,16 @@ function getLatestTSServerVersion() {
 # Find all TeamSpeak 3 server instances
 # Return: 0:boolean or 1:boolean
 function findTS3ServerInstances() {
+	TEMP_BACKUP_DIR=$(getTempBackupDir)
+	PERSISTENT_BACKUP_DIR=$(getPersistentBackupDir)
 	if [[ "$SCRIPT_LICENSE_TYPE" == "2" ]]; then
 		if [[ "$PAR_PATH_DIRECTORY" == "/" ]]; then
-			find / -name 'ts3server_startscript.sh' 2> /dev/null | grep -Eiv "/tmp/TS3Tools/TS3UpdateScript|/var/backups/TS3Tools/TS3UpdateScript" | sort > TS3InstancePaths.txt
+			find / -name 'ts3server_startscript.sh' 2> /dev/null | grep -Eiv "${TEMP_BACKUP_DIR}/TS3Tools/TS3UpdateScript|${PERSISTENT_BACKUP_DIR}/TS3Tools/TS3UpdateScript" | sort > TS3InstancePaths.txt
 		else
 			echo "$PAR_PATH_DIRECTORY/ts3server_startscript.sh" > TS3InstancePaths.txt
 		fi
 	else
-		find / -name 'ts3server_startscript.sh' 2> /dev/null | grep -Eiv "/tmp/TS3Tools/TS3UpdateScript|/var/backups/TS3Tools/TS3UpdateScript" | sort | head -1 > TS3InstancePaths.txt
+		find / -name 'ts3server_startscript.sh' 2> /dev/null | grep -Eiv "${TEMP_BACKUP_DIR}/TS3Tools/TS3UpdateScript|${PERSISTENT_BACKUP_DIR}/TS3Tools/TS3UpdateScript" | sort | head -1 > TS3InstancePaths.txt
 	fi
 
 	if [[ -s TS3InstancePaths.txt ]]; then
@@ -803,7 +805,7 @@ function getVersionOfInstalledTS3Server() {
 		fi
 	elif [[ "$PAR_COUNTER" -eq 1 ]]; then
 		INSTANCE_LOG_FILE="$(find $(getTS3ServerInstanceLogPath ${1}) -name *_0.log | sort -nr | head -1)"
-		VERSION="$(grep -Eo 'TeamSpeak\s3\sServer\s[0-9\.?]+' $INSTANCE_LOG_FILE | cut -d " " -f 4)"
+		VERSION="$(grep -Eo 'TeamSpeak\s3\sServer\s[0-9\.?]+' $INSTANCE_LOG_FILE | cut -d " " -f 4 | tail -1)"
 
 		if [[ -n "$VERSION" ]]; then
 			echo -n "$VERSION";
@@ -874,7 +876,7 @@ function getPlatformOfInstalledTS3Server() {
 		fi
 	elif [[ "$PAR_COUNTER" -eq 1 ]]; then
 		INSTANCE_LOG_FILE="$(find $(getTS3ServerInstanceLogPath ${1}) -name *_0.log | sort -nr | head -1)"
-		PLATFORM="$(grep -Eo '(Linux|FreeBSD)' $INSTANCE_LOG_FILE)"
+		PLATFORM="$(grep -Eo '(Linux|FreeBSD)' $INSTANCE_LOG_FILE | tail -1)"
 
 		if [[ -n "$PLATFORM" ]]; then
 			echo -n "$PLATFORM";
@@ -889,7 +891,7 @@ function getPlatformOfInstalledTS3Server() {
 # Return: Architecture:string or 1:boolean
 function getArchitectureOfInstalledTS3Server() {
 	INSTANCE_LOG_FILE="$(find $(getTS3ServerInstanceLogPath ${1}) -name *_0.log | sort -nr | head -1)"
-	SYSTEM_TYPE="$(grep -Eo 'Binary: (64bit|32bit)' $INSTANCE_LOG_FILE | cut -d " " -f 2)"
+	SYSTEM_TYPE="$(grep -Eo 'Binary: (64bit|32bit)' $INSTANCE_LOG_FILE | cut -d " " -f 2 | tail -1)"
 
 	if [[ "${SYSTEM_TYPE}" == "64bit" ]]; then
 		ARCHITECTURE="amd64"
@@ -1115,6 +1117,38 @@ function getServerQueryPort() {
 		fi
 	else
 		echo -n "10011";
+	fi
+}
+
+# Get temporary backup directory
+# Return: TemporaryBackupDirectory:string or 1:boolean
+function getTempBackupDir() {
+	TEMP_BACKUP_DIR="$(grep TEMP_BACKUP_DIR ${ABSOLUTE_PATH}/configs/config.all | cut -d '=' -f 2)"
+
+	if [[ -n "$TEMP_BACKUP_DIR" ]]; then
+		if [[ -d "$TEMP_BACKUP_DIR" ]]; then
+			echo -n "$TEMP_BACKUP_DIR";
+		else
+			return 1;
+		fi
+	else
+		echo "/tmp";
+	fi
+}
+
+# Get persistent backup directory
+# Return: PersistentBackupDirectory:string or 1:boolean
+function getPersistentBackupDir() {
+	PERSISTENT_BACKUP_DIR="$(grep PERSISTENT_BACKUP_DIR ${ABSOLUTE_PATH}/configs/config.all | cut -d '=' -f 2)"
+
+	if [[ -n "$PERSISTENT_BACKUP_DIR" ]]; then
+		if [[ -d "$PERSISTENT_BACKUP_DIR" ]]; then
+			echo -n "$PERSISTENT_BACKUP_DIR";
+		else
+			return 1;
+		fi
+	else
+		echo "/var/backups";
 	fi
 }
 
@@ -1788,10 +1822,13 @@ function databaseBackup() {
 	DB_HOST=$(grep -Ei '^host=.+$' ${TEAMSPEAK_ROOT_DIRECTORY}${DATABASE_INI_FILE} | cut -d '=' -f 2 | sed -e "s/^'//" -e 's/^"//' -e "s/'$//" -e 's/"$//')
 	DB_PORT=$(grep -Ei '^port=.+$' ${TEAMSPEAK_ROOT_DIRECTORY}${DATABASE_INI_FILE} | cut -d '=' -f 2 | sed -e "s/^'//" -e 's/^"//' -e "s/'$//" -e 's/"$//')
 
+	TEMP_BACKUP_DIR=$(getTempBackupDir)
+	PERSISTENT_BACKUP_DIR=$(getPersistentBackupDir)
+
 	if [[ "${1}" == "export" ]]; then
-		mysqldump --add-drop-table --user=${DB_USERNAME} --password=${DB_PASSWORD} ${DB_NAME} --host=${DB_HOST} --port=${DB_PORT} > /tmp/TS3Tools/TS3UpdateScript/${DIRECTORY_MD5SUM}/ts3DatabaseBackup.sql
+		mysqldump --add-drop-table --user=${DB_USERNAME} --password=${DB_PASSWORD} ${DB_NAME} --host=${DB_HOST} --port=${DB_PORT} > ${TEMP_BACKUP_DIR}/TS3Tools/TS3UpdateScript/${DIRECTORY_MD5SUM}/ts3DatabaseBackup.sql
 		if [ $? -eq 0 ]; then
-			mysqldump --add-drop-table --user=${DB_USERNAME} --password=${DB_PASSWORD} ${DB_NAME} --host=${DB_HOST} --port=${DB_PORT} > /var/backups/TS3Tools/TS3UpdateScript/${DIRECTORY_MD5SUM}/ts3DatabaseBackup.sql
+			mysqldump --add-drop-table --user=${DB_USERNAME} --password=${DB_PASSWORD} ${DB_NAME} --host=${DB_HOST} --port=${DB_PORT} > ${PERSISTENT_BACKUP_DIR}/TS3Tools/TS3UpdateScript/${DIRECTORY_MD5SUM}/ts3DatabaseBackup.sql
 			if [ $? -eq 0 ]; then
 				return 0;
 			else
@@ -1801,7 +1838,7 @@ function databaseBackup() {
 			return 1;
 		fi
 	elif [[ "${1}" == "import" ]]; then
-		mysql --user=${DB_USERNAME} --password=${DB_PASSWORD} ${DB_NAME} --host=${DB_HOST} --port=${DB_PORT} < /tmp/TS3Tools/TS3UpdateScript/${DIRECTORY_MD5SUM}/ts3DatabaseBackup.sql
+		mysql --user=${DB_USERNAME} --password=${DB_PASSWORD} ${DB_NAME} --host=${DB_HOST} --port=${DB_PORT} < ${TEMP_BACKUP_DIR}/TS3Tools/TS3UpdateScript/${DIRECTORY_MD5SUM}/ts3DatabaseBackup.sql
 		if [ $? -eq 0 ]; then
 			return 0;
 		else
@@ -1823,18 +1860,21 @@ function backup() {
 
 	DATABASE_TYPE=${3}
 
+	TEMP_BACKUP_DIR=$(getTempBackupDir)
+	PERSISTENT_BACKUP_DIR=$(getPersistentBackupDir)
+
 	case $2 in
 		create)
-			if [ ! -d /tmp/TS3Tools/TS3UpdateScript/${DIRECTORY_MD5SUM} ]; then
-				mkdir -p /tmp/TS3Tools/TS3UpdateScript/${DIRECTORY_MD5SUM}
+			if [ ! -d ${TEMP_BACKUP_DIR}/TS3Tools/TS3UpdateScript/${DIRECTORY_MD5SUM} ]; then
+				mkdir -p ${TEMP_BACKUP_DIR}/TS3Tools/TS3UpdateScript/${DIRECTORY_MD5SUM}
 			fi
 
-			if [ ! -d /var/backups/TS3Tools/TS3UpdateScript/${DIRECTORY_MD5SUM} ]; then
-				mkdir -p /var/backups/TS3Tools/TS3UpdateScript/${DIRECTORY_MD5SUM}
+			if [ ! -d ${PERSISTENT_BACKUP_DIR}/TS3Tools/TS3UpdateScript/${DIRECTORY_MD5SUM} ]; then
+				mkdir -p ${PERSISTENT_BACKUP_DIR}/TS3Tools/TS3UpdateScript/${DIRECTORY_MD5SUM}
 			fi
 
-			if [ ! $(rsync -a --no-inc-recursive --exclude 'files' ${TEAMSPEAK_ROOT_DIRECTORY} /tmp/TS3Tools/TS3UpdateScript/${DIRECTORY_MD5SUM} 2> /dev/null) ]; then
-				if [ ! $(rsync -a --no-inc-recursive --exclude 'files' ${TEAMSPEAK_ROOT_DIRECTORY} /var/backups/TS3Tools/TS3UpdateScript/${DIRECTORY_MD5SUM} 2> /dev/null) ]; then
+			if [ ! $(rsync -a --no-inc-recursive --exclude 'files' ${TEAMSPEAK_ROOT_DIRECTORY} ${TEMP_BACKUP_DIR}/TS3Tools/TS3UpdateScript/${DIRECTORY_MD5SUM} 2> /dev/null) ]; then
+				if [ ! $(rsync -a --no-inc-recursive --exclude 'files' ${TEAMSPEAK_ROOT_DIRECTORY} ${PERSISTENT_BACKUP_DIR}/TS3Tools/TS3UpdateScript/${DIRECTORY_MD5SUM} 2> /dev/null) ]; then
 					if [[ "${DATABASE_TYPE}" == "MySQL" ]] || [[ "${DATABASE_TYPE}" == "MariaDB" ]]; then
 						if databaseBackup export ${TEAMSPEAK_ROOT_DIRECTORY}; then
 							return 0;
@@ -1851,7 +1891,7 @@ function backup() {
 		;;
 
 		delete)
-			if [ ! $(rm -rf /tmp/TS3Tools/TS3UpdateScript/${DIRECTORY_MD5SUM}) ]; then
+			if [ ! $(rm -rf ${TEMP_BACKUP_DIR}/TS3Tools/TS3UpdateScript/${DIRECTORY_MD5SUM}) ]; then
 				return 0;
 			else
 				return 1;
@@ -1859,7 +1899,7 @@ function backup() {
 		;;
 
 		deploy)
-			if [ ! $(rsync -a --exclude 'ts3DatabaseBackup.sql' /tmp/TS3Tools/TS3UpdateScript/${DIRECTORY_MD5SUM}/ ${TEAMSPEAK_ROOT_DIRECTORY} 2> /dev/null) ]; then
+			if [ ! $(rsync -a --exclude 'ts3DatabaseBackup.sql' ${TEMP_BACKUP_DIR}/TS3Tools/TS3UpdateScript/${DIRECTORY_MD5SUM}/ ${TEAMSPEAK_ROOT_DIRECTORY} 2> /dev/null) ]; then
 				if [[ "${DATABASE_TYPE}" == "MySQL" ]] || [[ "${DATABASE_TYPE}" == "MariaDB" ]]; then
 					if databaseBackup import ${TEAMSPEAK_ROOT_DIRECTORY}; then
 						return 0;
@@ -1875,7 +1915,7 @@ function backup() {
 		;;
 
 		exists)
-			if [ -d /tmp/TS3Tools/TS3UpdateScript/${DIRECTORY_MD5SUM} ]; then
+			if [ -d ${TEMP_BACKUP_DIR}/TS3Tools/TS3UpdateScript/${DIRECTORY_MD5SUM} ]; then
 				return 0;
 			else
 				return 1;
@@ -2038,6 +2078,8 @@ function createDebugReport() {
 	CURRENT_DATE_TIME="$(date +'%Y%m%d-%H%M')"
 	DEBUG_REPORT_FILE="${TEAMSPEAK_ROOT_DIRECTORY}/${CURRENT_DATE_TIME}-ts3us-debug-report.md"
 
+	TEMP_BACKUP_DIR=$(getTempBackupDir)
+
 	if [ ! -f "${DEBUG_REPORT_FILE}" ]; then
 		echo -e "# TS3tools TS3UpdateScript Debug Report\n" >> ${DEBUG_REPORT_FILE};
 		echo	"Date and time of report: ${CURRENT_DATE_TIME}" >> ${DEBUG_REPORT_FILE};
@@ -2124,7 +2166,7 @@ function createDebugReport() {
 				expect "(gdb)"
 				send "quit\r"
 			GDD_BACKTRACE
-		) | expect >> /tmp/${CURRENT_DATE_TIME}-ts3us-debug-report.md
+		) | expect >> ${TEMP_BACKUP_DIR}/${CURRENT_DATE_TIME}-ts3us-debug-report.md
 	else
 		(
 			cat <<- GDD_BACKTRACE
@@ -2138,10 +2180,10 @@ function createDebugReport() {
 				expect "(gdb)"
 				send "quit\r"
 			GDD_BACKTRACE
-		) | expect >> /tmp/${CURRENT_DATE_TIME}-ts3us-debug-report.md
+		) | expect >> ${TEMP_BACKUP_DIR}/${CURRENT_DATE_TIME}-ts3us-debug-report.md
 	fi
 
-	cat /tmp/${CURRENT_DATE_TIME}-ts3us-debug-report.md >> ${DEBUG_REPORT_FILE} && rm /tmp/${CURRENT_DATE_TIME}-ts3us-debug-report.md
+	cat ${TEMP_BACKUP_DIR}/${CURRENT_DATE_TIME}-ts3us-debug-report.md >> ${DEBUG_REPORT_FILE} && rm ${TEMP_BACKUP_DIR}/${CURRENT_DATE_TIME}-ts3us-debug-report.md
 	echo -e "\n" >> ${DEBUG_REPORT_FILE};
 
 	echo -e "### Virtual Server Log file(s)\n" >> ${DEBUG_REPORT_FILE};
@@ -2191,6 +2233,9 @@ function main() {
 	##
 	# Time measurement self-tests START
 	TIME_MEASUREMENT_SELFTESTS_START=$(date +%s)
+
+	TEMP_BACKUP_DIR=$(getTempBackupDir)
+	PERSISTENT_BACKUP_DIR=$(getPersistentBackupDir)
 
 	if [ "$PAR_CRONJOB_TASK" -eq 1 ]; then
 		echo -n "${TXT_SELF_TEST_INFO}";
@@ -2290,6 +2335,18 @@ function main() {
 	# Set own settings in config files?
 	if ! scriptSettingsChanged; then
 		echo "${TXT_SELF_TEST_ADMINISTRATOR_EMAIL}" >> SELF_TEST_STATUS.txt;
+		SELF_TEST_STATUS=1;
+	fi
+
+	# Check if temporary backup directory exists
+	if ! getTempBackupDir; then
+		echo "${TXT_SELF_TEST_TEMP_BACKUP_DIR}" >> SELF_TEST_STATUS.txt;
+		SELF_TEST_STATUS=1;
+	fi
+
+	# Check if persistent backup directory exists
+	if ! getPersistentBackupDir; then
+		echo "${TXT_SELF_TEST_PERSISTENT_BACKUP_DIR}" >> SELF_TEST_STATUS.txt;
 		SELF_TEST_STATUS=1;
 	fi
 
@@ -3050,7 +3107,8 @@ function main() {
 										echo "${TXT_EXECUTION_MECHANISM_TEMPORARY_SERVER_PASSWORDS_WERE_NOT_BACKUPED_INFO}";
 									fi
 
-									# Lock TeamSpeak 3 server instance for TS3Monitor
+									# Lock TeamSpeak 3 server instance for update process
+									# Helper file to avoid automated restarrts of the instance by eg. systemd
 									touch ${INSTANCE_PATH}/.ts3updatescript.lock
 
 									## UPDATE PROCESS START ##
@@ -3073,7 +3131,7 @@ function main() {
 													# Delete old logs if parameter is set
 													if [[ "$PAR_DELETE_OLD_LOGS" -eq 1 ]]; then
 														echo "${TXT_EXECUTION_MECHANISM_DELETING_OLD_LOG_FILES}";
-														rm -f ${TS3SERVER_INSTANCE_LOG_PATH}/*
+														find ${TS3SERVER_INSTANCE_LOG_PATH} -type f -name "*.log" -exec rm -f {} \;
 													fi
 
 													# Create backup of instance
@@ -3183,7 +3241,7 @@ function main() {
 												# Delete old logs if parameter is set
 												if [[ "$PAR_DELETE_OLD_LOGS" -eq 1 ]]; then
 													echo "${TXT_EXECUTION_MECHANISM_DELETING_OLD_LOG_FILES}";
-													rm -f ${TS3SERVER_INSTANCE_LOG_PATH}/*
+													find ${TS3SERVER_INSTANCE_LOG_PATH} -type f -name "*.log" -exec rm -f {} \;
 												fi
 
 												# Create backup of instance
@@ -3283,7 +3341,7 @@ function main() {
 												set -x
 											fi
 
-											BACKUP_PATH="/tmp/TS3Tools/TS3UpdateScript/$(echo -n "${INSTANCE_PATH}/" | md5sum | cut -d " " -f 1)/"
+											BACKUP_PATH="${TEMP_BACKUP_DIR}/TS3Tools/TS3UpdateScript/$(echo -n "${INSTANCE_PATH}/" | md5sum | cut -d " " -f 1)/"
 
 											if backup ${INSTANCE_PATH} deploy ${DATABASE_TYPE}; then
 												echo "${TXT_EXECUTION_MECHANISM_ROLLBACK_INFO} '${INSTALLED_TS3_SERVER_VERSION}'.";
@@ -3326,7 +3384,7 @@ function main() {
 												echo "${TXT_EXECUTION_MECHANISM_DELETING_BACKUP_FAILED}";
 											fi
 										else
-											BACKUP_PATH="/tmp/TS3Tools/TS3UpdateScript/$(echo -n "${INSTANCE_PATH}/" | md5sum | cut -d " " -f 1)/"
+											BACKUP_PATH="${TEMP_BACKUP_DIR}/TS3Tools/TS3UpdateScript/$(echo -n "${INSTANCE_PATH}/" | md5sum | cut -d " " -f 1)/"
 											echo "${TXT_EXECUTION_MECHANISM_BACKUP_DOES_STILL_EXISTS_INFO}: ${BACKUP_PATH}";
 										fi
 									fi
@@ -3414,15 +3472,15 @@ function main() {
 		rm wget-log
 	fi
 
-	if [ -d /tmp/TS3Tools/TS3UpdateScript/ ]; then
-		if [ ! "$(ls -A /tmp/TS3Tools/TS3UpdateScript/)" ]; then
-			rmdir /tmp/TS3Tools/TS3UpdateScript/
+	if [ -d ${TEMP_BACKUP_DIR}/TS3Tools/TS3UpdateScript/ ]; then
+		if [ ! "$(ls -A ${TEMP_BACKUP_DIR}/TS3Tools/TS3UpdateScript/)" ]; then
+			rmdir ${TEMP_BACKUP_DIR}/TS3Tools/TS3UpdateScript/
 		fi
 	fi
 
-	if [ -d /tmp/TS3Tools/ ]; then
-		if [ ! "$(ls -A /tmp/TS3Tools/)" ]; then
-			rmdir /tmp/TS3Tools/
+	if [ -d ${TEMP_BACKUP_DIR}/TS3Tools/ ]; then
+		if [ ! "$(ls -A ${TEMP_BACKUP_DIR}/TS3Tools/)" ]; then
+			rmdir ${TEMP_BACKUP_DIR}/TS3Tools/
 		fi
 	fi
 
