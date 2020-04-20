@@ -1,10 +1,12 @@
 # TS3UpdateScript
 
-**TS3UpdateScript** is the most used bash-script by companies to automate and optimaze the TeamSpeak 3 server update process. It is the fastest script you have ever seen for this task.
+**TS3UpdateScript** is the most used bash-script by companies to automate and optimize the TeamSpeak 3 server update process. This is the fastest script to run this task.
 
 [Show TS3UpdateScript Best Practices](docs/TS3US_BEST_PRACTICES.md)
 
-It checks, if a newer version for your TeamSpeak 3 server instance is available or not. If yes, you can choose, if the script should update the server or not. You also have some parameters like "delete old logs files" and so on. Well... If you don't want to update your TeamSpeak 3 server manually, you can use this script. This script is doing ALL steps for a correct update process of your TeamSpeak 3 server.
+The script checks if a newer version of TeamSpeak 3 server is available. If yes, you can choose if the script updates your server. You also set parameters like "delete old logs files" and so on. 
+
+If you don't want to update your TeamSpeak 3 server manually, you can use this script. This script follows all of the steps to properly update your TeamSpeak 3 server.
 
 ## Table of content
 
@@ -27,9 +29,9 @@ It checks, if a newer version for your TeamSpeak 3 server instance is available 
  	- [Multi usable](#multi-usable)
 	- [Single usable](#single-usable)
 - [Work flow of the script](#work-flow-of-the-script)
-- [Used Ressources by the script](#used-ressources-by-the-script)
+- [Used Resources by the script](#used-resources-by-the-script)
 - [Directory Structure - Where can I find which file?](#directory-structure---where-can-i-find-which-file)
-- [Why got this script a high version number?](#why-got-this-script-a-high-version-number)
+- [Why does this have a high version number?](#why-does-this-have-a-high-version-number)
 
 ![Example Output](https://raw.githubusercontent.com/TS3Tools/TS3UpdateScript/master/img/TS3UpdateScript_Example_Summary.png)
 
@@ -94,7 +96,7 @@ It checks, if a newer version for your TeamSpeak 3 server instance is available 
 
 ## Requirements
 
-- Linux (should work on the most distributations; below a list of explicit tested distributations)
+- Linux (should work on the most distributions; below a list of explicit tested distributions)
   - Debian 7 & 8
   - Ubuntu 15
   - CentOS 7
@@ -181,7 +183,7 @@ Need Review:
 
 ### Help us
 
-We can not translate this script in each language, because we do not speak each language. But you can help us to get more language support by creating an own new language file with your mother language! And if you want to, send your translation to our email address above, that we can add your translation to the next version. As thank you we will name you in this document, if you want to.
+We cannot translate this script into each language. But you can help us achieve better language support by creating a new language file with your language! Please send your translation to our email address above, then we can add your translation to the next version. As thank you we will name you in this document, if you would like.
 
 Just grab a copy of your language file, which you understand and translate the content between the two quotation marks. If you think it is ok, you can send us this file via email and we will add it to the TS3UpdateScript. You also can check it in the GitHub Project as new "Issue".
 
@@ -308,17 +310,17 @@ Parameter | Description
 
 ## Work flow of the script
 
-First it will check, if a newer version for the script self is available and afterwards it will check your installed version of each instance against the latest available version from teamspeak.de. It also will detect, if you are using TSDNS, SQLite or MySQL database and so on. If a newer version is available, the script will do following steps:
+First it will check if a newer version of the script is available; afterwards it will check your installed version of each instance against the latest available version from teamspeak.de. It also will detect if you are using TSDNS, SQLite or MySQL database, etc. If a newer version is available, the script will do following steps:
 
-1. Download latest and named TeamSpeak 3 server files from 4players.de
+1. Download latest named TeamSpeak 3 server files from 4players.de
 2. Inform online clients on all virtual servers (if you want to; parameter '--inform-online-clients' needed)
-3. Stopp running TSDNS (if used)
+3. Stop running TSDNS (if used)
 4. Backup temporary virtual server passwords (if any is available)
-5. Stopp running server instance gracefully
+5. Stop running server instance gracefully
 6. Delete old logs (if you want to; parameter '--delete-old-logs' needed)
 7. Create backup of currently running TeamSpeak 3 server in '/tmp/TS3Tools/TS3UpdateScript/'
 8. Unzip downloaded TeamSpeak 3 server files
-9. Import licensekey (if available), database and Query IP Black- and Whitelist from backup
+9. Import licensekey (if available), database and Query IP Black and Whitelist from backup
 10. Import TSDNS settings file (if used)
 11. Delete ts3server.pid, if exists for correct start
 12. Delete downloaded TeamSpeak 3 server files
@@ -327,15 +329,15 @@ First it will check, if a newer version for the script self is available and aft
 15. Add commandline parameter to new ts3server_startscript.sh if INI-file is used
 16. Start updated TS3 server
 17. Restore temporary virtual server passwords (if any was backuped)
-18. Script waits 15 seconds and checks, if the server is running
+18. Script waits 15 seconds and checks if the server is running
 19. If the server is not running, the rollback will be executed
-20. Clean up system from created and downloaded files for the update process
+20. Clean up system from created and downloaded files from the update process
 
-Those steps will the script execute for each installed instance, which will be checked.
+Those steps will execute for each installed instance of Teamspeak 3, which will be checked.
 
-The files/ directory will not be touched by the script - also not backuped!
+The files/ directories will not be touched by the script - also not backuped!
 
-## Used Ressources by the script
+## Used Resources by the script
 
 Protocol | Host/IP  | Used for | How often?
 :------------- | :------------- | :------------- | :-------------
@@ -354,7 +356,7 @@ Path  | Description
 ./configs/  | Configuration files
 ./languages/  | Language files
 
-## Why got this script a high version number?
+## Why does this have a high version number?
 
 Because of the TeamSpeak 3 Server updates, customer wishes and suggestions to the script, however, constantly extended or optimized, which is the reason why it will never have a "final" version level.
 
