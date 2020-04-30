@@ -16,8 +16,8 @@ exec 5<&0
 # Donations: https://www.paypal.com/cgi-bin/webscr?cmd=_s-xclick&hosted_button_id=7ZRXLSC2UBVWE
 #
 
-SCRIPT_VERSION="5.8.0"
-LAST_EDIT_DATE="2020-04-20"
+SCRIPT_VERSION="5.8.1"
+LAST_EDIT_DATE="2020-04-30"
 
 # DO NOT REMOVE OR CHANGE
 SOFTWARE_ABOUT="This is the most widely used and fastest shell script to update all your TeamSpeak 3 server instances."
@@ -87,7 +87,7 @@ function clearTerminalScreen() {
 # Return: 0:boolean or 1:boolean
 function checkConsistency() {
 	CHKSUM=$(grep -v "ORIGIN=" "$0" | sha256sum | cut -d " " -f 1)
-	ORIGIN="59e85b0ee11a8f4209aa16abd6f7ae306f7911d2942428e3a7e863350c8a846d"
+	ORIGIN="b7705dc90fbed0524aa4550c5b633eda46c21959af6642bb749cfa4bf4a9050f"
 
 	if [[ "$CHKSUM" == "$ORIGIN" ]]; then
 		return 0;
@@ -2268,8 +2268,23 @@ function main() {
 
 	# Able to reach all needed remote server?
 	if [[ "$PAR_DEACTIVATE_HOST_ALIVE_CHECK" -eq 0 ]]; then
-		if ! testInternetConnectivity "www.ts3-tools.info" || ! testInternetConnectivity "dl.4players.de" || ! testInternetConnectivity "github.com" || ! testInternetConnectivity "raw.githubusercontent.com"; then
-			echo "${TXT_SELF_TEST_CONNECTIVITY}" >> SELF_TEST_STATUS.txt;
+		if ! testInternetConnectivity "www.ts3-tools.info"; then
+			echo "www.ts3-tools.info ${TXT_SELF_TEST_CONNECTIVITY}" >> SELF_TEST_STATUS.txt;
+			SELF_TEST_STATUS=1;
+		fi
+
+		if ! testInternetConnectivity "files.teamspeak-services.com"; then
+			echo "files.teamspeak-services.com ${TXT_SELF_TEST_CONNECTIVITY}" >> SELF_TEST_STATUS.txt;
+			SELF_TEST_STATUS=1;
+		fi
+
+		if ! testInternetConnectivity "github.com"; then
+			echo "github.com ${TXT_SELF_TEST_CONNECTIVITY}" >> SELF_TEST_STATUS.txt;
+			SELF_TEST_STATUS=1;
+		fi
+
+		if ! testInternetConnectivity "raw.githubusercontent.com"; then
+			echo "raw.githubusercontent.com ${TXT_SELF_TEST_CONNECTIVITY}" >> SELF_TEST_STATUS.txt;
 			SELF_TEST_STATUS=1;
 		fi
 	fi

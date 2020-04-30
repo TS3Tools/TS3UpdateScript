@@ -23,6 +23,11 @@ Hotfix | Important fix for one more issues, which causes a not (correct) working
 
 ## Releases
 
+### Version 5.8.1 (2020-04-30)
+
+	* Improved and updated messages for self-tests to see which site is not reachable
+	* Replaced self-test of internet connectivity for dl.4players.de with files.teamspeak-services.com
+
 ### Version 5.8.0 (2020-04-20)
 
 	* Added information regarding `.ts3updatescript.lock` file (GitHub issue [#107](https://github.com/TS3Tools/TS3UpdateScript/issues/107))
