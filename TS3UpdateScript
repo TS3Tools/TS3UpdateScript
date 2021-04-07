@@ -87,7 +87,7 @@ function clearTerminalScreen() {
 # Return: 0:boolean or 1:boolean
 function checkConsistency() {
 	CHKSUM=$(grep -v "ORIGIN=" "$0" | sha256sum | cut -d " " -f 1)
-	ORIGIN="eb9cff6b07559eefe86311a171a76ee46498a0a73d1a432a1f68b0563f7340ed"
+	ORIGIN="ba8ba471627a26bde26f8e6c680574deda66c7c10bf617211e0e752f424f5c0a"
 
 	if [[ "$CHKSUM" == "$ORIGIN" ]]; then
 		return 0;
@@ -312,7 +312,7 @@ function setUpBashCompletion() {
 			return 1;
 		fi
 	else
-		if [[ ! $(cp .ts3updatescript /etc/bash_completion.d/ts3updatescript) ]]; then
+		if [[ ! $(cp ${ABSOLUTE_PATH}/.ts3updatescript /etc/bash_completion.d/ts3updatescript) ]]; then
 			if [[ ! $(chown root:root /etc/bash_completion.d/ts3updatescript) ]]; then
 				return 0;
 			else

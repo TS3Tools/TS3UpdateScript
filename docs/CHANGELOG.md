@@ -25,6 +25,7 @@ Hotfix | Important fix for one more issues, which causes a not (correct) working
 
 ### Version 5.8.2 (2021-04-07)
 
+	* Changed relative to absolute path for installing the scripts bash completion
 	* Fixed incorrect returned `ABSOLUTE_PATH` when running as symlinked file in eg. `/usr/local/bin/`
 	! You can now clone this project into any directory on your server and then symlink it to make it globally available
 	! `# ln -s /path/to/cloned/TS3UpdateScript /usr/local/bin/ts3updatescript`
