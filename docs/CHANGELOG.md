@@ -23,6 +23,13 @@ Hotfix | Important fix for one more issues, which causes a not (correct) working
 
 ## Releases
 
+### Version 5.8.2 (2021-04-07)
+
+	* Fixed incorrect returned `ABSOLUTE_PATH` when running as symlinked file in eg. `/usr/local/bin/`
+	! You can now clone this project into any directory on your server and then symlink it to make it globally available
+	! `# ln -s /path/to/cloned/TS3UpdateScript /usr/local/bin/ts3updatescript`
+	! `# ts3updatescript --version`
+
 ### Version 5.8.1 (2020-04-30)
 
 	* Improved and updated messages for self-tests to see which site is not reachable

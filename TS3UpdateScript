@@ -16,8 +16,8 @@ exec 5<&0
 # Donations: https://www.paypal.com/cgi-bin/webscr?cmd=_s-xclick&hosted_button_id=7ZRXLSC2UBVWE
 #
 
-SCRIPT_VERSION="5.8.1"
-LAST_EDIT_DATE="2020-04-30"
+SCRIPT_VERSION="5.8.2"
+LAST_EDIT_DATE="2021-04-07"
 
 # DO NOT REMOVE OR CHANGE
 SOFTWARE_ABOUT="This is the most widely used and fastest shell script to update all your TeamSpeak 3 server instances."
@@ -70,7 +70,7 @@ Whi='\e[0;37m';     BWhi='\e[1;37m';    UWhi='\e[4;37m';    IWhi='\e[0;97m';    
 
 # Detect absolute and full path as well as filename of this script
 cd "$(dirname $0)"
-ABSOLUTE_PATH=$(pwd)
+ABSOLUTE_PATH=$(dirname $(realpath $0))
 SCRIPT_NAME=$(basename $0)
 cd - > /dev/null
 
@@ -87,7 +87,7 @@ function clearTerminalScreen() {
 # Return: 0:boolean or 1:boolean
 function checkConsistency() {
 	CHKSUM=$(grep -v "ORIGIN=" "$0" | sha256sum | cut -d " " -f 1)
-	ORIGIN="b7705dc90fbed0524aa4550c5b633eda46c21959af6642bb749cfa4bf4a9050f"
+	ORIGIN="eb9cff6b07559eefe86311a171a76ee46498a0a73d1a432a1f68b0563f7340ed"
 
 	if [[ "$CHKSUM" == "$ORIGIN" ]]; then
 		return 0;
