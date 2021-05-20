@@ -16,8 +16,8 @@ exec 5<&0
 # Donations: https://www.paypal.com/cgi-bin/webscr?cmd=_s-xclick&hosted_button_id=7ZRXLSC2UBVWE
 #
 
-SCRIPT_VERSION="5.8.2"
-LAST_EDIT_DATE="2021-04-07"
+SCRIPT_VERSION="5.8.3"
+LAST_EDIT_DATE="2021-05-20"
 
 # DO NOT REMOVE OR CHANGE
 SOFTWARE_ABOUT="This is the most widely used and fastest shell script to update all your TeamSpeak 3 server instances."
@@ -87,7 +87,7 @@ function clearTerminalScreen() {
 # Return: 0:boolean or 1:boolean
 function checkConsistency() {
 	CHKSUM=$(grep -v "ORIGIN=" "$0" | sha256sum | cut -d " " -f 1)
-	ORIGIN="ba8ba471627a26bde26f8e6c680574deda66c7c10bf617211e0e752f424f5c0a"
+	ORIGIN="b5fd2210cd8ca75b8671760db176230437828732ed004e54640e10a01e9174c6"
 
 	if [[ "$CHKSUM" == "$ORIGIN" ]]; then
 		return 0;
@@ -949,7 +949,7 @@ function getGroupOfTS3ServerFiles() {
 # Par 1: TS3ServerRootDirectory:string
 # Return: GroupID:string or 1:boolean
 function getGroupID() {
-	GROUP_ID=$(grep -E "^$(getGroupOfTS3ServerFiles ${1})\:" /etc/passwd | cut -d ":" -f 4)
+	GROUP_ID=$(grep -E "^$(getGroupOfTS3ServerFiles ${1})\:" /etc/group | cut -d ":" -f 3)
 
 	if [[ -n "$GROUP_ID" ]]; then
 		echo -n "$GROUP_ID";
@@ -1012,19 +1012,6 @@ function getDatabaseINIFile() {
 	fi
 }
 
-# Get database type
-# Par 1: TeamSpeakRootDirectory:string
-# Return: DatabaseType:string or 1:boolean
-function getDatabaseType() {
-	DATABASE_TYPE="$(grep -Eo 'dbPlugin name:.*plugin' $(find ${1}/logs/ -name 'ts3server*_0.log' 2> /dev/null | sort | tail -1) | tr -d " " | cut -d ":" -f 2 | grep -Eo 'SQLite|MySQL|MariaDB')"
-
-	if [[ -n "$DATABASE_TYPE" ]]; then
-		echo -n "$DATABASE_TYPE";
-	else
-		return 1;
-	fi
-}
-
 # Get TS3 server instance log path
 # Par 1: TS3ServerRootDirectory:string
 # Return: InstanceLogPath:string or 1:boolean
@@ -1058,7 +1045,7 @@ function getTS3ServerInstanceLogPath() {
 # Return: DatabaseType:string or 1:boolean
 function getDatabaseType() {
 	INSTANCE_LOG_PATH="$(getTS3ServerInstanceLogPath ${1})"
-	DATABASE_TYPE="$(grep -Eo 'dbPlugin name:.*plugin' $(find ${INSTANCE_LOG_PATH} -name 'ts3server*_0.log' 2> /dev/null | sort | tail -1) | tr -d " " | cut -d ":" -f 2 | grep -Eo 'SQLite|MySQL|MariaDB')"
+	DATABASE_TYPE="$(grep -Eo 'dbPlugin name:.*plugin' $(find ${INSTANCE_LOG_PATH} -name 'ts3server*_0.log' 2> /dev/null | sort | tail -1) | tail -1 | tr -d " " | cut -d ":" -f 2 | grep -Eo 'SQLite|MySQL|MariaDB')"
 
 	if [[ -n "$DATABASE_TYPE" ]]; then
 		echo -n "$DATABASE_TYPE";
@@ -2219,7 +2206,7 @@ function createDebugReport() {
 function main() {
 	# Load text for set language
 	cd "$ABSOLUTE_PATH"
-	source $PAR_LOCALE;
+	source "${ABSOLUTE_PATH}/$PAR_LOCALE";
 	cd - > /dev/null
 
 	# Enable debugging by commenting out the following line

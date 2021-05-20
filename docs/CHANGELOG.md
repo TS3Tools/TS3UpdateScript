@@ -23,6 +23,12 @@ Hotfix | Important fix for one more issues, which causes a not (correct) working
 
 ## Releases
 
+### Version 5.8.3 (2021-05-20)
+
+	* Fixed incorrect group ownership ID detection
+	* Fixed database type detection when using `appendlog=1`
+	* Fixed incorrect loading of language file, when executing the TS3UpdateScript as global command (from eg. `/usr/local/bin/`)
+
 ### Version 5.8.2 (2021-04-07)
 
 	* Changed relative to absolute path for installing the scripts bash completion
