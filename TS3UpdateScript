@@ -87,7 +87,7 @@ function clearTerminalScreen() {
 # Return: 0:boolean or 1:boolean
 function checkConsistency() {
 	CHKSUM=$(grep -v "ORIGIN=" "$0" | sha256sum | cut -d " " -f 1)
-	ORIGIN="d64e15bbef8e8a2fee3c93831831b19d3bc37c22caa4e4cd1b8e8a65af0f3146"
+	ORIGIN="013e5dd3ed60e49ae291e7ce343c6c6d7044ff1a684cfc20a207c80c57978bbc"
 
 	if [[ "$CHKSUM" == "$ORIGIN" ]]; then
 		return 0;
