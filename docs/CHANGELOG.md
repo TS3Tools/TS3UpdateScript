@@ -23,6 +23,10 @@ Hotfix | Important fix for one more issues, which causes a not (correct) working
 
 ## Releases
 
+### Version 5.8.4 (2021-05-21)
+
+	* Due to an incorrect line ending format (CRLF instead of LF), the consitency check failed
+
 ### Version 5.8.3 (2021-05-20)
 
 	* Fixed incorrect group ownership ID detection
