@@ -25,7 +25,7 @@ Hotfix | Important fix for one more issues, which causes a not (correct) working
 
 ### Version 5.8.4 (2021-05-21)
 
-	* Due to an incorrect line ending format (CRLF instead of LF), the consitency check failed
+	* Due to an incorrect line ending format (CRLF instead of LF), the consistency check failed
 
 ### Version 5.8.3 (2021-05-20)
 
