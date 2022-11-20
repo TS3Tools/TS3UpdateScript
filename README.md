@@ -8,30 +8,7 @@ The script checks if a newer version of TeamSpeak 3 server is available. If yes,
 
 If you don't want to update your TeamSpeak 3 server manually, you can use this script. This script follows all of the steps to properly update your TeamSpeak 3 server.
 
-## Table of content
-
-- [Developers](#developers)
-- [Contributors](#contributors)
-- [Donations](#donations)
-- [Main Features](#main-features)
-- [Special Features](#special-features)
-- [Stay tuned!](#stay-tuned)
-- [Requirements](#requirements)
-- [Supports](#supports)
-- [Hint: systemd](#hint-systemd)
-- [Available Languages](#available-languages)
-	- [Help us](#help-us)
-- [Script licenses](#script-licenses)
-	- [Get Professional / Enterprise license](#get-professional-enterprise-license)
-	- [Extended support subscription plans](#extended-support-subscription-plans)
-- [Usage](#usage)
-- [Parameters / Options](#parameters--options)
- 	- [Multi usable](#multi-usable)
-	- [Single usable](#single-usable)
-- [Work flow of the script](#work-flow-of-the-script)
-- [Used Resources by the script](#used-resources-by-the-script)
-- [Directory Structure - Where can I find which file?](#directory-structure---where-can-i-find-which-file)
-- [Why does this have a high version number?](#why-does-this-have-a-high-version-number)
+## Various references
 
 ![Example Output](https://raw.githubusercontent.com/TS3Tools/TS3UpdateScript/master/img/TS3UpdateScript_Example_Summary.png)
 
@@ -40,10 +17,6 @@ If you don't want to update your TeamSpeak 3 server manually, you can use this s
 [Open install and usage guide](docs/INSTALL_USAGE_GUIDE.md)
 
 [Open upgrade guide](docs/UPDATE_GUIDE.md)
-
-[Show script licenses](#script-licenses)
-
-[Open GNU GPLv3 license](LICENSE_GNU_GPL.md)
 
 ## Developers
 
@@ -90,19 +63,18 @@ If you don't want to update your TeamSpeak 3 server manually, you can use this s
 
 ## Stay tuned!
 
-- [Official Project Homepage](https://www.ts3-tools.info/)
 - [facebook Fanpage](https://www.facebook.com/TS3Tools)
 - [GitHub](/)
 
 ## Requirements
 
 - Linux (should work on the most distributions; below a list of explicit tested distributions)
-  - Debian 7 & 8
-  - Ubuntu 15
-  - CentOS 7
-  - OpenSUSE 13
-  - Fedora 21
-  - IPFire 2
+  - Debian
+  - Ubuntu
+  - CentOS
+  - OpenSUSE
+  - Fedora
+  - IPFire
 - One or more installed TeamSpeak 3 server instances on a Root server/VPS/virtual machine
   - Minimum required version: 3.1.x
 - Software packages
@@ -187,46 +159,6 @@ We cannot translate this script into each language. But you can help us achieve 
 
 Just grab a copy of your language file, which you understand and translate the content between the two quotation marks. If you think it is ok, you can send us this file via email and we will add it to the TS3UpdateScript. You also can check it in the GitHub Project as new "Issue".
 
-## Script licenses
-
-Name | Ideal for | Restrictions | 2-years Support | Costs
-:------------- | :------------- | :------------- | :------------- | :-------------
-Community | Unlicensed, NPL, AAL | Single Instance, no [BPA](docs/BEST_PRACTICES_ANALYZER.md), no Cronjob | No | Free of charge / 'Pay what you want'-Donation
-Professional | Unlicensed, NPL, AAL | Single Instance | No | 29.99 EUR
-Enterprise | ATHP | None | Yes | 79.99 EUR
-
-### Get Professional / Enterprise license
-
-Send me your license information to get a invoice, which you need to pay:
-
-  user@tux:~$ ./TS3UpdateScript --request-license [Your invoice E-Mail address] [professional | enterprise]
-
-  user@tux:~$ ./TS3UpdateScript --request-license you@example.com professional
-
-Hint: You should receive a copy of this email within a few minutes. If not, your server is may not able to send emails. Please follow the alternative instructions instead.
-
-Alternative you can send me those details manual via email to [info@ts3-tools.info](info@ts3-tools.info):
-- Your (invoice) E-Mail address
-- Product name (TS3UpdateScript)
-- Public/WAN IP address, where you want to use the script
-- License key of your script (Parameter '--show-license-key')
-- Type of license, which you want: Professional or Enterprise
-
-After you've paid the invoice, your script will be licensed within the next 48 hours. Usually, it only takes up to 24 hours.
-
-### Extended support subscription plans
-
-If you only have bought a Professional license or just require more support, you can buy a renewable support subscription plan.
-
-Below are the available subscription plans including their SLA:
-
-Name | Included support | SLA Respond time | Costs
-:------------- | :------------- | :------------- | :-------------
-Community | Lifetime | As soon as possible | 0.00 EUR
-Basis SLA | 1 year | Within a week | 14.99 EUR
-Professional SLA | 1 year | Within 48 hours | 49.99 EUR
-Enterprise SLA | 3 year | Within 48 hours | 119.99 EUR
-
 ## Usage
 
 All you need to do to get the list of available options/parameters is:
@@ -289,9 +221,6 @@ Parameter | Description
 --display-settings | Displays settings from config files in configs/
 --test-inform-online-clients | Execute test poke with current settings
 --update-script | Updates the TS3UpdateScript to the latest version
---show-license-key | Displays TS3UpdateScript license key
---force-license-update | Forces an update for the TS3UpdateScript license key
---request-license [EMAIL] [professional | enterprise] | Sends license information to info@ts3-tools.com to get professional/enterprise license ([see Script Licenses](#script-licenses)!)
 --deinstall-cronjob | Deinstalls weekly cronjob
 
 #### Examples
@@ -305,8 +234,6 @@ Parameter | Description
   user@tux:~$ sudo ./TS3UpdateScript --test-inform-online-clients
 
   user@tux:~$ sudo ./TS3UpdateScript --update-script
-
-  user@tux:~$ sudo ./TS3UpdateScript --request-license mail@example.com professional
 
 ## Work flow of the script
 
@@ -341,7 +268,6 @@ The files/ directories will not be touched by the script - also not backuped!
 
 Protocol | Host/IP  | Used for | How often?
 :------------- | :------------- | :------------- | :-------------
-https | www.ts3-tools.info | Licensing server | Every 7 days or when your force an update of your license
 https | www.teamspeak.com | For detection of latest stable server release version | Each execution of the TS3UpdateScript
 https | files.teamspeak-services.com | Download server for TeamSpeak 3 server files | Each execution of the TS3UpdateScript
 https | raw.githubusercontent.com | Server for checking latest TS3UpdateScript version | Each execution of the TS3UpdateScript
@@ -351,7 +277,7 @@ https | github.com | Download server for TS3UpdateScript files | Only if you upd
 
 Path  | Description
 :------------- | :-------------
-.  | README.md, TS3UpdateScript.sh, .updateScript.sh, .ts3updatescript and the copy of the license
+.  | README.md, TS3UpdateScript.sh, .updateScript.sh, .ts3updatescript
 ./docs/  | Install and upgrade guide as well as changelog
 ./configs/  | Configuration files
 ./languages/  | Language files

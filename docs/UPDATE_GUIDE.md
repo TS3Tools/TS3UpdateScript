@@ -33,8 +33,6 @@ This file shows you, how you can update the TS3UpdateScript.
 
 ## How-To Update automate using cronjob
 
-The cronjob feature is only available with the 'Professional'/'Enterprise' license. Read [here](../README.md#script-licenses) for further license information.
-
 1. Install a new cronjob with your required parameters:
 
   ``root@tux:~# ./TS3UpdateScript --install-cronjob --check --delete-old-logs``

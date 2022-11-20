@@ -24,10 +24,6 @@ The BPA checks each of installed TeamSpeak server instances against the latest l
 	- [WARNING: You rather should use an external storage for your files/ directory regarding big file uploads.](#warning-you-rather-should-use-an-external-storage-for-your-files-directory-regarding-big-file-uploads)
 	- [The system locale is set to 'C' this can cause unexpected behavior. TeamSpeak advices you to repair your locale!](#The-system-locale-is-set-to-C-this-can-cause-unexpected-behavior.-TeamSpeak-advices-you-to-repair-your-locale)
 
-## Hint / Note
-
-The BPA is only available with the 'Enterprise' license. Read [here](https://github.com/TS3Tools/TS3UpdateScript#script-licenses) for further license information.
-
 ## Types
 
 The script includes following types of best practices:

@@ -3,31 +3,26 @@
 exec 5<&0
 #
 # About: This is the most widely used and fastest shell script to update all your TeamSpeak 3 server instances.
-# Author: Sebastian Kraetzig <info@ts3-tools.info>
-# Project: www.ts3-tools.info
+# Author: https://github.com/Sebi94nbg
+# Project: https://github.com/TS3Tools/TS3UpdateScript
 # facebook: www.facebook.com/TS3Tools
 # License: GNU GPLv3
-# _____ ____ _____       _              _       _        __
-#|_   _/ ___|___ /      | |_ ___   ___ | |___  (_)_ __  / _| ___
-#  | | \___ \ |_ \ _____| __/ _ \ / _ \| / __| | | '_ \| |_ / _ \
-#  | |  ___) |__) |_____| || (_) | (_) | \__ \_| | | | |  _| (_) |
-#  |_| |____/____/       \__\___/ \___/|_|___(_)_|_| |_|_|  \___/
+#  _______ _____ ____  _              _
+# |__   __/ ____|___ \| |            | |
+#    | | | (___   __) | |_ ___   ___ | |___
+#    | |  \___ \ |__ <| __/ _ \ / _ \| / __|
+#    | |  ____) |___) | || (_) | (_) | \__ \
+#    |_| |_____/|____/ \__\___/ \___/|_|___/
 #
 # Donations: https://www.paypal.com/cgi-bin/webscr?cmd=_s-xclick&hosted_button_id=7ZRXLSC2UBVWE
 #
 
-SCRIPT_VERSION="5.8.4"
-LAST_EDIT_DATE="2021-05-21"
-
 # DO NOT REMOVE OR CHANGE
 SOFTWARE_ABOUT="This is the most widely used and fastest shell script to update all your TeamSpeak 3 server instances."
-SOFTWARE_AUTHOR="Sebastian Kraetzig <info@ts3-tools.info>"
-SOFTWARE_HOMEPAGE="www.ts3-tools.info"
+SOFTWARE_AUTHOR="https://github.com/Sebi94nbg"
+SOFTWARE_HOMEPAGE="https://github.com/TS3Tools/TS3UpdateScript"
 SOFTWARE_FACEBOOK="www.facebook.com/TS3Tools"
 SOFTWARE_LICENSE="GNU GPLv3"
-
-LICENSE_SIP='aHR0cHM6Ly93d3cudHMzLXRvb2xzLmluZm8vdHMzdG9vbHMvbGljZW5zaW5nLnBocD9wPXRzM3VzCg=='
-LICENSE_SEC='7dc3d819fb42ed9006df79e2642d026c5faef1fb9959b29810718d034fc50a0556d868ae5e15cfe58159bcfcb7026b5852b1d8a2cc194d8e6ca35cf9a203f225'
 
 # Code structure:
 #	1) COLOURS
@@ -82,211 +77,6 @@ cd - > /dev/null
 function clearTerminalScreen() {
 	clear 2> /dev/null
 }
-
-# Checks consistency of script
-# Return: 0:boolean or 1:boolean
-function checkConsistency() {
-	CHKSUM=$(grep -v "ORIGIN=" "$0" | sha256sum | cut -d " " -f 1)
-	ORIGIN="013e5dd3ed60e49ae291e7ce343c6c6d7044ff1a684cfc20a207c80c57978bbc"
-
-	if [[ "$CHKSUM" == "$ORIGIN" ]]; then
-		return 0;
-	else
-		return 1;
-	fi
-}
-
-# Creates a unique license key
-# Return: 0:boolean or 1:boolean
-function createUniqueLicenseKey() {
-        LDIR='L3Zhci9jYWNoZS90czN1cy8='
-        LSEED='c2VlZAo='
-        LKEY='LnRzM3VzX2xpY2Vuc2Vfa2V5Cg=='
-
-	if [[ -f license_key ]]; then
-		rm license_key
-	fi
-
-        if [[ ! -d "$(echo "${LDIR}" | base64 --decode)" ]]; then
-                if [[ $(mkdir -m 0755 "$(echo "${LDIR}" | base64 --decode)") ]]; then
-                        return 1;
-                fi
-        fi
-
-        if [[ ! -f "$(echo "${LDIR}${LSEED}" | base64 --decode)" ]]; then
-                if [[ $(dd if=/dev/urandom bs=1k count=1 2>/dev/null | od -t x1 -v | cut -d " " -f 2- | grep -E "^([0-9a-f]{2} )+[0-9a-f]{2}$" > $(echo "${LDIR}${LSEED}" | base64 --decode)) ]]; then
-                        return 1;
-                fi
-        fi
-
-        IP=$(wget -t 3 -T 3 -qO- $(echo "${LICENSE_SIP}" | base64 --decode))
-        HNAME=$(hostname -f)
-        UNAME=$(uname -mo)
-        DISTID=$(cut -d ' ' -f 1 < /etc/issue | tr -d '[[:space:]]')
-        LSEED=$(cat $(echo "${LDIR}${LSEED}" | base64 --decode))
-
-        echo "${IP}${HNAME}${UNAME}${LICENSE_SEC}${DISTID}${LSEED}" | md5sum | head -c 24 > ${ABSOLUTE_PATH}/$(echo "${LKEY}" | base64 --decode)
-
-        if [[ $? -ne 0 ]]; then
-                return 1;
-        fi
-
-        return 0;
-}
-
-# Gets the license verify key from the licensing server
-# Return: 0:boolean or 1:boolean
-function getLicenseVerifyKey() {
-        LDIR='L3Zhci9jYWNoZS90czN1cy8='
-        LKEY='LnRzM3VzX2xpY2Vuc2Vfa2V5Cg=='
-        LVKEY='dmVyaWZ5X2tleQo='
-        LCHKSUM='a2V5Cg=='
-
-        if ! createUniqueLicenseKey; then
-                return 1;
-        fi
-
-        LKEY=$(< ${ABSOLUTE_PATH}/$(echo "${LKEY}" | base64 --decode))
-        wget -t 3 -T 3 -qO- "$(echo "${LICENSE_SIP}" | base64 --decode)&lkey=${LKEY}&v=${SCRIPT_VERSION}" > $(echo "${LDIR}${LVKEY}" | base64 --decode)
-
-        if [[ $? -ne 0 ]]; then
-                return 1;
-        fi
-
-        LVKEY=$(< $(echo "${LDIR}${LVKEY}" | base64 --decode))
-
-        echo "${LKEY}${LVKEY}" | sha256sum | cut -d ' ' -f 1 > $(echo "${LDIR}${LCHKSUM}" | base64 --decode)
-
-        if [[ $? -ne 0 ]]; then
-                return 1;
-        fi
-
-        return 0;
-}
-
-# Checks the license every 7 days or immediately
-# Par 1: force:string
-# Return: license:string or 0:boolean (if force is set) or 1:boolean
-function checkLicense() {
-        LDIR='L3Zhci9jYWNoZS90czN1cy8='
-        LKEY='LnRzM3VzX2xpY2Vuc2Vfa2V5Cg=='
-        LVKEY='dmVyaWZ5X2tleQo='
-        LCHKSUM='a2V5Cg=='
-
-        find $(echo "${LDIR}${LVKEY}" | base64 --decode) -mtime +7 -exec rm {} \;
-
-        if [[ -n "$1" ]]; then
-                if [[ "$1" == "force" ]]; then
-                        if [[ -f "${ABSOLUTE_PATH}/$(echo "${LKEY}" | base64 --decode)" ]]; then
-                                rm "${ABSOLUTE_PATH}/$(echo "${LKEY}" | base64 --decode)"
-                        fi
-                fi
-        fi
-
-        if [[ ! -f "${ABSOLUTE_PATH}/$(echo "${LKEY}" | base64 --decode)" ]] || [[ ! -f "$(echo "${LDIR}${LVKEY}" | base64 --decode)" ]]; then
-                if ! getLicenseVerifyKey; then
-                        return 1;
-		else
-			if [[ "$1" == "force" ]]; then
-				return 0;
-			fi
-                fi
-        fi
-
-        LDIR='L3Zhci9jYWNoZS90czN1cy8='
-        LKEY='LnRzM3VzX2xpY2Vuc2Vfa2V5Cg=='
-        LVKEY='dmVyaWZ5X2tleQo='
-        LCHKSUM='a2V5Cg=='
-
-        LKEY=$(< ${ABSOLUTE_PATH}/$(echo "${LKEY}" | base64 --decode))
-        VKEY=$(< $(echo "${LDIR}${LVKEY}" | base64 --decode))
-        CHKSUM=$(< $(echo "${LDIR}${LCHKSUM}" | base64 --decode))
-        SHASUM=$(echo "${LKEY}${VKEY}" | sha256sum | cut -d ' ' -f 1)
-
-        if [[ "${CHKSUM}" != "${SHASUM}" ]]; then
-                if ! getLicenseVerifyKey; then
-                        return 1;
-                fi
-        fi
-
-        LDEC=$(echo "${VKEY}" | base64 --decode | cut -d ':' -f 3-)
-
-        if [[ -n "${LDEC}" ]]; then
-                echo "${LDEC}";
-        fi
-
-        return 1;
-}
-
-# Returns license details
-# Par 1: force:string (optional)
-# Return: licenseDetails:string or 1:boolean
-function getLicenseDetails() {
-        LICENSE_DETAILS=""
-        if [[ "${1}" == "force" ]]; then
-                STR_LICENSE=$(checkLicense force)
-        else
-                STR_LICENSE=$(checkLicense)
-        fi
-        SCRIPT_LICENSE=$(echo $STR_LICENSE | cut -d ':' -f 1);
-        SCRIPT_LICENSE_START_TS=$(echo $STR_LICENSE | cut -d ':' -f 2);
-        SUPPORT_LICENSE=$(echo $STR_LICENSE | cut -d ':' -f 3);
-        SUPPORT_LICENSE_START_TS=$(echo $STR_LICENSE | cut -d ':' -f 4);
-
-        if [[ "${SCRIPT_LICENSE}" == "Community" ]] || [[ "${SCRIPT_LICENSE}" == "Professional" ]]; then
-                SCRIPT_LICENSE_END="No support bought"
-        else
-                SCRIPT_LICENSE_START=$(date +'%Y-%m-%d' --date="@${SCRIPT_LICENSE_START_TS}")
-                if [[ ${SCRIPT_LICENSE_START_TS} -lt 1472594400 ]]; then
-                        SCRIPT_LICENSE_END=$(date +'%Y-%m-%d' --date="@${SCRIPT_LICENSE_START_TS}" --date="+5 years")
-                else
-                        SCRIPT_LICENSE_END=$(date +'%Y-%m-%d' --date="@${SCRIPT_LICENSE_START_TS}" --date="+2 years")
-                fi
-        fi
-
-        if [[ "${SUPPORT_LICENSE}" == "Community" ]]; then
-                SUPPORT_LICENSE_END="No support bought"
-        else
-                SUPPORT_LICENSE_START=$(date +'%Y-%m-%d' --date="@${SUPPORT_LICENSE_START_TS}")
-
-                if [[ "${SUPPORT_LICENSE}" == "SLA-Basis" ]] || [[ "${SUPPORT_LICENSE}" == "SLA-Professional" ]]; then
-                        SUPPORT_LICENSE_END=$(date +'%Y-%m-%d' --date="@${SUPPORT_LICENSE_START_TS}" --date="+1 years")
-                elif [[ "${SUPPORT_LICENSE}" == "SLA-Enterprise" ]]; then
-                        SUPPORT_LICENSE_END=$(date +'%Y-%m-%d' --date="@${SUPPORT_LICENSE_START_TS}" --date="+3 years")
-                fi
-        fi
-
-        LICENSE_DETAILS="${SCRIPT_LICENSE}|${SCRIPT_LICENSE_START}|${SCRIPT_LICENSE_END}|${SUPPORT_LICENSE}|${SUPPORT_LICENSE_START}|${SUPPORT_LICENSE_END}"
-
-        if [[ -n "${LICENSE_DETAILS}" ]]; then
-                echo -n "${LICENSE_DETAILS}";
-        fi
-
-        return 1;
-}
-
-if [[ "$EUID" == 0 ]]; then
-	LICENSE_DETAILS=$(getLicenseDetails)
-	SCRIPT_LICENSE_TXT=$(echo ${LICENSE_DETAILS} | cut -d '|' -f 1)
-	SCRIPT_LICENSE_START=$(echo ${LICENSE_DETAILS} | cut -d '|' -f 2)
-	SCRIPT_LICENSE_END=$(echo ${LICENSE_DETAILS} | cut -d '|' -f 3)
-
-	if [[ "${SCRIPT_LICENSE_TXT}" == "Community" ]]; then
-		SCRIPT_LICENSE_TYPE=0;
-	elif [[ "${SCRIPT_LICENSE_TXT}" == "Professional" ]]; then
-		SCRIPT_LICENSE_TYPE=1;
-	elif [[ "${SCRIPT_LICENSE_TXT}" == "Enterprise" ]]; then
-		SCRIPT_LICENSE_TYPE=2;
-	fi
-
-	SUPPORT_LICENSE_TXT=$(echo ${LICENSE_DETAILS} | cut -d '|' -f 4)
-	SUPPORT_LICENSE_START=$(echo ${LICENSE_DETAILS} | cut -d '|' -f 5)
-	SUPPORT_LICENSE_END=$(echo ${LICENSE_DETAILS} | cut -d '|' -f 6)
-else
-	SCRIPT_LICENSE_TYPE=0;
-	SCRIPT_LICENSE_TXT="Community"
-	SUPPORT_LICENSE_TXT="Community"
-fi
 
 # Check, if bash-completion is installed
 # Return: 0:boolean or 1:boolean
@@ -465,6 +255,18 @@ function getTimeDifference() {
 function testInternetConnectivity() {
 	if [[ $(ping -w 1 "$1" 2> /dev/null) ]]; then
 		return 0;
+	else
+		return 1;
+	fi
+}
+
+# Get current script version
+# Return: CurrentScriptVersion:string or 1:boolean
+function getCurrentScriptVersion() {
+	CURRENT_SCRIPT_VERSION="$(grep Version docs/CHANGELOG.md | head -1 | cut -d ' ' -f 3 | tr -d '[[:space:]]')"
+
+	if [[ -n "$CURRENT_SCRIPT_VERSION" ]]; then
+		echo -n "$CURRENT_SCRIPT_VERSION";
 	else
 		return 1;
 	fi
@@ -683,14 +485,11 @@ function getLatestTSServerVersion() {
 function findTS3ServerInstances() {
 	TEMP_BACKUP_DIR=$(getTempBackupDir)
 	PERSISTENT_BACKUP_DIR=$(getPersistentBackupDir)
-	if [[ "$SCRIPT_LICENSE_TYPE" == "2" ]]; then
-		if [[ "$PAR_PATH_DIRECTORY" == "/" ]]; then
-			find / -name 'ts3server_startscript.sh' 2> /dev/null | grep -Eiv "${TEMP_BACKUP_DIR}/TS3Tools/TS3UpdateScript|${PERSISTENT_BACKUP_DIR}/TS3Tools/TS3UpdateScript" | sort > TS3InstancePaths.txt
-		else
-			echo "$PAR_PATH_DIRECTORY/ts3server_startscript.sh" > TS3InstancePaths.txt
-		fi
+
+	if [[ "$PAR_PATH_DIRECTORY" == "/" ]]; then
+		find / -name 'ts3server_startscript.sh' 2> /dev/null | grep -Eiv "${TEMP_BACKUP_DIR}/TS3Tools/TS3UpdateScript|${PERSISTENT_BACKUP_DIR}/TS3Tools/TS3UpdateScript" | sort > TS3InstancePaths.txt
 	else
-		find / -name 'ts3server_startscript.sh' 2> /dev/null | grep -Eiv "${TEMP_BACKUP_DIR}/TS3Tools/TS3UpdateScript|${PERSISTENT_BACKUP_DIR}/TS3Tools/TS3UpdateScript" | sort | head -1 > TS3InstancePaths.txt
+		echo "$PAR_PATH_DIRECTORY/ts3server_startscript.sh" > TS3InstancePaths.txt
 	fi
 
 	if [[ -s TS3InstancePaths.txt ]]; then
@@ -2247,12 +2046,6 @@ function main() {
 		migrateMultipleConfigFilesToOne
 	fi
 
-	# Check consistency of script
-	if ! checkConsistency; then
-		echo "${TXT_SELF_TEST_CHECK_CONSISTENCY}" >> SELF_TEST_STATUS.txt;
-		SELF_TEST_STATUS=1;
-	fi
-
 	# Able to reach all needed remote server?
 	if [[ "$PAR_DEACTIVATE_HOST_ALIVE_CHECK" -eq 0 ]]; then
 		if ! testInternetConnectivity "www.ts3-tools.info"; then
@@ -2502,10 +2295,8 @@ function main() {
 						fi
 
 						# Check for lines with 'The system locale is set to'
-						if [[ "$SCRIPT_LICENSE_TYPE" == "1" ]] || [[ "$SCRIPT_LICENSE_TYPE" == "2" ]]; then
-							if ! checkSystemLocale ${INSTANCE_PATH}; then
-								displayBPAText "${TXT_COLLECTING_INFORMATION_SYSTEM_LOCALE}"
-							fi
+						if ! checkSystemLocale ${INSTANCE_PATH}; then
+							displayBPAText "${TXT_COLLECTING_INFORMATION_SYSTEM_LOCALE}"
 						fi
 
 						# Detect architecture
@@ -2526,10 +2317,8 @@ function main() {
 									COLLECTING_INFORMATION_STATUS=1;
 								fi
 
-								if [[ "$SCRIPT_LICENSE_TYPE" == "1" ]] || [[ "$SCRIPT_LICENSE_TYPE" == "2" ]]; then
-									if [[ "$OWNER" == "root" ]]; then
-										displayBPAText "${TXT_COLLECTING_INFORMATION_OWNER_ROOT_PERMISSIONS_INFO}"
-									fi
+								if [[ "$OWNER" == "root" ]]; then
+									displayBPAText "${TXT_COLLECTING_INFORMATION_OWNER_ROOT_PERMISSIONS_INFO}"
 								fi
 							fi
 						else
@@ -2544,10 +2333,8 @@ function main() {
 						fi
 
 						# Check shell and display warning, if a valid shell is in use
-						if [[ "$SCRIPT_LICENSE_TYPE" == "1" ]] || [[ "$SCRIPT_LICENSE_TYPE" == "2" ]]; then
-							if isShellOfOwnerValid ${OWNER}; then
-								displayBPAText "${TXT_COLLECTING_INFORMATION_IS_SHELL_VALID_FAILED}"
-							fi
+						if isShellOfOwnerValid ${OWNER}; then
+							displayBPAText "${TXT_COLLECTING_INFORMATION_IS_SHELL_VALID_FAILED}"
 						fi
 
 						# Detect group
@@ -2560,10 +2347,8 @@ function main() {
 									COLLECTING_INFORMATION_STATUS=1;
 								fi
 
-								if [[ "$SCRIPT_LICENSE_TYPE" == "1" ]] || [[ "$SCRIPT_LICENSE_TYPE" == "2" ]]; then
-									if [[ "$GROUP" == "root" ]]; then
-										displayBPAText "${TXT_COLLECTING_INFORMATION_GROUP_ROOT_PERMISSIONS_INFO}"
-									fi
+								if [[ "$GROUP" == "root" ]]; then
+									displayBPAText "${TXT_COLLECTING_INFORMATION_GROUP_ROOT_PERMISSIONS_INFO}"
 								fi
 							fi
 						else
@@ -2578,10 +2363,8 @@ function main() {
 						fi
 
 						# Check files/ storage and display warning, if a non-external storage is in use
-						if [[ "$SCRIPT_LICENSE_TYPE" == "1" ]] || [[ "$SCRIPT_LICENSE_TYPE" == "2" ]]; then
-							if isFilesStorageExternal ${INSTANCE_PATH}; then
-								displayBPAText "${TXT_COLLECTING_INFORMATION_IS_FILES_STORAGE_EXTERNAL_FAILED}"
-							fi
+						if isFilesStorageExternal ${INSTANCE_PATH}; then
+							displayBPAText "${TXT_COLLECTING_INFORMATION_IS_FILES_STORAGE_EXTERNAL_FAILED}"
 						fi
 
 						# Set textbased status flag based on collecting information status flag
@@ -2843,9 +2626,7 @@ function main() {
 					if [[ -n "$INSTANCE_PATH" ]]; then
 						echo -n "  ${CRONJOB_MINUTE} ${CRONJOB_HOUR} * * 1  root ${ABSOLUTE_PATH}/${SCRIPT_NAME} " >> ${CROND_PATH_FILE};
 
-						if [[ "$SCRIPT_LICENSE_TYPE" == "2" ]]; then
-							echo -n "--path ${INSTANCE_PATH} " >> ${CROND_PATH_FILE};
-						fi
+						echo -n "--path ${INSTANCE_PATH} " >> ${CROND_PATH_FILE};
 
 						if [ "$PAR_CHECK" -eq 1 ]; then
 							echo -n "--check " >> ${CROND_PATH_FILE};
@@ -3549,22 +3330,21 @@ if [ -t 0 ]; then
 	clearTerminalScreen
 fi
 
+# Get current installed script version
+SCRIPT_VERSION=$(getCurrentScriptVersion)
+
 echo -e "\nAbout: ${SOFTWARE_ABOUT}";
 echo    "Author: ${SOFTWARE_AUTHOR} | Website: ${SOFTWARE_HOMEPAGE} | facebook: ${SOFTWARE_FACEBOOK}";
 echo -e "License: ${SOFTWARE_LICENSE}\n";
 
-echo	" _____ ____ _____       _              _       _        __";
-echo	"|_   _/ ___|___ /      | |_ ___   ___ | |___  (_)_ __  / _| ___";
-echo	"  | | \___ \ |_ \ _____| __/ _ \ / _ \| / __| | | '_ \| |_ / _ \\";
-echo	"  | |  ___) |__) |_____| || (_) | (_) | \__ \_| | | | |  _| (_) |";
-echo -e "  |_| |____/____/       \__\___/ \___/|_|___(_)_|_| |_|_|  \___/\n";
+echo	" _______ _____ ____  _              _";
+echo	"|__   __/ ____|___ \| |            | |";
+echo	"   | | | (___   __) | |_ ___   ___ | |___";
+echo	"   | |  \___ \ |__ <| __/ _ \ / _ \| / __|";
+echo	"   | |  ____) |___) | || (_) | (_) | \__ \\";
+echo -e "   |_| |_____/|____/ \__\___/ \___/|_|___/\n";
 
-echo	"Script Version: $SCRIPT_VERSION ($LAST_EDIT_DATE)";
-if [[ "$EUID" != 0 ]]; then echo -e "${Red}HINT:${RCol} Only root can check your license!"; fi
-echo -n "Script License: ${SCRIPT_LICENSE_TXT}";
-if [[ "${SCRIPT_LICENSE_TYPE}" -eq 0 ]] || [[ "${SCRIPT_LICENSE_TXT}" == "Community" ]] || [[ "${SCRIPT_LICENSE_TXT}" == "Professional" ]]; then echo " (No support bought)"; else echo " (Support valid from ${SCRIPT_LICENSE_START} until ${SCRIPT_LICENSE_END})"; fi
-echo -n "Support License: ${SUPPORT_LICENSE_TXT}";
-if [[ "${SCRIPT_LICENSE_TYPE}" -eq 0 ]] || [[ "${SUPPORT_LICENSE_TXT}" == "Community" ]]; then echo -e " (No support plan bought)\n"; else echo -e " (Support valid from ${SUPPORT_LICENSE_START} until ${SUPPORT_LICENSE_END})\n"; fi
+echo	"Script Version: $SCRIPT_VERSION";
 
 echo -e "Donate and support this script: https://www.paypal.com/cgi-bin/webscr?cmd=_s-xclick&hosted_button_id=7ZRXLSC2UBVWE\n";
 
@@ -3608,12 +3388,7 @@ PAR_INSTALL_CRONJOB=0;
 PAR_DEINSTALL_CRONJOB=0;
 PAR_CRONJOB_TASK=0;
 if [ ! -t 0 ]; then
-	if [[ "$SCRIPT_LICENSE_TYPE" == "1" ]] || [[ "$SCRIPT_LICENSE_TYPE" == "2" ]]; then
-		PAR_CRONJOB_TASK=1;
-	else
-		echo "Cronjobs are not possible under the Community license! You need to upgrade your license therefore. View README.md for more.";
-		exit 1;
-	fi
+	PAR_CRONJOB_TASK=1;
 fi
 LANGUAGE_CODE="$(grep 'DEFAULT_LANGUAGE' ${ABSOLUTE_PATH}/configs/config.all | cut -d '=' -f 2)";
 if [[ -n "${LANGUAGE_CODE}" ]]; then
@@ -3647,9 +3422,6 @@ while [ -n "$1" ]; do
 			echo	"--disable-temporary-password-backup	Disable feature to backup temporary passwords";
 			echo	"--set-release				Do not use the official latest release. Use instead the set release from the configuration file ${ABSOLUTE_PATH}/configs/config.all";
 			echo	"--beta-release				With this parameter you are able to detect and update your TeamSpeak server to the latest beta release";
-			if [[ "$SCRIPT_LICENSE_TYPE" == "2" ]]; then
-				echo	"--path PATH				Just check the server in this directory and do not search for directories on the whole server";
-			fi
 			echo	"--debug <DEBUG_FILENAME>		Enables debugging and writes output to file";
 			echo -e "--install-cronjob <HOUR> <MINUTE>	Installs weekly cronjob for monday at your specified time (default: 3 AM (= 03:00 O'clock))\n";
 
@@ -3659,9 +3431,6 @@ while [ -n "$1" ]; do
 			echo	"--display-settings			Displays settings from config files in ${ABSOLUTE_PATH}/configs/";
 			echo	"--test-inform-online-clients		Execute test poke with current settings";
 			echo -e "--update-script\t			Updates the TS3UpdateScript to the latest version";
-			echo	"--show-license-key			Displays TS3UpdateScript license key";
-			echo	"--force-license-update			Forces an update for the TS3UpdateScript license key";
-			echo	"--request-license <EMAIL> <professional|enterprise>	Sends license information to info@ts3-tools.com to get Professional or Enterprise license (view README.md section 'Script Licenses'!)";
 			echo	"--deinstall-cronjob			Deinstalls weekly cronjob";
 
 			exit 0;
@@ -3679,9 +3448,6 @@ while [ -n "$1" ]; do
 			echo	"--disable-temporary-password-backup	Disable feature to backup temporary passwords";
 			echo    "--set-release				Do not use the official latest release. Use instead the set release from the configuration file ${ABSOLUTE_PATH}/configs/config.all";
 			echo    "--beta-release				With this parameter you are able to detect and update your TeamSpeak server to the latest beta release";
-			if [[ "$SCRIPT_LICENSE_TYPE" == "2" ]]; then
-				echo    "--path PATH				Just check the server in this directory and do not search for directories on the whole server";
-			fi
 			echo -e "(--deactivate-host-alive-check)\t	Deactivates the part of self-test, which checks if all needed hosts are reachable. It is highly NOT recommended to use this parameter!";
 			echo -e "(--deactivate-permissions-check)	Deactivates the part of detection, which checks if the server is running as another user as root";
 			echo    "--debug <DEBUG_FILENAME>		Enables debugging and writes output to file";
@@ -3694,16 +3460,13 @@ while [ -n "$1" ]; do
 			echo	"--display-settings			Displays settings from config files in ${ABSOLUTE_PATH}/configs/";
 			echo    "--test-inform-online-clients		Execute test poke with current settings";
 			echo -e "--update-script\t			Updates the TS3UpdateScript to the latest version";
-			echo -e "--show-license-key			Displays TS3UpdateScript license key";
-			echo	"--force-license-update			Forces an update for the TS3UpdateScript license key";
-			echo	"--request-license <EMAIL> <professional|enterprise>	Sends license information to info@ts3-tools.com to get Professional or Enterprise license (view README.md section 'Script Licenses'!)";
 			echo    "--deinstall-cronjob			Deinstalls weekly cronjob";
 			
 			exit 0;
 		;;
 
 		-v | --version)
-			echo "The script of version $SCRIPT_VERSION was edited on $LAST_EDIT_DATE the last time.";
+			echo "$SCRIPT_VERSION";
 
 			exit 0;
 		;;
@@ -3773,12 +3536,7 @@ while [ -n "$1" ]; do
 			if [[ -n "$2" ]]; then
 				if [[ -d "$2" ]]; then
 					if [[ -f "${2}/ts3server_startscript.sh" ]]; then
-						if [[ "$SCRIPT_LICENSE_TYPE" == "2" ]]; then
-							PAR_PATH_DIRECTORY="$2";
-						else
-							echo "The parameter '--path' is only available under the Enterprise license! You need to upgrade your license therefore. View README.md for more.";
-							exit 1;
-						fi
+						PAR_PATH_DIRECTORY="$2";
 					else
 						echo "Your set directory '$2' is not a valid root directory of a TeamSpeak 3 server! Please set a correct one.";
 						exit 1;
@@ -3807,89 +3565,27 @@ while [ -n "$1" ]; do
 		;;
 
 		--install-cronjob)
-			if [[ "$SCRIPT_LICENSE_TYPE" == "1" ]] || [[ "$SCRIPT_LICENSE_TYPE" == "2" ]]; then
-				PAR_INSTALL_CRONJOB=1;
-				if [[ -n "$2" ]] && [[ "$2" =~ [0-9]{1,2} ]]; then
-					if [[ "$2" -ge 0 ]] && [[ "$2" -le 23 ]]; then
-						PAR_CRONJOB_HOUR="$2";
-						shift;
-					else
-						echo "'$2' is an invalid hour on the clock! Please use a positive number between 0 and 23.";
-						exit 1;
-					fi
-				fi
-				if [[ -n "$2" ]] && [[ "$2" =~ [0-9]{1,2} ]]; then
-					if [[ "$2" -ge 0 ]] && [[ "$2" -le 59 ]]; then
-						PAR_CRONJOB_MINUTE="$2";
-						shift;
-					else
-						echo "'$2' is an invalid minute on the clock! Please use a positive number between 0 and 59.";
-						exit 1;
-					fi
-				fi
-			else
-				echo "The parameter '--install-cronjob' is not available under the Community license! You need to upgrade your license therefore. View README.md for more.";
-				exit 1;
-			fi
-
-			shift;
-		;;
-
-		--show-license-key)
-			if [ -f .ts3us_license_key ]; then
-				echo "Your license key is as follows: $(cat .ts3us_license_key | sed 's/\(.\{4\}\)/\1 /g')";
-			else
-				echo "You need to execute the script once with root permissions to obtain a valid license.";
-			fi
-
-			exit 0;
-		;;
-
-		--force-license-update)
-			PAR_FORCE_LICENSE_UPDATE=1;
-			shift;
-		;;
-
-		--request-license)
-			if [[ "$EUID" == 0 ]]; then
-				if [[ -n "$2" ]]; then
-					if [[ -n "$3" ]]; then
-						LICENSE_TYPE=$(echo -n "$3" | tr '[:lower:]' '[:upper:]')
-
-						if [[ "${LICENSE_TYPE}" == "PROFESSIONAL" ]] || [[ "${LICENSE_TYPE}" == "ENTERPRISE" ]]; then
-							PAYMENT_EMAIL="$2";
-							IP_ADDRESS=$(wget -t 3 -T 1 -qO- "$(echo "${LICENSE_SIP}" | base64 --decode)");
-							LICENSE_KEY="$(cat .ts3us_license_key)";
-
-							if [[ -n "$IP_ADDRESS" ]] && [[ -n "$LICENSE_KEY" ]]; then
-								(echo "Payment eMail: ${PAYMENT_EMAIL}"; echo "IP: ${IP_ADDRESS}"; echo "Product: TS3UpdateScript"; echo "License: ${LICENSE_TYPE}"; echo "License key: ${LICENSE_KEY}") | mail -s "TS3-Tools.info - TS3UpdateScript ${LICENSE_TYPE} License" info@ts3-tools.info,${PAYMENT_EMAIL}
-								if [[ $? -eq 0 ]]; then
-									echo "Email should be sent successful to info@ts3-tools.info and ${PAYMENT_EMAIL}. If you do not receive this email within the next minutes, you server is may not able to send emails through the internet.";
-									exit 0;
-								else
-									echo "Could not send email. The 'mail' command is may not available.";
-									exit 1;
-								fi
-							else
-								echo "Could not detect your IP address or your license key. Please try again.";
-								exit 1;
-							fi
-						else
-							echo "'${LICENSE_TYPE}' is no valid license. Please set a valid one. Available licenses are 'Professional' and 'Enterprise'.";
-							exit 1;
-						fi
-					else
-						echo "Specifiy the license for which you want to apply. For example: --request-license you@example.com professional";
-						exit 1;
-					fi
+			PAR_INSTALL_CRONJOB=1;
+			if [[ -n "$2" ]] && [[ "$2" =~ [0-9]{1,2} ]]; then
+				if [[ "$2" -ge 0 ]] && [[ "$2" -le 23 ]]; then
+					PAR_CRONJOB_HOUR="$2";
+					shift;
 				else
-					echo "Specify your payment email address, with which you have payed your license! For example: --request-license you@example.com professional";
+					echo "'$2' is an invalid hour on the clock! Please use a positive number between 0 and 23.";
 					exit 1;
 				fi
-			else
-				echo "Unable to get your license key. Run the script as root!";
-				exit 1;
 			fi
+			if [[ -n "$2" ]] && [[ "$2" =~ [0-9]{1,2} ]]; then
+				if [[ "$2" -ge 0 ]] && [[ "$2" -le 59 ]]; then
+					PAR_CRONJOB_MINUTE="$2";
+					shift;
+				else
+					echo "'$2' is an invalid minute on the clock! Please use a positive number between 0 and 59.";
+					exit 1;
+				fi
+			fi
+
+			shift;
 		;;
 
 		--deinstall-cronjob)
@@ -3938,7 +3634,7 @@ done
 
 # Given arguments allowed?
 if [[ "$PAR_COUNTER" -eq 1 ]]; then
-	if [[ "$PAR_CHECK" -eq 0 ]] && [[ "$PAR_UPDATE_SCRIPT" -eq 0 ]] && [[ "$PAR_DEINSTALL_CRONJOB" -eq 0 ]] && [[ "$PAR_TEST_INFORM_ONLINE_CLIENTS" -eq 0 ]] && [[ "$PAR_DISPLAY_SETTINGS" -eq 0 ]] && [[ "$PAR_FORCE_LICENSE_UPDATE" -eq 0 ]]; then
+	if [[ "$PAR_CHECK" -eq 0 ]] && [[ "$PAR_UPDATE_SCRIPT" -eq 0 ]] && [[ "$PAR_DEINSTALL_CRONJOB" -eq 0 ]] && [[ "$PAR_TEST_INFORM_ONLINE_CLIENTS" -eq 0 ]] && [[ "$PAR_DISPLAY_SETTINGS" -eq 0 ]]; then
 		echo "It is not allowed to use this parameter only!";
 		exit 1;
 	fi
@@ -3948,7 +3644,7 @@ elif [[ "$PAR_COUNTER" -eq 2 ]]; then
 		exit 1;
 	fi
 elif [[ "$PAR_COUNTER" -gt 2 ]]; then
-	if [[ "$PAR_HELP" -eq 1 ]] || [[ "$PAR_VERSION" -eq 1 ]] || [[ "$PAR_DEINSTALL_CRONJOB" -eq 1 ]] || [[ "$PAR_TEST_INFORM_ONLINE_CLIENTS" -eq 1 ]] || [[ "$PAR_DISPLAY_SETTINGS" -eq 1 ]] || [[ "$PAR_FORCE_LICENSE_UPDATE" -eq 1 ]]; then
+	if [[ "$PAR_HELP" -eq 1 ]] || [[ "$PAR_VERSION" -eq 1 ]] || [[ "$PAR_DEINSTALL_CRONJOB" -eq 1 ]] || [[ "$PAR_TEST_INFORM_ONLINE_CLIENTS" -eq 1 ]] || [[ "$PAR_DISPLAY_SETTINGS" -eq 1 ]]; then
 		echo "This type of combination is not permitted!";
 		exit 1;
 	elif [[ "$PAR_SET_RELEASE" -eq 1 ]] && [[ "$PAR_BETA_RELEASE" -eq 1 ]]; then
@@ -3966,16 +3662,6 @@ if [[ "$EUID" != 0 ]]; then
 	cd "$ABSOLUTE_PATH"
 	su -s "$(which bash)" -c "./$SCRIPT_NAME $PAR_LIST"
 	cd - > /dev/null
-
-	exit 0;
-fi
-
-if [[ "${PAR_FORCE_LICENSE_UPDATE}" -eq 1 ]]; then
-	if ! checkLicense force; then
-		echo "Your license could not be updated.";
-	else
-		echo "Your license was updated successful.";
-	fi
 
 	exit 0;
 fi
