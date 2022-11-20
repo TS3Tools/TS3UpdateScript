@@ -8,27 +8,7 @@ The script checks if a newer version of TeamSpeak 3 server is available. If yes,
 
 If you don't want to update your TeamSpeak 3 server manually, you can use this script. This script follows all of the steps to properly update your TeamSpeak 3 server.
 
-## Table of content
-
-- [Developers](#developers)
-- [Contributors](#contributors)
-- [Donations](#donations)
-- [Main Features](#main-features)
-- [Special Features](#special-features)
-- [Stay tuned!](#stay-tuned)
-- [Requirements](#requirements)
-- [Supports](#supports)
-- [Hint: systemd](#hint-systemd)
-- [Available Languages](#available-languages)
-	- [Help us](#help-us)
-- [Usage](#usage)
-- [Parameters / Options](#parameters--options)
- 	- [Multi usable](#multi-usable)
-	- [Single usable](#single-usable)
-- [Work flow of the script](#work-flow-of-the-script)
-- [Used Resources by the script](#used-resources-by-the-script)
-- [Directory Structure - Where can I find which file?](#directory-structure---where-can-i-find-which-file)
-- [Why does this have a high version number?](#why-does-this-have-a-high-version-number)
+## Various references
 
 ![Example Output](https://raw.githubusercontent.com/TS3Tools/TS3UpdateScript/master/img/TS3UpdateScript_Example_Summary.png)
 
@@ -83,19 +63,18 @@ If you don't want to update your TeamSpeak 3 server manually, you can use this s
 
 ## Stay tuned!
 
-- [Official Project Homepage](https://www.ts3-tools.info/)
 - [facebook Fanpage](https://www.facebook.com/TS3Tools)
 - [GitHub](/)
 
 ## Requirements
 
 - Linux (should work on the most distributions; below a list of explicit tested distributions)
-  - Debian 7 & 8
-  - Ubuntu 15
-  - CentOS 7
-  - OpenSUSE 13
-  - Fedora 21
-  - IPFire 2
+  - Debian
+  - Ubuntu
+  - CentOS
+  - OpenSUSE
+  - Fedora
+  - IPFire
 - One or more installed TeamSpeak 3 server instances on a Root server/VPS/virtual machine
   - Minimum required version: 3.1.x
 - Software packages
