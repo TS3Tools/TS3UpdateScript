@@ -16,7 +16,6 @@ exec 5<&0
 # Donations: https://www.paypal.com/cgi-bin/webscr?cmd=_s-xclick&hosted_button_id=7ZRXLSC2UBVWE
 #
 
-SCRIPT_VERSION="6.0.0"
 LAST_EDIT_DATE="2022-11-20"
 
 # DO NOT REMOVE OR CHANGE
@@ -257,6 +256,18 @@ function getTimeDifference() {
 function testInternetConnectivity() {
 	if [[ $(ping -w 1 "$1" 2> /dev/null) ]]; then
 		return 0;
+	else
+		return 1;
+	fi
+}
+
+# Get current script version
+# Return: CurrentScriptVersion:string or 1:boolean
+function getCurrentScriptVersion() {
+	CURRENT_SCRIPT_VERSION="$(grep Version docs/CHANGELOG.md | head -1 | cut -d ' ' -f 3 | tr -d '[[:space:]]')"
+
+	if [[ -n "$CURRENT_SCRIPT_VERSION" ]]; then
+		echo -n "$CURRENT_SCRIPT_VERSION";
 	else
 		return 1;
 	fi
@@ -3319,6 +3330,9 @@ TIME_MEASUREMENT_SCRIPT_START=$(date +%s)
 if [ -t 0 ]; then
 	clearTerminalScreen
 fi
+
+# Get current installed script version
+SCRIPT_VERSION=$(getCurrentScriptVersion)
 
 echo -e "\nAbout: ${SOFTWARE_ABOUT}";
 echo    "Author: ${SOFTWARE_AUTHOR} | Website: ${SOFTWARE_HOMEPAGE} | facebook: ${SOFTWARE_FACEBOOK}";
