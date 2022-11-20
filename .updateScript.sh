@@ -3,11 +3,16 @@
 #set -x
 #
 # About: This little Shell-Script updates the TS3UpdateScript and all associated files - configs excluded
-# Author: Sebastian Kraetzig <info@ts3-tools.info>
-# Project: www.ts3-tools.info
+# Author: https://github.com/Sebi94nbg
+# Project: https://github.com/TS3Tools/TS3UpdateScript
 # facebook: www.facebook.com/TS3Tools
-#
 # License: GNU GPLv3
+#  _______ _____ ____  _              _
+# |__   __/ ____|___ \| |            | |
+#    | | | (___   __) | |_ ___   ___ | |___
+#    | |  \___ \ |__ <| __/ _ \ / _ \| / __|
+#    | |  ____) |___) | || (_) | (_) | \__ \
+#    |_| |_____/|____/ \__\___/ \___/|_|___/
 #
 # Donations: https://www.paypal.com/cgi-bin/webscr?cmd=_s-xclick&hosted_button_id=7ZRXLSC2UBVWE
 #
