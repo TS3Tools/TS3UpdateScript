@@ -30,6 +30,7 @@ Hotfix | Important fix for one more issues, which causes a not (correct) working
 	! Still active script licenses are still getting premium support. Otherwise, only community support will be provided in the future via Github issues.
 	! Have fun and use all Enterprise features, you couldn't use before! :-)
 	* Get installed script version from CHANGELOG instead of hardcoding the version in the script
+	* Remove "last edited date" from the script - see CHANGELOG instead
 
 ### Version 5.8.4 (2021-05-21)
 

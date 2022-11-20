@@ -16,8 +16,6 @@ exec 5<&0
 # Donations: https://www.paypal.com/cgi-bin/webscr?cmd=_s-xclick&hosted_button_id=7ZRXLSC2UBVWE
 #
 
-LAST_EDIT_DATE="2022-11-20"
-
 # DO NOT REMOVE OR CHANGE
 SOFTWARE_ABOUT="This is the most widely used and fastest shell script to update all your TeamSpeak 3 server instances."
 SOFTWARE_AUTHOR="Sebastian Kraetzig <info@ts3-tools.info>"
@@ -3344,7 +3342,7 @@ echo	"  | | \___ \ |_ \ _____| __/ _ \ / _ \| / __| | | '_ \| |_ / _ \\";
 echo	"  | |  ___) |__) |_____| || (_) | (_) | \__ \_| | | | |  _| (_) |";
 echo -e "  |_| |____/____/       \__\___/ \___/|_|___(_)_|_| |_|_|  \___/\n";
 
-echo	"Script Version: $SCRIPT_VERSION ($LAST_EDIT_DATE)";
+echo	"Script Version: $SCRIPT_VERSION";
 
 echo -e "Donate and support this script: https://www.paypal.com/cgi-bin/webscr?cmd=_s-xclick&hosted_button_id=7ZRXLSC2UBVWE\n";
 
@@ -3466,7 +3464,7 @@ while [ -n "$1" ]; do
 		;;
 
 		-v | --version)
-			echo "The script of version $SCRIPT_VERSION was edited on $LAST_EDIT_DATE the last time.";
+			echo "$SCRIPT_VERSION";
 
 			exit 0;
 		;;
