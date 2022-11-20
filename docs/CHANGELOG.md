@@ -23,6 +23,13 @@ Hotfix | Important fix for one more issues, which causes a not (correct) working
 
 ## Releases
 
+### Version 6.0.0 (2022-11-20)
+
+	- Removed script licensing
+	! Starting with this release, the script is only licensed under GNU GPLv3. No additional software license is required.
+	! Still active script licenses are still getting premium support. Otherwise, only community support will be provided in the future via Github issues.
+	! Have fun and use all Enterprise features, you couldn't use before! :-)
+
 ### Version 5.8.4 (2021-05-21)
 
 	* Due to an incorrect line ending format (CRLF instead of LF), the consistency check failed

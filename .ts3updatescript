@@ -17,7 +17,7 @@ _ts3updatescript()
     COMPREPLY=()
     cur="${COMP_WORDS[COMP_CWORD]}"
     prev="${COMP_WORDS[COMP_CWORD-1]}"
-    opts="--help --version --display-settings --test-inform-online-clients --update-script --show-license-key --request-license --deinstall-cronjob --force-license-update --check --delete-old-logs --inform-online-clients --disable-temporary-password-backup --keep-backups --waiting-time-in-minutes --set-release --beta-release --debug --install-cronjob"
+    opts="--help --version --display-settings --test-inform-online-clients --update-script --deinstall-cronjob --check --delete-old-logs --inform-online-clients --disable-temporary-password-backup --keep-backups --waiting-time-in-minutes --set-release --beta-release --debug --install-cronjob"
 
     if [[ ${cur} == -* ]] ; then
         COMPREPLY=( $(compgen -W "${opts}" -- ${cur}) )
