@@ -1762,6 +1762,10 @@ function updateTeamSpeakInstance() {
 
 		wget ${TS3_SERVER_DOWNLOAD_LINK} -q -O teamspeak3-server.tar.bz2
 
+		if [[ ! -f "teamspeak3-server.tar.bz2" ]]; then
+			return 1;
+		fi
+
 		if [[ -f ${INSTANCE_PATH}/tsdns/tsdnsserver_${INSTALLED_TS3_SERVER_PLATFORM}_${TS3SERVER_ARCHITECTURE} ]]; then
 			rm -rf ${INSTANCE_PATH}/tsdns/tsdnsserver_${INSTALLED_TS3_SERVER_PLATFORM}_${TS3SERVER_ARCHITECTURE}
 		fi
