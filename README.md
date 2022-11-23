@@ -10,7 +10,7 @@ If you don't want to update your TeamSpeak 3 server manually, you can use this s
 
 ## Various references
 
-![Example Output](https://raw.githubusercontent.com/TS3Tools/TS3UpdateScript/master/img/TS3UpdateScript_Example_Summary.png)
+![Example Output](/img/TS3UpdateScript_Example_Summary.png)
 
 [Open CHANGELOG](docs/CHANGELOG.md)
 
@@ -59,7 +59,7 @@ If you don't want to update your TeamSpeak 3 server manually, you can use this s
 - Pre-Validation of collected data to prevent possible update issues
 - Best Practices Analyzer
 - Debug feature, if you got some issues with the script
-- Debug Report feature, if your update failed (Example [Debug Report](https://raw.githubusercontent.com/TS3Tools/TS3UpdateScript/master/docs/EXAMPLE_DEBUG_REPORT.md))
+- Debug Report feature, if your update failed (Example [Debug Report](/docs/EXAMPLE_DEBUG_REPORT.md))
 
 ## Stay tuned!
 
@@ -151,7 +151,7 @@ Verified:
 Need Review:
 - None
 
-![Settings summary](https://raw.githubusercontent.com/TS3Tools/TS3UpdateScript/master/img/TS3UpdateScript_Settings_Summary.png)
+![Settings summary](/img/TS3UpdateScript_Settings_Summary.png)
 
 ### Help us
 
@@ -165,7 +165,7 @@ All you need to do to get the list of available options/parameters is:
 
   user@tux:~$ sudo ./TS3UpdateScript --help
 
-![Help menu](https://raw.githubusercontent.com/TS3Tools/TS3UpdateScript/master/img/TS3UpdateScript_Help_Page.png)
+![Help menu](/img/TS3UpdateScript_Help_Page.png)
 
 All you need to do to execute an update process is:
 

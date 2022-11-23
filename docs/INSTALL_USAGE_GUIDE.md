@@ -22,13 +22,13 @@ First of all, you have to meet the latest [requirements](../README.md#requiremen
 
 a) Download the latest TS3UpdateScript from GitHub.com: https://github.com/TS3Tools/TS3UpdateScript/
 
-  ``user@tux:~$ wget https://github.com/TS3Tools/TS3UpdateScript/archive/master.zip``
+  ``user@tux:~$ wget https://github.com/TS3Tools/TS3UpdateScript/archive/main.zip``
 
 b) Unzip the downloaded archive on your Linux server:
 
-  ``user@tux:~$ unzip master.zip && rm master.zip``
+  ``user@tux:~$ unzip main.zip && rm main.zip``
 
-  ``user@tux:~$ mv TS3UpdateScript-master/ TS3UpdateScript && cd TS3UpdateScript``
+  ``user@tux:~$ mv TS3UpdateScript-main/ TS3UpdateScript && cd TS3UpdateScript``
 
    HINT: You can unzip and use the script from each directory of your server which you want to.
 

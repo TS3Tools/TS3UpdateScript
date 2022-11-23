@@ -23,6 +23,10 @@ Hotfix | Important fix for one more issues, which causes a not (correct) working
 
 ## Releases
 
+### Version 6.0.1 (2022-11-23)
+
+	- Renamed `master` branch to `main`
+
 ### Version 6.0.0 (2022-11-20)
 
 	- Removed script licensing

@@ -23,17 +23,17 @@ sleep 5s
 cd "$(dirname $0)"
 
 # Download latest version
-wget --no-check-certificate -q https://github.com/TS3Tools/TS3UpdateScript/archive/master.zip
+wget --no-check-certificate -q https://github.com/TS3Tools/TS3UpdateScript/archive/main.zip
 
 # Unzip latest version
-if [[ $(unzip master.zip TS3UpdateScript-master/* -x TS3UpdateScript-master/configs/*) ]]; then
-	if [ ! $(cp -Rf TS3UpdateScript-master/* . && rm -rf TS3UpdateScript-master/) ]; then
-		rm -rf master.zip
+if [[ $(unzip main.zip TS3UpdateScript-main/* -x TS3UpdateScript-main/configs/*) ]]; then
+	if [ ! $(cp -Rf TS3UpdateScript-main/* . && rm -rf TS3UpdateScript-main/) ]; then
+		rm -rf main.zip
 		cd - > /dev/null
 	        exit 1;
 	fi
 else
-	rm -rf master.zip
+	rm -rf main.zip
 	cd - > /dev/null
         exit 0;
 fi
