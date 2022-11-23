@@ -14,11 +14,11 @@ This file shows you, how you can update the TS3UpdateScript.
 2. Read the [docs/CHANGELOG.md](CHANGELOG.md) (important information are marked with a exclamation mark ("!"))
 3. Download the latest version from https://github.com/TS3Tools/TS3UpdateScript
 
-  ``root@tux:~# wget https://github.com/TS3Tools/TS3UpdateScript/archive/master.zip``
+  ``root@tux:~# wget https://github.com/TS3Tools/TS3UpdateScript/archive/main.zip``
 
 4. Unzip and replace all old TS3UpdateScript files excluding the configs/ directory with the latest version
 
-  ``root@tux:~# unzip master.zip TS3UpdateScript-master/* -x TS3UpdateScript-master/configs/*``
+  ``root@tux:~# unzip main.zip TS3UpdateScript-main/* -x TS3UpdateScript-main/configs/*``
 
 5. Check, if your used parameters have been changed or not and adjust them, if needed (read [docs/CHANGELOG.md](CHANGELOG.md) therefore)
 

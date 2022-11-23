@@ -275,7 +275,7 @@ function getCurrentScriptVersion() {
 # Get latest script version
 # Return: LatestScriptVersion:string or 1:boolean
 function getLatestScriptVersion() {
-	LATEST_SCRIPT_VERSION="$(wget -t 1 -T 1 https://raw.githubusercontent.com/TS3Tools/TS3UpdateScript/master/docs/CHANGELOG.md --no-check-certificate -q -O - | grep Version | head -1 | cut -d ' ' -f 3 | tr -d '[[:space:]]')"
+	LATEST_SCRIPT_VERSION="$(wget -t 1 -T 1 https://raw.githubusercontent.com/TS3Tools/TS3UpdateScript/main/docs/CHANGELOG.md --no-check-certificate -q -O - | grep Version | head -1 | cut -d ' ' -f 3 | tr -d '[[:space:]]')"
 
 	if [[ -n "$LATEST_SCRIPT_VERSION" ]]; then
 		echo -n "$LATEST_SCRIPT_VERSION";
