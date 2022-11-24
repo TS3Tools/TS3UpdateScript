@@ -473,7 +473,7 @@ function getLatestTSServerVersion() {
 		TS3_SERVER_VERSION="$(getLatestStableTS3ServerVersion)";
 	fi
 
-	if [[ -n "$TS3_SERVER_VERSION" ]] && [[ "$TS3_SERVER_VERSION" != "0" ]]; then
+	if [[ -n "$TS3_SERVER_VERSION" ]] && [[ "$TS3_SERVER_VERSION" != "1" ]]; then
 		echo -n "$TS3_SERVER_VERSION";
 	else
 		return 1;
@@ -1761,6 +1761,10 @@ function updateTeamSpeakInstance() {
 		fi
 
 		wget ${TS3_SERVER_DOWNLOAD_LINK} -q -O teamspeak3-server.tar.bz2
+
+		if [[ ! -f "teamspeak3-server.tar.bz2" ]]; then
+			return 1;
+		fi
 
 		if [[ -f ${INSTANCE_PATH}/tsdns/tsdnsserver_${INSTALLED_TS3_SERVER_PLATFORM}_${TS3SERVER_ARCHITECTURE} ]]; then
 			rm -rf ${INSTANCE_PATH}/tsdns/tsdnsserver_${INSTALLED_TS3_SERVER_PLATFORM}_${TS3SERVER_ARCHITECTURE}
