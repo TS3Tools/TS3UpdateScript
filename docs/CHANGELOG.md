@@ -26,6 +26,7 @@ Hotfix | Important fix for one more issues, which causes a not (correct) working
 ### Version 6.0.2 (2022-11-23)
 
 	+ Implement check for downloaded TeamSpeak server files
+	* Fixed incorrect check if the latest TeamSpeak server version could be detected or not. The script will now abort in case of failures.
 
 ### Version 6.0.1 (2022-11-23)
 

@@ -473,7 +473,7 @@ function getLatestTSServerVersion() {
 		TS3_SERVER_VERSION="$(getLatestStableTS3ServerVersion)";
 	fi
 
-	if [[ -n "$TS3_SERVER_VERSION" ]] && [[ "$TS3_SERVER_VERSION" != "0" ]]; then
+	if [[ -n "$TS3_SERVER_VERSION" ]] && [[ "$TS3_SERVER_VERSION" != "1" ]]; then
 		echo -n "$TS3_SERVER_VERSION";
 	else
 		return 1;
