@@ -879,10 +879,10 @@ function getServerQueryIP() {
 	fi
 
 	if [[ -n "$SERVER_QUERY_IP" ]]; then
-		if [[ "$SERVER_QUERY_IP" == "0.0.0.0" ]]; then
+		if [[ "$SERVER_QUERY_IP" =~ 0\.0\.0\.0 ]]; then
 			echo -n "127.0.0.1";
 		else
-			echo -n "$SERVER_QUERY_IP";
+			echo -n "$SERVER_QUERY_IP" | grep -Eo "([0-9]+[.]){3}[0-9]+";
 		fi
 	else
 		echo -n "127.0.0.1";
@@ -897,7 +897,7 @@ function getServerQueryPort() {
 		SERVER_QUERY_PORT="$(grep -E '^query_port=[0-9]{4,5}$' < ${1}/ts3server.ini | cut -d '=' -f 2)"
 
 		if [[ -n "$SERVER_QUERY_PORT" ]]; then
-			echo -n "$SERVER_QUERY_PORT";
+			echo -n "$SERVER_QUERY_PORT" | grep -Eo "([0-9]+)";
 		else
 			echo -n "10011";
 		fi
