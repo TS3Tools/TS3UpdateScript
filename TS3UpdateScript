@@ -263,7 +263,7 @@ function testInternetConnectivity() {
 # Get current script version
 # Return: CurrentScriptVersion:string or 1:boolean
 function getCurrentScriptVersion() {
-	CURRENT_SCRIPT_VERSION="$(grep Version docs/CHANGELOG.md | head -1 | cut -d ' ' -f 3 | tr -d '[[:space:]]')"
+	CURRENT_SCRIPT_VERSION="$(grep Version ${ABSOLUTE_PATH}/docs/CHANGELOG.md | head -1 | cut -d ' ' -f 3 | tr -d '[[:space:]]')"
 
 	if [[ -n "$CURRENT_SCRIPT_VERSION" ]]; then
 		echo -n "$CURRENT_SCRIPT_VERSION";
