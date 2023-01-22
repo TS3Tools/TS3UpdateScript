@@ -23,6 +23,10 @@ Hotfix | Important fix for one more issues, which causes a not (correct) working
 
 ## Releases
 
+### Version 6.0.4 (2023-01-22)
+
+	* Fix `grep: docs/CHANGELOG.md: No such file or directory`
+
 ### Version 6.0.3 (2022-12-02)
 
 	* Issue #118: Fix gathering of ServerQuery IP and port when unexpected characters are included
