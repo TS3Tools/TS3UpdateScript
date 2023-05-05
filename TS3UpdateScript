@@ -2052,8 +2052,8 @@ function main() {
 
 	# Able to reach all needed remote server?
 	if [[ "$PAR_DEACTIVATE_HOST_ALIVE_CHECK" -eq 0 ]]; then
-		if ! testInternetConnectivity "www.ts3-tools.info"; then
-			echo "www.ts3-tools.info ${TXT_SELF_TEST_CONNECTIVITY}" >> SELF_TEST_STATUS.txt;
+		if ! testInternetConnectivity "www.google.com"; then
+			echo "www.google.com ${TXT_SELF_TEST_CONNECTIVITY}" >> SELF_TEST_STATUS.txt;
 			SELF_TEST_STATUS=1;
 		fi
 
