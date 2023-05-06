@@ -20,7 +20,7 @@ If you don't want to update your TeamSpeak 3 server manually, you can use this s
 
 ## Developers
 
-  * Sebastian Kraetzig [info@ts3-tools.info]
+  * Sebastian Kraetzig ([@Sebi94nbg](https://github.com/Sebi94nbg))
 
 ## Contributors
 
