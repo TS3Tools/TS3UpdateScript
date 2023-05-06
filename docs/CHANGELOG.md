@@ -23,6 +23,11 @@ Hotfix | Important fix for one more issues, which causes a not (correct) working
 
 ## Releases
 
+### Version 6.0.5 (2023-05-06)
+
+	* Remove connectivity check for the `ts3-tools.info` domain
+	* Replace `ts3-tools.info` domain in documentations with respective alternatives, if necessary
+
 ### Version 6.0.4 (2023-01-22)
 
 	* Fix `grep: docs/CHANGELOG.md: No such file or directory`
