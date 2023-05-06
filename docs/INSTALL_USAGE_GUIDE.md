@@ -231,7 +231,7 @@ or
 
 ## Debugging
 
-You will not need to debug and fix the issue by yourself. Just enable debugging of the script and send me the debug file via eMail to info@ts3-tools.info.
+You will not need to debug and fix the issue by yourself. Just enable debugging of the script and upload the debug file here on GitHub as a new issue.
 
 1. Execute the script with those parameters you want plus '--debug' and provide any non-existing filename
 
